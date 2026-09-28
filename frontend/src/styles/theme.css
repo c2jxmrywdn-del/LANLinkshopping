@@ -1,0 +1,44 @@
+/* =====================================================
+   LANLinkshopping 品牌色板（全局 CSS 变量）
+   前台 MainLayout 与后台 AdminLayout 共用，改色只动这里。
+   与 LOGO 双环 / 汇聚流 / 琥珀火花 取自同一套色。
+   ===================================================== */
+:root {
+  /* 主色（LOGO 双环渐变） */
+  --ll-indigo: #4F46E5;   /* 靛蓝 */
+  --ll-azure:  #0EA5E9;   /* 天蓝 */
+  --ll-sky:    #38BDF8;   /* 亮天蓝 */
+  --ll-cyan:   #22D3EE;   /* 青（核心节点） */
+
+  /* 点缀色（LOGO 裂变火花） */
+  --ll-amber:  #F59E0B;   /* 琥珀 */
+  --ll-coral:  #FB7185;   /* 珊瑚 */
+
+  /* 中性 / 背景 */
+  --ll-navy:   #1F3864;   /* 前台顶栏深海军蓝 */
+  --ll-ink:    #0F172A;   /* 主文字 */
+  --ll-muted:  #64748B;   /* 次要文字 */
+  --ll-page:   #f5f6f8;   /* 页面底色 */
+
+  /* 渐变 token */
+  --ll-brand-gradient: linear-gradient(92deg, var(--ll-sky) 0%, var(--ll-cyan) 100%);
+  --ll-accent-gradient: linear-gradient(90deg, var(--ll-azure) 0%, var(--ll-cyan) 100%);
+  --ll-ring-gradient: linear-gradient(135deg, var(--ll-indigo) 0%, var(--ll-azure) 100%);
+  --ll-spark-gradient: linear-gradient(90deg, var(--ll-amber) 0%, var(--ll-coral) 100%);
+
+  /* 页面装饰 / 语义色 */
+  --ll-white:  #ffffff;
+  --ll-gray:   #999999;   /* 次要说明文字 */
+  --ll-gray2:  #888888;   /* 提示文字 */
+  --ll-price:  #e4393c;   /* 价格红 */
+  --ll-thumb-bg: #eef1f6; /* 商品占位图底色 */
+  --ll-thumb-fg: #b9c3d4; /* 商品占位图文字 */
+
+  /* 首页 banner 三张幻灯片渐变 */
+  --ll-slide1: linear-gradient(120deg, #1f3864, #3f6fb5);
+  --ll-slide2: linear-gradient(120deg, #0f6b5c, #39b58f);
+  --ll-slide3: linear-gradient(120deg, #8a4b1f, #d98e3a);
+}
+
+/* 品牌字标统一样式：LAN 用正文色，Link 用品牌琥珀高亮（全站共用） */
+.wordmark .ll-link { color: var(--ll-amber); }

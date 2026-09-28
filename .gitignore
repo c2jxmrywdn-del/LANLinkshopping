@@ -1,0 +1,22 @@
+# 依赖与构建产物
+node_modules/
+target/
+dist/
+out/
+.vite/
+*.log
+run.log
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 临时/生成图（工作区，非项目源码）
+vibe_images/
+__pycache__/
+*.pyc

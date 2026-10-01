@@ -46,7 +46,7 @@ onMounted(async () => {
 .ind-card { text-align: center; height: 116px; margin-bottom: 16px; }
 .ind-card :deep(.ant-card-body) { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 16px; }
 .ind-name { font-size: 18px; font-weight: 700; color: var(--ll-navy); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ind-desc { color: var(--ll-gray); font-size: 13px; margin-top: 6px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ind-desc { color: var(--ll-muted); font-size: 13px; margin-top: 6px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .prod-card { margin-bottom: 16px; }
 .thumb { height: 120px; background: var(--ll-thumb-bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: var(--ll-thumb-fg); margin-bottom: 8px; overflow: hidden; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; }

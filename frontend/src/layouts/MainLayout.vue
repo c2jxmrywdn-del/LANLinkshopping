@@ -29,13 +29,14 @@
             </a-dropdown>
           </template>
           <template v-else>
-            <a-button type="primary" ghost @click="$router.push('/login')">登录 / 注册</a-button>
+            <!-- 深色顶栏上使用白字白边（WCAG 对比度达标） -->
+            <a-button type="primary" ghost style="color:#fff;border-color:#fff" @click="$router.push('/login')">登录 / 注册</a-button>
           </template>
         </div>
       </div>
     </a-layout-header>
     <a-layout-content class="content">
-      <router-view />
+      <main><router-view /></main>
     </a-layout-content>
     <a-layout-footer class="footer" @click="secretTap">
       LANLinkshopping · 一种聚合型一体多元化解决方案电商平台（B2B 毕业设计演示）
@@ -95,7 +96,12 @@ function secretTap() {
 .logo-img { width: 34px; height: 34px; border-radius: 8px; display: block; }
 .logo-text b { color: var(--ll-amber); font-weight: 700; }
 .nav { flex: 1; background: transparent; border-bottom: none; }
+/* 顶栏深色背景上强制纯白文字，保证对比度（WCAG 2.1） */
+.header :deep(.ant-menu-horizontal .ant-menu-item) { color: #fff; }
+.header :deep(.ant-menu-horizontal .ant-menu-item:hover) { color: #fff; }
+.header :deep(.ant-menu-horizontal .ant-menu-item-selected) { color: #fff; }
 .right { display: flex; align-items: center; gap: 16px; }
 .content { max-width: 1200px; margin: 0 auto; width: 100%; padding: 24px 16px; }
-.footer { text-align: center; color: #888; background: var(--ll-page); }
+.footer { text-align: center; color: #4b5563 !important; background: var(--ll-page); }
+.footer .ant-layout-footer { color: inherit; }
 </style>

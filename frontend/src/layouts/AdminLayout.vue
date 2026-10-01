@@ -21,7 +21,7 @@
         </a-space>
       </a-layout-header>
       <a-layout-content class="admin-content">
-        <router-view />
+        <main><router-view /></main>
       </a-layout-content>
     </a-layout>
   </a-layout>

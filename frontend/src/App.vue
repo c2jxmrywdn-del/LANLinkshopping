@@ -1,5 +1,5 @@
 <template>
-  <a-config-provider :theme="{ algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm }">
+  <a-config-provider :theme="{ algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm, token: { colorPrimary: '#4F46E5', colorLink: '#4F46E5' } }">
     <router-view />
     <SplashScreen v-if="showSplash" @done="showSplash = false" />
   </a-config-provider>

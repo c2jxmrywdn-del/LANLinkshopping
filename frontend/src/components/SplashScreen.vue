@@ -61,7 +61,7 @@ function finish() {
   visible.value = false
   setTimeout(() => emit('done'), 650)
 }
-onMounted(() => { timer = setTimeout(finish, 5000) })
+onMounted(() => { timer = setTimeout(finish, 2400) })
 onBeforeUnmount(() => clearTimeout(timer))
 </script>
 
@@ -117,9 +117,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   background: rgba(255,255,255,.12); overflow: hidden; opacity: 0; animation: ssFadeIn .4s 1.2s forwards; }
 .ss-progress-bar { display: block; height: 100%; width: 0;
   background: linear-gradient(90deg, #4f46e5, #0ea5e9, #22d3ee); animation: ssSweep 3.6s .8s ease forwards; }
-
-.ss-skip { position: absolute; top: 22px; right: 26px; background: transparent; border: 1px solid rgba(255,255,255,.25);
-  color: #cbd5e1; font-size: 13px; padding: 6px 14px; border-radius: 20px; cursor: pointer;
+.ss-skip { position: absolute; top: 22px; right: 26px; background: transparent; border: 1px solid rgba(255,255,255,.4); color: #e2e8f0; font-size: 13px; padding: 6px 14px; border-radius: 20px; cursor: pointer;
   opacity: 0; animation: ssFadeIn .5s 1s forwards; transition: background .2s; }
 .ss-skip:hover { background: rgba(255,255,255,.1); }
 

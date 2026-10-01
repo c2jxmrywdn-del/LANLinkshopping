@@ -12,6 +12,7 @@
 
   /* 点缀色（LOGO 裂变火花） */
   --ll-amber:  #F59E0B;   /* 琥珀 */
+  --ll-amber-strong: #B45309; /* 琥珀加深（小字号/浅色底可达 WCAG 对比度 4.5:1） */
   --ll-coral:  #FB7185;   /* 珊瑚 */
 
   /* 中性 / 背景 */
@@ -28,9 +29,9 @@
 
   /* 页面装饰 / 语义色 */
   --ll-white:  #ffffff;
-  --ll-gray:   #999999;   /* 次要说明文字 */
-  --ll-gray2:  #888888;   /* 提示文字 */
-  --ll-price:  #e4393c;   /* 价格红 */
+  --ll-gray:   #4b5563;   /* 次要说明文字（浅色底对比度 ≥4.5:1） */
+  --ll-gray2:  #4b5563;   /* 提示文字 */
+  --ll-price:  #d93025;   /* 价格红（白底对比度 ≥4.5:1） */
   --ll-thumb-bg: #eef1f6; /* 商品占位图底色 */
   --ll-thumb-fg: #b9c3d4; /* 商品占位图文字 */
 
@@ -40,5 +41,6 @@
   --ll-slide3: linear-gradient(120deg, #8a4b1f, #d98e3a);
 }
 
-/* 品牌字标统一样式：LAN 用正文色，Link 用品牌琥珀高亮（全站共用） */
-.wordmark .ll-link { color: var(--ll-amber); }
+/* 品牌字标统一样式：LAN 用正文色，Link 用品牌琥珀高亮（全站共用）。
+   浅色底上使用加深琥珀以保证 WCAG 2.1 对比度 ≥ 4.5:1 */
+.wordmark .ll-link { color: var(--ll-amber-strong); }

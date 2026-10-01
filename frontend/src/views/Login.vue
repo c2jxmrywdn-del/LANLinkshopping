@@ -1,5 +1,5 @@
 <template>
-  <div class="wrap">
+  <main class="wrap">
     <a-card class="box">
       <template #title><span class="wordmark">LAN<span class="ll-link">Link</span>shopping</span></template>
       <a-tabs v-model:activeKey="tab" centered>
@@ -76,7 +76,7 @@
         </a-tab-pane>
       </a-tabs>
     </a-card>
-  </div>
+  </main>
 </template>
 
 <script setup>

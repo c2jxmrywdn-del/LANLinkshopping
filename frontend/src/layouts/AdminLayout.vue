@@ -8,6 +8,7 @@
         <a-menu-item key="admin-dash">数据概览</a-menu-item>
         <a-menu-item key="admin-merchants">商户审核</a-menu-item>
         <a-menu-item key="admin-products">商品管理</a-menu-item>
+        <a-menu-item key="admin-audit">审计日志</a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout>

@@ -20,3 +20,9 @@ Thumbs.db
 vibe_images/
 __pycache__/
 *.pyc
+
+# 上传目录（头像等运行时文件）
+backend/uploads/
+
+# IDE 规划文档
+.trae/

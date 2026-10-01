@@ -3,6 +3,8 @@ import request, { fetchCsrfToken } from './request'
 export const authApi = {
   register: (d) => request.post('/auth/register', d),
   login: (d) => request.post('/auth/login', d),
+  // 两步验证登录：登录返回 require2fa 后，用一次性票据 + 动态码完成登录
+  login2fa: (d) => request.post('/auth/login/2fa', d),
   logout: () => request.post('/auth/logout'),
   me: () => request.get('/auth/me')
 }
@@ -79,4 +81,10 @@ export const merchantApi = {
   // 管理后台专用
   adminList: (reviewStatus) => request.get('/merchant/admin/list', { params: { reviewStatus } }),
   adminReview: (merId, reviewStatus, reason) => request.post(`/merchant/admin/review/${merId}`, null, { params: { reviewStatus, reason } })
+}
+
+// ===== 管理后台审计（/admin/**，AuthInterceptor 已限定 admin 角色） =====
+export const adminApi = {
+  auditPage: (params) => request.get('/admin/audit/page', { params }),
+  auditExport: (params) => request.get('/admin/audit/export', { params, responseType: 'blob' })
 }

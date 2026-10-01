@@ -48,6 +48,8 @@ request.interceptors.request.use((config) => {
 
 request.interceptors.response.use(
   (res) => {
+    // 二进制响应（如 CSV 导出）不按业务 JSON 解析
+    if (res.config.responseType === 'blob') return res.data
     const body = res.data
     if (body && body.code !== 200) {
       // CSRF 令牌失效：换新后重放一次

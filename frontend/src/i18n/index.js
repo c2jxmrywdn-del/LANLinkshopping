@@ -9,7 +9,9 @@ const zh = {
     nav: { profile: '个人信息', settings: '系统设置' },
     card: {
       role: '角色', phone: '手机', email: '邮箱', unbound: '未绑定',
-      quick: '快捷入口', orders: '我的订单', cart: '购物车', merchant: '商户入驻'
+      quick: '快捷入口', orders: '我的订单', cart: '购物车', merchant: '商户入驻',
+      clearCache: '清空本地缓存', cacheCleared: '缓存已清空',
+      accountInfo: '账号信息', userId: '用户ID', member: '会员等级'
     },
     loadFail: '数据加载失败',
     loadFailDesc: '请检查网络后重试',
@@ -144,7 +146,9 @@ const en = {
     nav: { profile: 'Profile', settings: 'Settings' },
     card: {
       role: 'Role', phone: 'Phone', email: 'Email', unbound: 'Not bound',
-      quick: 'Quick Links', orders: 'My Orders', cart: 'Cart', merchant: 'Become a Merchant'
+      quick: 'Quick Links', orders: 'My Orders', cart: 'Cart', merchant: 'Become a Merchant',
+      clearCache: 'Clear Local Cache', cacheCleared: 'Cache cleared',
+      accountInfo: 'Account Info', userId: 'User ID', member: 'Member Level'
     },
     loadFail: 'Failed to load',
     loadFailDesc: 'Check your network and retry',

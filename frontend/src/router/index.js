@@ -25,7 +25,8 @@ const routes = [
     { path: '', name: 'admin-home', redirect: { name: 'admin-dash' } },
     { path: 'dashboard', name: 'admin-dash', component: () => import('../views/admin/AdminDashboard.vue') },
     { path: 'merchants', name: 'admin-merchants', component: () => import('../views/admin/MerchantReview.vue') },
-    { path: 'products', name: 'admin-products', component: () => import('../views/admin/AdminProducts.vue') }
+    { path: 'products', name: 'admin-products', component: () => import('../views/admin/AdminProducts.vue') },
+    { path: 'audit', name: 'admin-audit', component: () => import('../views/admin/AdminAuditLog.vue') }
   ]}
 ]
 

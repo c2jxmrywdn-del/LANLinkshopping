@@ -48,11 +48,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../store/user'
 import { useCartStore } from '../store/cart'
+import { useSettingsStore } from '../store/settings'
 
 const router = useRouter()
 const route = useRoute()
 const user = useUserStore()
 const cart = useCartStore()
+const settings = useSettingsStore()
 
 const selectedKeys = ref(['home'])
 onMounted(() => {
@@ -66,6 +68,7 @@ function onNav({ key }) {
 }
 async function doLogout() {
   await user.logout()
+  settings.clear() // 退出后恢复默认外观
   router.push('/login')
 }
 

@@ -26,9 +26,18 @@
           </a-badge>
           <template v-if="user.logged">
             <a-dropdown>
-              <a class="ll-ripple-host ll-tap user-trigger" style="color:#fff" @pointerdown="onTap">{{ user.user.nickname }} ▾</a>
+              <a class="ll-ripple-host ll-tap user-trigger" style="color:#fff" @pointerdown="onTap">
+                <span v-if="user.isVip" class="id-badge id-vip" title="VIP 用户">VIP</span>
+                <span v-else-if="user.isAdmin" class="id-badge id-admin" title="平台管理员">ADMIN</span>
+                <span v-else-if="user.isMerchant" class="id-badge id-merchant" title="入驻商户">商户</span>
+                {{ user.user.nickname }} ▾
+              </a>
               <template #overlay>
                 <a-menu>
+                  <a-menu-item disabled>
+                    <div class="id-scope">当前身份：<b>{{ user.identityName }}</b><br/>{{ user.identityScope }}</div>
+                  </a-menu-item>
+                  <a-menu-divider />
                   <a-menu-item @click="$router.push('/me')">个人中心</a-menu-item>
                   <a-menu-item @click="doLogout">退出登录</a-menu-item>
                 </a-menu>
@@ -138,11 +147,11 @@ function secretTap() {
 .logo-text b { color: var(--ll-amber); font-weight: 700; }
 .nav-shell { position: relative; flex: 1; min-width: 0; }
 .nav { background: transparent; border-bottom: none; }
-/* 导航交互态：未选中柔白，选中品牌天蓝（深色顶栏，WCAG 对比达标） */
+/* 导航交互态：未选中柔白，选中为贴近顶栏底色的柔和蓝（同色系相邻，视觉融合；对比度较亮天蓝降低） */
 .header :deep(.ant-menu-horizontal) { background: transparent; border-bottom: none; }
 .header :deep(.ant-menu-horizontal .ant-menu-item) { color: rgba(255, 255, 255, 0.72); transition: color 0.25s ease; }
 .header :deep(.ant-menu-horizontal .ant-menu-item:hover) { color: #fff; }
-.header :deep(.ant-menu-horizontal .ant-menu-item-selected) { color: var(--ll-sky, #38BDF8); font-weight: 600; }
+.header :deep(.ant-menu-horizontal .ant-menu-item-selected) { color: var(--ll-nav-active, #6E93C4); font-weight: 600; }
 /* 自定义滑动位置指示条：JS 定位到选中项下方，0.28s 平滑移动 */
 .nav-indicator {
   position: absolute;
@@ -150,12 +159,20 @@ function secretTap() {
   left: 0;
   width: 0;
   height: 3px;
-  background: var(--ll-sky, #38BDF8);
+  background: var(--ll-nav-active, #6E93C4);
   border-radius: 3px 3px 0 0;
   pointer-events: none;
   transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1), width 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
 }
 .right { display: flex; align-items: center; gap: 16px; }
+/* 身份徽章 */
+.id-badge { display: inline-block; font-size: 11px; font-weight: 700; line-height: 1;
+            padding: 3px 6px; border-radius: 4px; margin-right: 6px; vertical-align: 1px; }
+.id-vip { background: #b45309; color: #fff; }       /* 琥珀：VIP */
+.id-admin { background: #1e6eb8; color: #fff; }     /* 天蓝：管理员 */
+.id-merchant { background: #0f766e; color: #fff; }  /* 青绿：商户 */
+.id-scope { font-size: 12px; color: var(--ll-gray, #4b5563); line-height: 1.6; white-space: normal; }
+.id-scope b { color: var(--ll-ink, #0f172a); }
 .content { max-width: 1200px; margin: 0 auto; width: 100%; padding: 24px 16px; }
 .footer { text-align: center; color: #4b5563 !important; background: var(--ll-page); }
 .footer .ant-layout-footer { color: inherit; }

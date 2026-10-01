@@ -147,11 +147,11 @@ function secretTap() {
 .logo-text b { color: var(--ll-amber); font-weight: 700; }
 .nav-shell { position: relative; flex: 1; min-width: 0; }
 .nav { background: transparent; border-bottom: none; }
-/* 导航交互态：未选中柔白，选中色与后台激活色一致（主色 --ll-azure + 指示条 --ll-accent-gradient 天蓝→青） */
+/* 导航交互态：未选中柔白，选中文字用亮青 --ll-cyan（可读性更佳）+ 指示条 --ll-accent-gradient 天蓝→青，与后台激活色同源 */
 .header :deep(.ant-menu-horizontal) { background: transparent; border-bottom: none; }
 .header :deep(.ant-menu-horizontal .ant-menu-item) { color: rgba(255, 255, 255, 0.72); transition: color 0.25s ease; }
 .header :deep(.ant-menu-horizontal .ant-menu-item:hover) { color: #fff; }
-.header :deep(.ant-menu-horizontal .ant-menu-item-selected) { color: var(--ll-azure, #0EA5E9); font-weight: 600; }
+.header :deep(.ant-menu-horizontal .ant-menu-item-selected) { color: var(--ll-cyan, #22D3EE); font-weight: 600; }
 /* 自定义滑动位置指示条：JS 定位到选中项下方，0.28s 平滑移动 */
 .nav-indicator {
   position: absolute;

@@ -1,0 +1,47 @@
+# Normalize line endings across Windows / macOS / Linux.
+# Source files are stored as LF in the repo and checked out as LF,
+# overriding the global core.autocrlf=true so no "LF will be replaced
+# by CRLF" warnings or spurious diffs are produced.
+
+# Default: auto-detect text, store LF in repo
+* text=auto
+
+# ---- Source & config: always LF ----
+*.java  text eol=lf
+*.vue   text eol=lf
+*.js    text eol=lf
+*.mjs   text eol=lf
+*.cjs   text eol=lf
+*.ts    text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.css   text eol=lf
+*.scss  text eol=lf
+*.html  text eol=lf
+*.xml   text eol=lf
+*.sql   text eol=lf
+*.md    text eol=lf
+*.svg   text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# ---- Windows batch / PowerShell: keep CRLF (cmd.exe expects CRLF) ----
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# ---- Binary: never touch line endings ----
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.bmp binary
+*.jar binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.mp4 binary

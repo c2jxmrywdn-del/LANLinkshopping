@@ -161,10 +161,10 @@ a:active { color: var(--ll-skyblue-active); }
 
 /* 顶栏文字按钮（消息/购物车）+ 用户下拉：点击/悬停反馈色（深色顶栏用半透明白） */
 .header .right .ant-btn-text:hover { background: rgba(255, 255, 255, 0.10); }
-.header .right .ant-btn-text:active { background: rgba(255, 255, 255, 0.24); }
+.header .right .ant-btn-text:active { background: rgba(255, 255, 255, 0.30); }
 .user-trigger { padding: 6px 12px; border-radius: 8px; line-height: 1.4; transition: background var(--ll-transition-fast, 0.2s) ease; }
 .user-trigger:hover { background: rgba(255, 255, 255, 0.10); }
-.user-trigger:active { background: rgba(255, 255, 255, 0.24); }
+.user-trigger:active { background: rgba(255, 255, 255, 0.30); }
 
 .ll-ripple {
   position: absolute;

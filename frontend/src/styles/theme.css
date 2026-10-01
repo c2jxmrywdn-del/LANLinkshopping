@@ -154,6 +154,10 @@ a:active { color: var(--ll-skyblue-active); }
 .ant-btn { --ll-ripple-color: rgba(31, 56, 100, 0.16); }
 .ant-btn-primary { --ll-ripple-color: rgba(255, 255, 255, 0.35); }
 .ll-add-cart.ant-btn { --ll-ripple-color: rgba(31, 56, 100, 0.20); }
+/* 深色顶栏上的文字按钮（消息/购物车）：改用白波纹才可见 */
+.header .ant-btn-text { --ll-ripple-color: rgba(255, 255, 255, 0.35); }
+/* 非按钮的波纹宿主（如用户下拉 <a>）：需自身定位+裁剪 */
+.ll-ripple-host { position: relative; overflow: hidden; border-radius: 8px; --ll-ripple-color: rgba(255, 255, 255, 0.35); }
 
 .ll-ripple {
   position: absolute;

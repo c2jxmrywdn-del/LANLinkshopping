@@ -22,7 +22,7 @@
           </a-badge>
           <template v-if="user.logged">
             <a-dropdown>
-              <a style="color:#fff">{{ user.user.nickname }} ▾</a>
+              <a class="ll-ripple-host user-trigger" style="color:#fff">{{ user.user.nickname }} ▾</a>
               <template #overlay>
                 <a-menu>
                   <a-menu-item @click="$router.push('/me')">个人中心</a-menu-item>

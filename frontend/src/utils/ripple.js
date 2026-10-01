@@ -1,10 +1,10 @@
 /**
  * 按钮点击波纹（Material 风格，全站统一）
- * 通过事件委托监听 pointerdown，在 .ant-btn 内注入 .ll-ripple 波纹节点，
- * 动画结束自动移除。颜色由 CSS 变量 --ll-ripple-color 按按钮表面自适应
- * （浅底深波纹 / 深底白波纹），定义见 styles/theme.css。
+ * 通过事件委托监听 pointerdown，在 .ant-btn 或带 .ll-ripple-host 的元素内注入
+ * .ll-ripple 波纹节点，动画结束自动移除。颜色由 CSS 变量 --ll-ripple-color
+ * 按元素表面自适应（浅底深波纹 / 深底白波纹），定义见 styles/theme.css。
  */
-const RIPPLE_SELECTOR = '.ant-btn'
+const RIPPLE_SELECTOR = '.ant-btn, .ll-ripple-host'
 const RIPPLE_SPAN = 'll-ripple'
 
 export function initRipple() {

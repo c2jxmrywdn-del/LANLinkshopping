@@ -33,16 +33,19 @@ public class DataInitializer implements CommandLineRunner {
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
     private final ThirdAuthMapper thirdAuthMapper;
+    private final MessageMapper messageMapper;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(UserMapper userMapper, RoleMapper roleMapper, EnterpriseMapper enterpriseMapper,
                            MerchantMapper merchantMapper, ProductMapper productMapper,
                            CategoryMapper categoryMapper, ThirdAuthMapper thirdAuthMapper,
+                           MessageMapper messageMapper,
                            PasswordEncoder passwordEncoder) {
         this.userMapper = userMapper; this.roleMapper = roleMapper;
         this.enterpriseMapper = enterpriseMapper; this.merchantMapper = merchantMapper;
         this.productMapper = productMapper; this.categoryMapper = categoryMapper;
         this.thirdAuthMapper = thirdAuthMapper;
+        this.messageMapper = messageMapper;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -50,6 +53,8 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         // 第三方授权演示数据：与主初始化解耦，已存在的库也会补种子（按 用户+应用 幂等判断）
         seedThirdAuthDemo();
+        // 站内消息演示数据：按 用户+类型+标题 幂等判断
+        seedMessageDemo();
 
         if (userMapper.selectCount(null) > 0) {
             log.info("已存在用户数据, 跳过初始化");
@@ -136,6 +141,30 @@ public class DataInitializer implements CommandLineRunner {
         t.setAuthTime(LocalDateTime.now());
         t.setCreateTime(LocalDateTime.now());
         thirdAuthMapper.insert(t);
+    }
+
+    /** 站内消息演示数据：按手机号找演示买家（幂等：用户+类型+标题 唯一） */
+    private void seedMessageDemo() {
+        User buyer = userMapper.selectOne(Wrappers.<User>lambdaQuery().eq(User::getPhone, "13900000001"));
+        if (buyer == null) return;
+        seedMessage(buyer.getUserId(), "promotion", "新客户专享 9 折优惠", "首次下单享 9 折，全场通用，有效期至月底。");
+        seedMessage(buyer.getUserId(), "promotion", "行业采购节来袭", "建筑/纺织/石化/电子四大会场满减专场已开启。");
+        seedMessage(buyer.getUserId(), "system", "欢迎使用 LANLinkshopping", "平台已为你开通采购账号，可前往个人中心完善资料。");
+    }
+
+    private void seedMessage(Long userId, String type, String title, String content) {
+        if (messageMapper.selectCount(Wrappers.<Message>lambdaQuery()
+                .eq(Message::getUserId, userId).eq(Message::getType, type).eq(Message::getTitle, title)) > 0) {
+            return;
+        }
+        Message m = new Message();
+        m.setUserId(userId);
+        m.setType(type);
+        m.setTitle(title);
+        m.setContent(content);
+        m.setReadFlag(0);
+        m.setCreateTime(LocalDateTime.now());
+        messageMapper.insert(m);
     }
 
     private Product mkProduct(Long merId, String title, String brand, String spec, String price,

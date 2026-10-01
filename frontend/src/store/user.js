@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
-import { authApi } from '../api'
+import { authApi, userApi } from '../api'
 
 export const useUserStore = defineStore('user', {
   state: () => ({ user: null }),
   getters: {
     logged: (s) => !!s.user,
     isMerchant: (s) => s.user && s.user.roleCode === 'merchant',
-    isAdmin: (s) => s.user && s.user.roleCode === 'admin'
+    isAdmin: (s) => s.user && s.user.roleCode === 'admin',
+    unread: (s) => (s.user && s.user.unreadCount) || 0
   },
   actions: {
     /**
@@ -33,6 +34,20 @@ export const useUserStore = defineStore('user', {
         this.user = await authApi.me()
         localStorage.setItem('ll_user', JSON.stringify(this.user))
       } catch (e) { this.user = null }
+    },
+    /** 写入绝对未读数（登录后由 /auth/me 带回，或读操作后本地更新） */
+    setUnread(n) {
+      if (this.user) {
+        this.user.unreadCount = n
+        localStorage.setItem('ll_user', JSON.stringify(this.user))
+      }
+    },
+    /** 从服务端拉取最新未读数并刷新角标 */
+    async refreshUnread() {
+      try {
+        const data = await userApi.messageUnread()
+        this.setUnread(data.count || 0)
+      } catch (e) { /* 静默：未读数拉取失败不影响浏览 */ }
     },
     async logout() {
       try { await authApi.logout() } catch (e) {}

@@ -87,3 +87,45 @@ CREATE TABLE IF NOT EXISTS t_audit_log (
   user_agent  VARCHAR(255) DEFAULT '' COMMENT '设备/浏览器信息',
   create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间'
 ) ENGINE=InnoDB COMMENT='用户审计日志(保留不少于180天)';
+
+-- ==================== 6. 站内消息表 ====================
+CREATE TABLE IF NOT EXISTS t_message (
+  id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id     BIGINT NOT NULL COMMENT '接收用户ID',
+  type        VARCHAR(16) NOT NULL COMMENT '类型 order/promotion/system',
+  title       VARCHAR(128) NOT NULL COMMENT '标题',
+  content     VARCHAR(500) DEFAULT '' COMMENT '内容',
+  related_no  VARCHAR(40) DEFAULT '' COMMENT '关联订单号等',
+  read_flag   TINYINT DEFAULT 0 COMMENT '0未读 1已读',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '状态更新时间',
+  KEY idx_user (user_id, read_flag)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='站内消息';
+
+-- ==================== 7. 登录安全记录表 ====================
+CREATE TABLE IF NOT EXISTS t_login_log (
+  id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id     BIGINT DEFAULT NULL COMMENT '识别到的用户ID(失败且手机号不存在可为空)',
+  phone       VARCHAR(20) NOT NULL COMMENT '尝试登录的手机号',
+  success     TINYINT DEFAULT 0 COMMENT '0失败 1成功',
+  reason      VARCHAR(64) DEFAULT '' COMMENT '成功/手机号或密码错误/动态验证码错误等',
+  client_ip   VARCHAR(64) DEFAULT '' COMMENT '客户端IP',
+  user_agent  VARCHAR(255) DEFAULT '' COMMENT '设备/浏览器信息',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='登录安全记录';
+
+-- ==================== 8. 收货地址表 ====================
+CREATE TABLE IF NOT EXISTS t_address (
+  id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id     BIGINT NOT NULL COMMENT '用户ID',
+  receiver    VARCHAR(64) NOT NULL COMMENT '收货人',
+  phone       VARCHAR(20) NOT NULL COMMENT '联系电话',
+  region      VARCHAR(64) DEFAULT '' COMMENT '省市区',
+  detail      VARCHAR(255) NOT NULL COMMENT '详细地址',
+  is_default  TINYINT DEFAULT 0 COMMENT '是否默认地址 0否 1是',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  KEY idx_user (user_id),
+  KEY idx_user_default (user_id, is_default)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='收货地址';

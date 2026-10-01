@@ -72,7 +72,20 @@ export const userApi = {
   thirdAuthList: () => request.get('/user/third-auth'),
   revokeThirdAuth: (id) => request.delete(`/user/third-auth/${id}`),
   // 审计：客户端侧事件上报（如 cache.clear）
-  audit: (action, detail) => request.post('/user/audit', { action, detail })
+  audit: (action, detail) => request.post('/user/audit', { action, detail }),
+  // 消息通知中心
+  messagePage: (params) => request.get('/user/message/page', { params }),
+  messageUnread: () => request.get('/user/message/unread'),
+  messageRead: (id) => request.post(`/user/message/read/${id}`),
+  messageReadAll: () => request.post('/user/message/read-all'),
+  // 收货地址簿
+  addressList: () => request.get('/user/address'),
+  addressAdd: (d) => request.post('/user/address', d),
+  addressUpdate: (id, d) => request.put(`/user/address/${id}`, d),
+  addressDelete: (id) => request.delete(`/user/address/${id}`),
+  addressSetDefault: (id) => request.post(`/user/address/${id}/default`),
+  // 登录安全记录
+  loginLogPage: (params) => request.get('/user/login-log', { params })
 }
 
 export const merchantApi = {

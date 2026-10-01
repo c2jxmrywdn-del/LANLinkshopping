@@ -14,6 +14,9 @@
           <a-menu-item key="merchant">商户入驻</a-menu-item>
         </a-menu>
         <div class="right">
+          <a-badge v-if="user.logged" :count="user.unread" :overflow-count="99">
+            <a-button type="text" style="color:#fff" @click="$router.push({ path: '/me', query: { tab: 'messages' } })">🔔 消息</a-button>
+          </a-badge>
           <a-badge :count="cart.count" :overflow-count="99">
             <a-button type="text" style="color:#fff" @click="$router.push('/cart')">🛒 购物车</a-button>
           </a-badge>

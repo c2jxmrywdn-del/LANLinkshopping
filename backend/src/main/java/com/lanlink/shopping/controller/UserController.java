@@ -4,6 +4,7 @@ import com.lanlink.shopping.common.R;
 import com.lanlink.shopping.config.CsrfInterceptor;
 import com.lanlink.shopping.config.UserContext;
 import com.lanlink.shopping.dto.*;
+import com.lanlink.shopping.entity.Address;
 import com.lanlink.shopping.entity.ThirdAuth;
 import com.lanlink.shopping.service.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,11 +36,15 @@ public class UserController {
     private final UserSettingsService settingsService;
     private final ThirdAuthService thirdAuthService;
     private final AuditService auditService;
+    private final MessageService messageService;
+    private final LoginLogService loginLogService;
+    private final AddressService addressService;
 
     public UserController(UserService userService, UserProfileService profileService,
                           VerifyCodeService verifyCodeService, TotpService totpService,
                           UserSettingsService settingsService, ThirdAuthService thirdAuthService,
-                          AuditService auditService) {
+                          AuditService auditService, MessageService messageService,
+                          LoginLogService loginLogService, AddressService addressService) {
         this.userService = userService;
         this.profileService = profileService;
         this.verifyCodeService = verifyCodeService;
@@ -47,6 +52,9 @@ public class UserController {
         this.settingsService = settingsService;
         this.thirdAuthService = thirdAuthService;
         this.auditService = auditService;
+        this.messageService = messageService;
+        this.loginLogService = loginLogService;
+        this.addressService = addressService;
     }
 
     // ===== CSRF =====
@@ -227,6 +235,71 @@ public class UserController {
     @PostMapping("/audit")
     public R<Void> audit(@Valid @RequestBody AuditDTO dto, HttpServletRequest request) {
         auditService.record(UserContext.currentUserId(request), dto.getAction(), dto.getDetail(), request);
+        return R.ok();
+    }
+
+    // ===== 消息通知中心 =====
+
+    @GetMapping("/message/page")
+    public R<Map<String, Object>> messagePage(@RequestParam(defaultValue = "1") long page,
+                                              @RequestParam(defaultValue = "10") long size,
+                                              @RequestParam(required = false) String type,
+                                              HttpServletRequest request) {
+        return R.ok(messageService.page(UserContext.currentUserId(request), page, size, type));
+    }
+
+    @GetMapping("/message/unread")
+    public R<Map<String, Long>> messageUnread(HttpServletRequest request) {
+        return R.ok(Map.of("count", messageService.unreadCount(UserContext.currentUserId(request))));
+    }
+
+    @PostMapping("/message/read/{id}")
+    public R<Void> messageRead(@PathVariable Long id, HttpServletRequest request) {
+        messageService.read(UserContext.currentUserId(request), id);
+        return R.ok();
+    }
+
+    @PostMapping("/message/read-all")
+    public R<Void> messageReadAll(HttpServletRequest request) {
+        messageService.readAll(UserContext.currentUserId(request));
+        return R.ok();
+    }
+
+    // ===== 登录安全记录 =====
+
+    @GetMapping("/login-log")
+    public R<Map<String, Object>> loginLog(@RequestParam(defaultValue = "1") long page,
+                                           @RequestParam(defaultValue = "10") long size,
+                                           HttpServletRequest request) {
+        return R.ok(loginLogService.page(UserContext.currentUserId(request), page, size));
+    }
+
+    // ===== 收货地址 =====
+
+    @GetMapping("/address")
+    public R<List<Address>> addressList(HttpServletRequest request) {
+        return R.ok(addressService.list(UserContext.currentUserId(request)));
+    }
+
+    @PostMapping("/address")
+    public R<Address> addressAdd(@RequestBody Address dto, HttpServletRequest request) {
+        return R.ok(addressService.add(UserContext.currentUserId(request), dto));
+    }
+
+    @PutMapping("/address/{id}")
+    public R<Address> addressUpdate(@PathVariable Long id, @RequestBody Address dto, HttpServletRequest request) {
+        return R.ok(addressService.update(UserContext.currentUserId(request), id, dto));
+    }
+
+    @DeleteMapping("/address/{id}")
+    public R<Void> addressDelete(@PathVariable Long id, HttpServletRequest request) {
+        addressService.delete(UserContext.currentUserId(request), id);
+        return R.ok();
+    }
+
+    @PostMapping("/address/{id}/default")
+    public R<Void> addressDefault(@PathVariable Long id, HttpServletRequest request) {
+        addressService.setDefault(UserContext.currentUserId(request), id);
         return R.ok();
     }
 

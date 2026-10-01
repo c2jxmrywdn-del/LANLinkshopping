@@ -37,6 +37,15 @@
               <a-tab-pane key="profile" :tab="t('acct.nav.profile')">
                 <ProfilePanel ref="profileRef" @dirty-change="dirty = $event" />
               </a-tab-pane>
+              <a-tab-pane key="messages" tab="消息中心">
+                <MessagePanel />
+              </a-tab-pane>
+              <a-tab-pane key="address" tab="收货地址">
+                <AddressPanel />
+              </a-tab-pane>
+              <a-tab-pane key="loginlog" tab="登录记录">
+                <LoginLogPanel />
+              </a-tab-pane>
               <a-tab-pane key="settings" :tab="t('acct.nav.settings')">
                 <SettingsPanel />
               </a-tab-pane>
@@ -62,8 +71,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { useRouter, onBeforeRouteLeave } from 'vue-router'
+import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
 import ProfilePanel from '../components/account/ProfilePanel.vue'
+import MessagePanel from '../components/account/MessagePanel.vue'
+import AddressPanel from '../components/account/AddressPanel.vue'
+import LoginLogPanel from '../components/account/LoginLogPanel.vue'
 import SettingsPanel from '../components/account/SettingsPanel.vue'
 import { useProfileStore } from '../store/profile'
 import { useSettingsStore } from '../store/settings'
@@ -73,11 +85,13 @@ import { t } from '../i18n'
 import { idbDel } from '../utils/idb'
 
 const router = useRouter()
+const route = useRoute()
 const profile = useProfileStore()
 const settings = useSettingsStore()
 const user = useUserStore()
 
-const activeTab = ref('profile')
+const VALID_TABS = ['profile', 'messages', 'address', 'loginlog', 'settings']
+const activeTab = ref(VALID_TABS.includes(route.query.tab) ? route.query.tab : 'profile')
 const profileRef = ref(null)
 const dirty = ref(false)
 const clearingCache = ref(false)

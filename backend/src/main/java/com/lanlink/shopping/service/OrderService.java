@@ -26,14 +26,16 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
     private final UserMapper userMapper;
+    private final MessageService messageService;
 
     public OrderService(CartMapper cartMapper, ProductMapper productMapper, OrderMapper orderMapper,
-                        OrderItemMapper orderItemMapper, UserMapper userMapper) {
+                        OrderItemMapper orderItemMapper, UserMapper userMapper, MessageService messageService) {
         this.cartMapper = cartMapper;
         this.productMapper = productMapper;
         this.orderMapper = orderMapper;
         this.orderItemMapper = orderItemMapper;
         this.userMapper = userMapper;
+        this.messageService = messageService;
     }
 
     @Transactional
@@ -97,6 +99,8 @@ public class OrderService {
         }
         order.setTotalAmount(total);
         orderMapper.updateById(order);
+        messageService.send(userId, "order", "下单成功",
+                "订单 " + order.getOrderNo() + " 已提交，待支付。", order.getOrderNo());
         return order;
     }
 
@@ -123,6 +127,8 @@ public class OrderService {
         o.setPayTime(LocalDateTime.now());
         o.setUpdateTime(LocalDateTime.now());
         orderMapper.updateById(o);
+        messageService.send(userId, "order", "支付成功",
+                "订单 " + orderNo + " 已支付，商家将尽快发货。", orderNo);
         return o;
     }
 
@@ -144,6 +150,7 @@ public class OrderService {
         o.setOrderStatus(3);
         o.setUpdateTime(LocalDateTime.now());
         orderMapper.updateById(o);
+        messageService.send(userId, "order", "订单已取消", "订单 " + orderNo + " 已取消，库存已恢复。", orderNo);
     }
 
     private String genOrderNo() {

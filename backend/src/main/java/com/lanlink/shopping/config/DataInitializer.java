@@ -32,19 +32,25 @@ public class DataInitializer implements CommandLineRunner {
     private final MerchantMapper merchantMapper;
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
+    private final ThirdAuthMapper thirdAuthMapper;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(UserMapper userMapper, RoleMapper roleMapper, EnterpriseMapper enterpriseMapper,
                            MerchantMapper merchantMapper, ProductMapper productMapper,
-                           CategoryMapper categoryMapper, PasswordEncoder passwordEncoder) {
+                           CategoryMapper categoryMapper, ThirdAuthMapper thirdAuthMapper,
+                           PasswordEncoder passwordEncoder) {
         this.userMapper = userMapper; this.roleMapper = roleMapper;
         this.enterpriseMapper = enterpriseMapper; this.merchantMapper = merchantMapper;
         this.productMapper = productMapper; this.categoryMapper = categoryMapper;
+        this.thirdAuthMapper = thirdAuthMapper;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) {
+        // 第三方授权演示数据：与主初始化解耦，已存在的库也会补种子（按 用户+应用 幂等判断）
+        seedThirdAuthDemo();
+
         if (userMapper.selectCount(null) > 0) {
             log.info("已存在用户数据, 跳过初始化");
             return;
@@ -107,6 +113,29 @@ public class DataInitializer implements CommandLineRunner {
         u.setCreateTime(LocalDateTime.now()); u.setUpdateTime(LocalDateTime.now());
         userMapper.insert(u);
         return u;
+    }
+
+    /** 第三方授权演示数据：按手机号找演示买家（幂等：用户+应用 唯一） */
+    private void seedThirdAuthDemo() {
+        User buyer = userMapper.selectOne(Wrappers.<User>lambdaQuery().eq(User::getPhone, "13900000001"));
+        if (buyer != null) {
+            seedThirdAuth(buyer.getUserId(), "微信开放平台", "userinfo,openid");
+            seedThirdAuth(buyer.getUserId(), "支付宝开放平台", "userId,profile");
+        }
+    }
+
+    private void seedThirdAuth(Long userId, String appName, String scopes) {
+        if (thirdAuthMapper.selectCount(Wrappers.<ThirdAuth>lambdaQuery()
+                .eq(ThirdAuth::getUserId, userId).eq(ThirdAuth::getAppName, appName)) > 0) {
+            return;
+        }
+        ThirdAuth t = new ThirdAuth();
+        t.setUserId(userId);
+        t.setAppName(appName);
+        t.setScopes(scopes);
+        t.setAuthTime(LocalDateTime.now());
+        t.setCreateTime(LocalDateTime.now());
+        thirdAuthMapper.insert(t);
     }
 
     private Product mkProduct(Long merId, String title, String brand, String spec, String price,

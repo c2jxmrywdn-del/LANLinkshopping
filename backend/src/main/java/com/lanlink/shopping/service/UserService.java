@@ -61,14 +61,49 @@ public class UserService {
         return roleMapper.selectById(roleId);
     }
 
+    public User findById(Long userId) {
+        return userMapper.selectById(userId);
+    }
+
+    /**
+     * 修改密码：原密码校验 + 强规则（8-20 位，含大小写字母、数字、特殊字符）
+     */
     public void changePassword(Long userId, String oldPw, String newPw) {
         User user = userMapper.selectById(userId);
         if (user == null) throw new BusinessException("用户不存在");
         if (!passwordEncoder.matches(oldPw, user.getPassword())) throw new BusinessException("原密码错误");
-        if (newPw == null || newPw.length() < 8) throw new BusinessException("新密码至少 8 位");
-        if (!newPw.matches(".*[a-zA-Z].*") || !newPw.matches(".*\\d.*"))
-            throw new BusinessException("新密码需同时包含字母和数字");
+        if (!newPw.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,20}$")) {
+            throw new BusinessException("新密码需 8-20 位，包含大小写字母、数字和特殊字符");
+        }
+        if (newPw.equals(oldPw)) throw new BusinessException("新密码不能与原密码相同");
         user.setPassword(passwordEncoder.encode(newPw));
+        user.setUpdateTime(LocalDateTime.now());
+        userMapper.updateById(user);
+    }
+
+    /** 更新昵称（个人资料合并视图的一部分） */
+    public void updateNickname(Long userId, String nickname) {
+        if (nickname == null || nickname.isBlank()) return;
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException("用户不存在");
+        String clean = nickname.trim();
+        if (clean.length() > 32) throw new BusinessException("昵称不能超过 32 字");
+        user.setNickname(clean);
+        user.setUpdateTime(LocalDateTime.now());
+        userMapper.updateById(user);
+    }
+
+    /**
+     * 换绑手机号：新号唯一性校验 + 同步 t_user.phone（登录账号随之切换）
+     */
+    public void changePhone(Long userId, String newPhone) {
+        if (userMapper.selectCount(Wrappers.<User>lambdaQuery()
+                .eq(User::getPhone, newPhone).ne(User::getUserId, userId)) > 0) {
+            throw new BusinessException("该手机号已被占用");
+        }
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException("用户不存在");
+        user.setPhone(newPhone);
         user.setUpdateTime(LocalDateTime.now());
         userMapper.updateById(user);
     }

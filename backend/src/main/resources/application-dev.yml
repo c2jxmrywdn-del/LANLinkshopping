@@ -9,4 +9,4 @@ spring:
     init:
       mode: always
       encoding: UTF-8
-      schema-locations: classpath:sql/schema.sql
+      schema-locations: classpath:sql/schema.sql,classpath:sql/account.sql

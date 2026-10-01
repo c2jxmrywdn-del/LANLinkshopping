@@ -159,6 +159,13 @@ a:active { color: var(--ll-skyblue-active); }
 /* 非按钮的波纹宿主（如用户下拉 <a>）：需自身定位+裁剪 */
 .ll-ripple-host { position: relative; overflow: hidden; border-radius: 8px; --ll-ripple-color: rgba(255, 255, 255, 0.35); }
 
+/* 顶栏文字按钮（消息/购物车）+ 用户下拉：点击/悬停反馈色（深色顶栏用半透明白） */
+.header .right .ant-btn-text:hover { background: rgba(255, 255, 255, 0.10); }
+.header .right .ant-btn-text:active { background: rgba(255, 255, 255, 0.24); }
+.user-trigger { padding: 6px 12px; border-radius: 8px; line-height: 1.4; transition: background var(--ll-transition-fast, 0.2s) ease; }
+.user-trigger:hover { background: rgba(255, 255, 255, 0.10); }
+.user-trigger:active { background: rgba(255, 255, 255, 0.24); }
+
 .ll-ripple {
   position: absolute;
   border-radius: 50%;
@@ -171,4 +178,25 @@ a:active { color: var(--ll-skyblue-active); }
 @keyframes ll-ripple-spread {
   from { transform: scale(0); opacity: 0.4; }
   to   { transform: scale(1); opacity: 0; }
+}
+
+/* =====================================================
+   导航模块触达反馈（消息 / 购物车 / 我的）
+   视觉：150ms 缩放 + 高亮（100–200ms 区间内）
+   触觉：navigator.vibrate(15)（见 utils/feedback.js）
+   用法：元素加 class="ll-tap"，pointerdown 调 tapFeedback(el)
+   ===================================================== */
+.ll-tap {
+  transition: transform var(--ll-transition-fast) cubic-bezier(.2, .6, .4, 1),
+              background-color var(--ll-transition-fast) ease;
+  /* 移动端：消除点按高亮残留与 300ms 点击延迟 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.ll-tap.ll-tapped {
+  transform: scale(0.9);
+  background-color: rgba(255, 255, 255, 0.16);
 }

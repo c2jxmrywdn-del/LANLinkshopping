@@ -147,11 +147,11 @@ function secretTap() {
 .logo-text b { color: var(--ll-amber); font-weight: 700; }
 .nav-shell { position: relative; flex: 1; min-width: 0; }
 .nav { background: transparent; border-bottom: none; }
-/* 导航交互态：未选中柔白，选中为贴近顶栏底色的柔和蓝（同色系相邻，视觉融合；对比度较亮天蓝降低） */
+/* 导航交互态：未选中柔白，选中色与后台激活色一致（主色 --ll-azure + 指示条 --ll-accent-gradient 天蓝→青） */
 .header :deep(.ant-menu-horizontal) { background: transparent; border-bottom: none; }
 .header :deep(.ant-menu-horizontal .ant-menu-item) { color: rgba(255, 255, 255, 0.72); transition: color 0.25s ease; }
 .header :deep(.ant-menu-horizontal .ant-menu-item:hover) { color: #fff; }
-.header :deep(.ant-menu-horizontal .ant-menu-item-selected) { color: var(--ll-nav-active, #6E93C4); font-weight: 600; }
+.header :deep(.ant-menu-horizontal .ant-menu-item-selected) { color: var(--ll-azure, #0EA5E9); font-weight: 600; }
 /* 自定义滑动位置指示条：JS 定位到选中项下方，0.28s 平滑移动 */
 .nav-indicator {
   position: absolute;
@@ -159,7 +159,7 @@ function secretTap() {
   left: 0;
   width: 0;
   height: 3px;
-  background: var(--ll-nav-active, #6E93C4);
+  background: var(--ll-accent-gradient);
   border-radius: 3px 3px 0 0;
   pointer-events: none;
   transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1), width 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;

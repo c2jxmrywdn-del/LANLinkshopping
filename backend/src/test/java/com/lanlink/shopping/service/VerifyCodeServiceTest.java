@@ -15,7 +15,8 @@ class VerifyCodeServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new VerifyCodeService();
+        // 测试场景走 phone 演示分支，mailSender 传 null 即可
+        service = new VerifyCodeService(null, "", "");
     }
 
     @Test

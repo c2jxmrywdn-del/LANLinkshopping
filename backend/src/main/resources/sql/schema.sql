@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS t_order (
   order_no     VARCHAR(40) PRIMARY KEY COMMENT '订单号',
   user_id      BIGINT NOT NULL COMMENT '采购方用户ID',
   ent_id       BIGINT COMMENT '采购方企业ID',
-  total_amount DECIMAL(14,2) NOT NULL COMMENT '订单总额',
+  total_amount DECIMAL(14,2) NOT NULL DEFAULT 0 COMMENT '订单总额',
   pay_type     VARCHAR(16) COMMENT '支付方式 balance/corporate/term(账期)',
   pay_status   TINYINT DEFAULT 0 COMMENT '0未支付 1已支付',
   order_status TINYINT DEFAULT 0 COMMENT '0待发货 1已发货 2已完成 3已取消',
@@ -172,6 +172,13 @@ CREATE TABLE IF NOT EXISTS t_order (
   pay_time     DATETIME,
   update_time  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB COMMENT='订单';
+
+-- 幂等兜底：为历史库中已存在、无默认值的 t_order.total_amount 补 DEFAULT 0
+-- （代码层已保证插入前写入总额；此处确保任何遗漏路径都不会整单失败）
+SET @ord1 = (SELECT IF(COUNT(*) = 1 AND ISNULL(COLUMN_DEFAULT),
+    'ALTER TABLE t_order MODIFY total_amount DECIMAL(14,2) NOT NULL DEFAULT 0 COMMENT ''订单总额''', 'SELECT 1')
+    FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_order' AND COLUMN_NAME='total_amount');
+PREPARE ord_stmt FROM @ord1; EXECUTE ord_stmt; DEALLOCATE PREPARE ord_stmt;
 
 -- 订单明细表
 CREATE TABLE IF NOT EXISTS t_order_item (

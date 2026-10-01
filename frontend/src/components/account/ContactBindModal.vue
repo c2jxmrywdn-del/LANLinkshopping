@@ -78,9 +78,16 @@ async function send() {
   sending.value = true
   try {
     const data = isPhone.value ? await userApi.sendPhoneCode(target.value) : await userApi.sendEmailCode(target.value)
-    devCode.value = data.devCode || ''
+    // SMTP 已配置：验证码真实发往邮箱，接口不回显；仅演示回退时展示 devCode
+    devCode.value = (data && data.devCode) || ''
+    if (!isPhone.value && !devCode.value) {
+      message.success(t('acct.profile.codeSent'), 4)
+    }
     cd.value = 60
     timer = setInterval(() => { cd.value--; if (cd.value <= 0) { clearInterval(timer); timer = null } }, 1000)
+  } catch (e) {
+    // 失败提示已由请求拦截器统一弹出，这里确保不启动倒计时
+    devCode.value = ''
   } finally { sending.value = false }
 }
 

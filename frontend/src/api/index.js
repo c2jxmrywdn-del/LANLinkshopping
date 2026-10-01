@@ -53,7 +53,7 @@ export const userApi = {
       onUploadProgress: (e) => { if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
     })
   },
-  // 联系方式换绑（演示环境验证码由接口直接返回 devCode）
+  // 联系方式换绑（邮箱：SMTP 配置时验证码发往邮箱不回显；未配置时回退 devCode 演示模式）
   sendPhoneCode: (phone) => request.post('/user/phone-code', { phone }),
   bindPhone: (phone, code) => request.post('/user/phone-bind', { phone, code }),
   sendEmailCode: (email) => request.post('/user/email-code', { email }),

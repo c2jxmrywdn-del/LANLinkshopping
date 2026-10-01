@@ -25,7 +25,7 @@
             <div class="ptitle">{{ p.title }}</div>
             <div class="pprice">¥{{ p.price }}</div>
             <div class="pmeta">{{ p.brand }} · 销量 {{ p.sales }}</div>
-            <a-button type="primary" size="small" block @click.stop="addCart(p)">加入购物车</a-button>
+            <a-button class="ll-add-cart" type="primary" size="small" block @click.stop="addCart(p)">加入购物车</a-button>
           </a-card>
         </a-col>
       </a-row>

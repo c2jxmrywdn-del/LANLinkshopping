@@ -66,12 +66,14 @@ public class OrderService {
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
 
-        // 先校验库存
+        // 先校验库存并累计总额，确保插入前 totalAmount 已就绪
         for (Cart c : carts) {
             Product p = productMapper.selectById(c.getProdId());
             if (p == null) throw new BusinessException("商品不存在: " + c.getProdId());
             if (p.getStock() < c.getQuantity()) throw new BusinessException("库存不足: " + p.getTitle());
+            total = total.add(p.getPrice().multiply(BigDecimal.valueOf(c.getQuantity())));
         }
+        order.setTotalAmount(total);
         // 生成订单主表
         orderMapper.insert(order);
 
@@ -79,7 +81,6 @@ public class OrderService {
         for (Cart c : carts) {
             Product p = productMapper.selectById(c.getProdId());
             BigDecimal subtotal = p.getPrice().multiply(BigDecimal.valueOf(c.getQuantity()));
-            total = total.add(subtotal);
             OrderItem item = new OrderItem();
             item.setOrderNo(order.getOrderNo());
             item.setProdId(p.getProdId());
@@ -97,8 +98,6 @@ public class OrderService {
             // 移除已购购物车项
             cartMapper.deleteById(c.getCartId());
         }
-        order.setTotalAmount(total);
-        orderMapper.updateById(order);
         messageService.send(userId, "order", "下单成功",
                 "订单 " + order.getOrderNo() + " 已提交，待支付。", order.getOrderNo());
         return order;

@@ -139,7 +139,10 @@ public class UserController {
     public R<Map<String, String>> sendEmailCode(@Valid @RequestBody EmailDTO dto, HttpServletRequest request) {
         Long userId = UserContext.currentUserId(request);
         String code = verifyCodeService.send(userId, "email", dto.getEmail());
-        return R.ok(Map.of("devCode", code));
+        // SMTP 已配置时验证码真实发往邮箱，不回显；仅演示回退（未配置 SMTP）时返回 devCode
+        Map<String, String> out = new HashMap<>();
+        if (code != null) out.put("devCode", code);
+        return R.ok(out);
     }
 
     @PostMapping("/email-bind")

@@ -20,7 +20,7 @@
           数量：<a-input-number v-model:value="qty" :min="1" :max="p.stock" />
         </div>
         <a-space>
-          <a-button size="large" @click="addCart">加入购物车</a-button>
+          <a-button class="ll-add-cart" size="large" @click="addCart">加入购物车</a-button>
           <a-button size="large" type="primary" @click="buyNow">立即购买</a-button>
         </a-space>
         <div class="detail"><h3>商品详情</h3><p>{{ p.detail }}</p></div>

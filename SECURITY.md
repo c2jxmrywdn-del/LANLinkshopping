@@ -17,7 +17,14 @@
 请通过以下渠道之一报告安全问题，**不要在公开的 Issue / PR / 讨论区直接披露**可被利用的漏洞细节、凭据或 PoC：
 
 1. 首选：GitHub 私有漏洞报告 —— 进入本仓库 **Security** 标签页 → **Report a vulnerability**，提交私有报告。
-2. 备选：若上述入口未开启，请通过仓库所有者的 GitHub 私信或 noreply 邮箱联系维护者。
+2. 加密邮件：若你希望以邮件披露并保护内容，请用本仓库公钥 [`security-contact.asc`](./security-contact.asc)
+   加密后发送至 `250803872+c2jxmrywdn-del@users.noreply.github.com`。使用前请核对公钥指纹：
+
+   ```
+   A78E 255D 092C ED59 92D8  7979 2C73 A7EC 9270 148D
+   ```
+
+   （导入并校验：`gpg --import security-contact.asc && gpg --fingerprint A78E255D092CED5992D879792C73A7EC9270148D`）
 
 报告时如能包含以下信息，将帮助我们更快定位与修复：受影响模块或接口、复现步骤、潜在影响，以及（可选）修复建议。
 

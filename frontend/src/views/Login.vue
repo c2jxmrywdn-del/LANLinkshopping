@@ -1,29 +1,72 @@
 <template>
   <div class="wrap">
     <a-card class="box">
-      <template #title>登录 <span class="wordmark">LAN<span class="ll-link">Link</span>shopping</span></template>
-      <a-form :model="form" layout="vertical" @finish="submit">
-        <a-form-item label="手机号" name="phone" :rules="[{ required: true, message: '请输入手机号' }]">
-          <a-input v-model:value="form.phone" placeholder="演示: 13900000001" size="large" />
-        </a-form-item>
-        <a-form-item label="密码" name="password" :rules="[{ required: true, message: '请输入密码' }]">
-          <a-input-password v-model:value="form.password" placeholder="演示密码: 123456" size="large" />
-        </a-form-item>
-        <a-button type="primary" html-type="submit" block size="large" :loading="loading">登录</a-button>
-        <div class="tip">还没有账号？<a @click="$router.push('/register')">立即注册</a></div>
-      </a-form>
-      <a-divider>演示账号（密码均 123456）</a-divider>
-      <a-space direction="vertical" style="width:100%">
-        <a-button block @click="quick('13800000000')">平台运营 13800000000</a-button>
-        <a-button block @click="quick('13900000001')">采购方 13900000001</a-button>
-        <a-button block @click="quick('13700000002')">商户 13700000002</a-button>
-      </a-space>
+      <template #title><span class="wordmark">LAN<span class="ll-link">Link</span>shopping</span></template>
+      <a-tabs v-model:activeKey="tab" centered>
+        <!-- ===== 登录 ===== -->
+        <a-tab-pane key="login" tab="登录">
+          <a-form :model="form" layout="vertical" @finish="submit">
+            <a-form-item label="手机号" :rules="[{ required: true, message: '请输入手机号' }]">
+              <a-input v-model:value="form.phone" placeholder="演示: 13900000001" size="large" />
+            </a-form-item>
+            <a-form-item label="密码" :rules="[{ required: true, message: '请输入密码' }]">
+              <a-input-password v-model:value="form.password" placeholder="演示密码: 123456" size="large" />
+            </a-form-item>
+            <a-button type="primary" html-type="submit" block size="large" :loading="loading">登录</a-button>
+          </a-form>
+          <a-divider>演示账号（密码均 123456）</a-divider>
+          <a-space direction="vertical" style="width:100%">
+            <a-button block @click="quick('13800000000')">平台运营 13800000000</a-button>
+            <a-button block @click="quick('13900000001')">采购方 13900000001</a-button>
+            <a-button block @click="quick('13700000002')">商户 13700000002</a-button>
+          </a-space>
+        </a-tab-pane>
+
+        <!-- ===== 注册 ===== -->
+        <a-tab-pane key="register" tab="注册">
+          <a-form :model="reg" layout="vertical" @finish="doRegister">
+            <a-form-item label="注册身份">
+              <a-radio-group v-model:value="reg.roleCode" button-style="solid">
+                <a-radio-button value="buyer">采购方</a-radio-button>
+                <a-radio-button value="merchant">商户/供应商</a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+            <a-form-item label="手机号" :rules="[{ required: true, message: '请输入手机号' }, { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确' }]">
+              <a-input v-model:value="reg.phone" size="large" placeholder="11 位手机号" />
+            </a-form-item>
+            <a-form-item label="邮箱（选填）" :rules="reg.email ? [{ type: 'email', message: '邮箱格式不正确' }] : []">
+              <a-input v-model:value="reg.email" size="large" placeholder="name@example.com" />
+            </a-form-item>
+            <a-form-item label="昵称">
+              <a-input v-model:value="reg.nickname" size="large" />
+            </a-form-item>
+            <a-form-item label="验证码" :rules="[{ required: true, message: '请输入验证码' }]">
+              <div class="code-row">
+                <a-input v-model:value="reg.code" size="large" placeholder="6 位验证码" maxlength="6" />
+                <a-button size="large" :disabled="cd > 0" @click="sendCode">{{ cd > 0 ? cd + 's' : '获取验证码' }}</a-button>
+              </div>
+            </a-form-item>
+            <a-form-item label="密码" :rules="[{ required: true, message: '请输入密码' }]">
+              <a-input-password v-model:value="reg.password" size="large" placeholder="至少 8 位，含字母与数字" />
+              <div class="strength">
+                <span class="bars"><i :class="['bar', strength >= 1 ? 'on s1' : '']"></i><i :class="['bar', strength >= 2 ? 'on s2' : '']"></i><i :class="['bar', strength >= 3 ? 'on s3' : '']"></i></span>
+                <em>{{ strengthText }}</em>
+              </div>
+            </a-form-item>
+            <a-form-item label="确认密码" :rules="[{ required: true, message: '请再次输入密码' }]">
+              <a-input-password v-model:value="reg.confirm" size="large" />
+            </a-form-item>
+            <a-button type="primary" html-type="submit" block size="large" :loading="regLoading">注册</a-button>
+            <div class="tip">已有账号？<a @click="tab = 'login'">去登录</a></div>
+          </a-form>
+        </a-tab-pane>
+      </a-tabs>
     </a-card>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useUserStore } from '../store/user'
@@ -31,8 +74,34 @@ import { useCartStore } from '../store/cart'
 
 const router = useRouter(); const route = useRoute()
 const user = useUserStore(); const cart = useCartStore()
+const tab = ref('login')
 const loading = ref(false)
+const regLoading = ref(false)
 const form = reactive({ phone: '', password: '123456' })
+const reg = reactive({ roleCode: 'buyer', phone: '', email: '', nickname: '', code: '', password: '', confirm: '', _srvCode: '' })
+
+// 密码强度：长度 / 字母+数字 / 特殊符号 计分
+const strength = computed(() => {
+  const p = reg.password || ''
+  let s = 0
+  if (p.length >= 8) s++
+  if (/[a-zA-Z]/.test(p) && /\d/.test(p)) s++
+  if (/[^a-zA-Z0-9]/.test(p)) s++
+  return p ? s : 0
+})
+const strengthText = computed(() => ['', '弱', '中', '强'][strength.value] || '')
+
+// 验证码（演示：未接真实短信，随机码以提示返回）
+const cd = ref(0)
+let timer = null
+function sendCode() {
+  if (!/^1[3-9]\d{9}$/.test(reg.phone)) { message.warning('请先填写正确的手机号'); return }
+  const code = String(Math.floor(100000 + Math.random() * 900000))
+  reg._srvCode = code
+  message.info(`演示验证码：${code}（未接真实短信）`)
+  cd.value = 60
+  timer = setInterval(() => { cd.value--; if (cd.value <= 0) clearInterval(timer) }, 1000)
+}
 
 function quick(p) { form.phone = p; form.password = '123456'; submit() }
 async function submit() {
@@ -45,10 +114,36 @@ async function submit() {
     router.push(route.query.redirect || '/')
   } finally { loading.value = false }
 }
+
+async function doRegister() {
+  if (strength.value < 2) { message.warning('密码强度不足，至少 8 位且含字母与数字'); return }
+  if (reg.password !== reg.confirm) { message.error('两次输入的密码不一致'); return }
+  if (!reg._srvCode || reg.code !== reg._srvCode) { message.error('验证码错误或未获取'); return }
+  regLoading.value = true
+  try {
+    await user.register({ phone: reg.phone, password: reg.password, nickname: reg.nickname, roleCode: reg.roleCode })
+    message.success('注册成功，请登录')
+    form.phone = reg.phone; form.password = reg.password
+    tab.value = 'login'
+  } finally { regLoading.value = false }
+}
 </script>
 
 <style scoped>
-.wrap { display: flex; justify-content: center; align-items: center; min-height: 70vh; }
-.box { width: 380px; }
+.wrap { display: flex; justify-content: center; align-items: center; min-height: 70vh; padding: 16px; }
+.box { width: 420px; max-width: 100%; }
 .tip { text-align: center; margin-top: 12px; color: var(--ll-gray2); }
+.code-row { display: flex; gap: 8px; }
+.code-row :deep(.ant-input-affix-wrapper), .code-row :deep(.ant-input) { flex: 1; }
+.strength { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.strength .bars { display: inline-flex; gap: 4px; }
+.strength .bar { width: 34px; height: 5px; border-radius: 3px; background: #e5e7eb; }
+.strength .bar.on.s1 { background: #ef4444; }
+.strength .bar.on.s2 { background: #f59e0b; }
+.strength .bar.on.s3 { background: #10b981; }
+.strength em { font-style: normal; font-size: 12px; color: var(--ll-gray2); }
+@media (max-width: 480px) {
+  .box { width: 100%; }
+  .strength .bar { width: 26px; }
+}
 </style>

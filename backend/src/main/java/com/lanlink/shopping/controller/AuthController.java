@@ -4,9 +4,13 @@ import com.lanlink.shopping.common.BusinessException;
 import com.lanlink.shopping.common.R;
 import com.lanlink.shopping.config.UserContext;
 import com.lanlink.shopping.dto.LoginDTO;
+import com.lanlink.shopping.dto.PasswordDTO;
+import com.lanlink.shopping.dto.ProfileUpdateDTO;
 import com.lanlink.shopping.dto.RegisterDTO;
 import com.lanlink.shopping.entity.Role;
 import com.lanlink.shopping.entity.User;
+import com.lanlink.shopping.entity.UserProfile;
+import com.lanlink.shopping.service.UserProfileService;
 import com.lanlink.shopping.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -16,16 +20,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 认证控制器: 注册 / 登录 / 登出 / 当前用户
+ * 认证控制器: 注册 / 登录 / 登出 / 当前用户 / 个人资料 / 修改密码
  */
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
     private final UserService userService;
+    private final UserProfileService profileService;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, UserProfileService profileService) {
         this.userService = userService;
+        this.profileService = profileService;
     }
 
     @PostMapping("/register")

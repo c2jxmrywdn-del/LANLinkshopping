@@ -29,8 +29,7 @@
             </a-dropdown>
           </template>
           <template v-else>
-            <a-button type="primary" ghost @click="$router.push('/login')">登录</a-button>
-            <a-button @click="$router.push('/register')">注册</a-button>
+            <a-button type="primary" ghost @click="$router.push('/login')">登录 / 注册</a-button>
           </template>
         </div>
       </div>

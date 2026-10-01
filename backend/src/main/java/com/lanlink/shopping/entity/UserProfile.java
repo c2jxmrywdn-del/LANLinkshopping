@@ -18,6 +18,14 @@ public class UserProfile {
     private Long userId;
     @TableField(typeHandler = EncryptTypeHandler.class)
     private String realName;
+    private String gender;
+    private String birthday;
+    private String avatar;
+    private String bio;
+    @TableField(typeHandler = EncryptTypeHandler.class)
+    private String phone;
+    @TableField(typeHandler = EncryptTypeHandler.class)
+    private String email;
     @TableField(typeHandler = EncryptTypeHandler.class)
     private String idCard;
     @TableField(typeHandler = EncryptTypeHandler.class)

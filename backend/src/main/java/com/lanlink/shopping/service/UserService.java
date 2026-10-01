@@ -60,4 +60,16 @@ public class UserService {
     public Role findRole(Long roleId) {
         return roleMapper.selectById(roleId);
     }
+
+    public void changePassword(Long userId, String oldPw, String newPw) {
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException("用户不存在");
+        if (!passwordEncoder.matches(oldPw, user.getPassword())) throw new BusinessException("原密码错误");
+        if (newPw == null || newPw.length() < 8) throw new BusinessException("新密码至少 8 位");
+        if (!newPw.matches(".*[a-zA-Z].*") || !newPw.matches(".*\\d.*"))
+            throw new BusinessException("新密码需同时包含字母和数字");
+        user.setPassword(passwordEncoder.encode(newPw));
+        user.setUpdateTime(LocalDateTime.now());
+        userMapper.updateById(user);
+    }
 }

@@ -154,17 +154,17 @@ a:active { color: var(--ll-skyblue-active); }
 .ant-btn { --ll-ripple-color: rgba(31, 56, 100, 0.16); }
 .ant-btn-primary { --ll-ripple-color: rgba(255, 255, 255, 0.35); }
 .ll-add-cart.ant-btn { --ll-ripple-color: rgba(31, 56, 100, 0.20); }
-/* 深色顶栏上的文字按钮（消息/购物车）：改用白波纹才可见 */
-.header .ant-btn-text { --ll-ripple-color: rgba(255, 255, 255, 0.35); }
+/* 深色顶栏上的文字按钮（消息/购物车）：改用品牌天蓝波纹 */
+.header .ant-btn-text { --ll-ripple-color: rgba(155, 192, 217, 0.55); }
 /* 非按钮的波纹宿主（如用户下拉 <a>）：需自身定位+裁剪 */
-.ll-ripple-host { position: relative; overflow: hidden; border-radius: 8px; --ll-ripple-color: rgba(255, 255, 255, 0.35); }
+.ll-ripple-host { position: relative; overflow: hidden; border-radius: 8px; --ll-ripple-color: rgba(155, 192, 217, 0.55); }
 
-/* 顶栏文字按钮（消息/购物车）+ 用户下拉：点击/悬停反馈色（深色顶栏用半透明白） */
-.header .right .ant-btn-text:hover { background: rgba(255, 255, 255, 0.10); }
-.header .right .ant-btn-text:active { background: rgba(255, 255, 255, 0.30); }
+/* 顶栏文字按钮（消息/购物车）+ 用户下拉：点击/悬停反馈色（品牌天蓝 #9BC0D9） */
+.header .right .ant-btn-text:hover { background: rgba(155, 192, 217, 0.20); }
+.header .right .ant-btn-text:active { background: rgba(155, 192, 217, 0.42); }
 .user-trigger { padding: 6px 12px; border-radius: 8px; line-height: 1.4; transition: background var(--ll-transition-fast, 0.2s) ease; }
-.user-trigger:hover { background: rgba(255, 255, 255, 0.10); }
-.user-trigger:active { background: rgba(255, 255, 255, 0.30); }
+.user-trigger:hover { background: rgba(155, 192, 217, 0.20); }
+.user-trigger:active { background: rgba(155, 192, 217, 0.42); }
 
 .ll-ripple {
   position: absolute;

@@ -10,6 +10,7 @@
       <a-col :span="14">
         <h1 class="title">{{ p.title }}</h1>
         <div class="price">¥{{ p.price }}</div>
+        <div v-if="user.hasPerm('vip:discount')" class="vip-price">VIP 价 ¥{{ (p.price * 0.95).toFixed(2) }}（专属折扣）</div>
         <a-descriptions :column="1" bordered size="small">
           <a-descriptions-item label="品牌">{{ p.brand }}</a-descriptions-item>
           <a-descriptions-item label="规格">{{ p.spec }}</a-descriptions-item>
@@ -20,8 +21,9 @@
           数量：<a-input-number v-model:value="qty" :min="1" :max="p.stock" />
         </div>
         <a-space>
-          <a-button class="ll-add-cart" size="large" @click="addCart">加入购物车</a-button>
-          <a-button size="large" type="primary" @click="buyNow">立即购买</a-button>
+          <a-button v-if="user.hasPerm('cart:manage')" class="ll-add-cart" size="large" @click="addCart">加入购物车</a-button>
+          <a-button v-if="user.hasPerm('order:create')" size="large" type="primary" @click="buyNow">立即购买</a-button>
+          <a-button v-if="!user.logged" size="large" type="default" @click="$router.push('/login')">登录后购买</a-button>
         </a-space>
         <div class="detail"><h3>商品详情</h3><p>{{ p.detail }}</p></div>
       </a-col>
@@ -54,6 +56,7 @@ async function buyNow() { if (needLogin()) return; await cart.add(p.value.prodId
 .bigthumb img { width: 100%; height: 100%; object-fit: contain; }
 .title { font-size: 22px; }
 .price { color: #e4393c; font-size: 32px; font-weight: 700; margin: 8px 0 16px; }
+.vip-price { color: #b45309; font-size: 14px; font-weight: 600; margin: -8px 0 16px; }
 .qty { margin: 16px 0; }
 .detail { margin-top: 24px; color: #555; }
 </style>

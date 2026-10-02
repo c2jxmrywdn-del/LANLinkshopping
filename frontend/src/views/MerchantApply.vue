@@ -1,7 +1,9 @@
 <template>
   <div class="wrap">
     <a-card title="商户入驻申请" class="left">
-      <a-alert message="平台筛选机制" description="需满足：公司类型注册，或个体工商户注册资本 > 10 万元；且有稳定纳税记录。系统自动审核。" type="info" show-icon style="margin-bottom:16px" />
+      <a-alert type="info" show-icon style="margin-bottom:16px"
+               message="平台筛选机制"
+               description="需满足：公司类型注册，或个体工商户注册资本 > 10 万元；且有稳定纳税记录。系统自动审核。营业执照与税务证明等证照材料将在入驻通过后，于「我的商品 → 证照管理」中上传绑定。" />
       <a-form :model="form" layout="vertical" @finish="submit">
         <a-form-item label="企业名称" :rules="[{ required: true }]"><a-input v-model:value="form.entName" /></a-form-item>
         <a-form-item label="统一社会信用代码"><a-input v-model:value="form.creditCode" /></a-form-item>
@@ -34,7 +36,13 @@
                   :title="statusText">
           <template #subTitle>
             <div>注册资本：¥{{ mine.regCapital }}</div>
+            <div v-if="mine.licenseUrl" class="license-view">
+              营业执照：<a :href="mine.licenseUrl" target="_blank">查看</a>
+            </div>
             <div v-if="mine.rejectReason" style="color:#e4393c">原因：{{ mine.rejectReason }}</div>
+            <div v-if="mine.reviewStatus === 1" class="next-step">
+              下一步：前往 <a @click="$router.push('/merchant/products')">我的商品 → 证照管理</a> 上传营业执照与税务证明
+            </div>
           </template>
         </a-result>
       </template>
@@ -67,4 +75,7 @@ onMounted(async () => { try { mine.value = await merchantApi.my() } catch (e) {}
 <style scoped>
 .wrap { display: flex; gap: 24px; align-items: flex-start; }
 .left { flex: 1; } .right { width: 420px; }
+.license-view { font-size: 13px; }
+.next-step { font-size: 13px; margin-top: 8px; }
+.next-step a { color: var(--ll-primary, #1e6eb8); cursor: pointer; }
 </style>

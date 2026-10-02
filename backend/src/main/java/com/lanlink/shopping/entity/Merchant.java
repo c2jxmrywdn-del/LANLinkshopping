@@ -21,6 +21,9 @@ public class Merchant {
     private String joinType;        // 加盟/入驻/邀约
     private Integer reviewStatus;   // 0待审 1通过 2驳回
     private String rejectReason;
+    private String licenseUrl;      // 营业执照图片URL(JPG/PNG)
+    private String taxProofUrls;    // 近3个月税务缴纳证明URL(逗号分隔)
+    private String taxRegNo;        // 税务登记号(查询纳税记录用)
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     @TableLogic

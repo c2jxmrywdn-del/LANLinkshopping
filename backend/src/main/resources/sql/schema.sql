@@ -87,10 +87,24 @@ CREATE TABLE IF NOT EXISTS t_merchant (
   join_type     VARCHAR(16) COMMENT '入驻方式 加盟/入驻/邀约',
   review_status TINYINT DEFAULT 0 COMMENT '审核状态 0待审 1通过 2驳回',
   reject_reason VARCHAR(255) COMMENT '驳回原因',
+  license_url   VARCHAR(255) COMMENT '营业执照图片URL(JPG/PNG)',
+  tax_proof_urls VARCHAR(1000) COMMENT '近3个月税务缴纳证明URL(逗号分隔,PDF/JPG)',
+  tax_reg_no    VARCHAR(32) COMMENT '税务登记号(查询纳税记录用)',
   create_time   DATETIME DEFAULT CURRENT_TIMESTAMP,
   update_time   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted       TINYINT DEFAULT 0
 ) ENGINE=InnoDB COMMENT='商户';
+
+-- 幂等升级：历史库 t_merchant 补齐营业执照/税务记录三列（列不存在时才 ADD）
+SET @mc1 = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_merchant ADD COLUMN license_url VARCHAR(255) COMMENT ''营业执照图片URL(JPG/PNG)''', 'SELECT 1')
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_merchant' AND COLUMN_NAME='license_url');
+PREPARE mc_stmt1 FROM @mc1; EXECUTE mc_stmt1; DEALLOCATE PREPARE mc_stmt1;
+SET @mc2 = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_merchant ADD COLUMN tax_proof_urls VARCHAR(1000) COMMENT ''近3个月税务缴纳证明URL(逗号分隔,PDF/JPG)''', 'SELECT 1')
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_merchant' AND COLUMN_NAME='tax_proof_urls');
+PREPARE mc_stmt2 FROM @mc2; EXECUTE mc_stmt2; DEALLOCATE PREPARE mc_stmt2;
+SET @mc3 = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_merchant ADD COLUMN tax_reg_no VARCHAR(32) COMMENT ''税务登记号(查询纳税记录用)''', 'SELECT 1')
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_merchant' AND COLUMN_NAME='tax_reg_no');
+PREPARE mc_stmt3 FROM @mc3; EXECUTE mc_stmt3; DEALLOCATE PREPARE mc_stmt3;
 
 -- 资质表
 CREATE TABLE IF NOT EXISTS t_qualification (
@@ -138,12 +152,24 @@ CREATE TABLE IF NOT EXISTS t_product (
   stock          INT DEFAULT 0 COMMENT '库存',
   cover_url      VARCHAR(255) COMMENT '主图',
   detail         TEXT COMMENT '详情',
-  status         TINYINT DEFAULT 1 COMMENT '上架状态 1上架 0下架',
+  status         TINYINT DEFAULT 1 COMMENT '上架状态 1可售(已审核) 0不可售',
+  review_status  TINYINT DEFAULT 0 COMMENT '审核状态 0待审核 1通过 2驳回',
+  reject_reason  VARCHAR(255) COMMENT '驳回原因',
   sales          INT DEFAULT 0 COMMENT '销量',
   create_time    DATETIME DEFAULT CURRENT_TIMESTAMP,
   update_time    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted        TINYINT DEFAULT 0
 ) ENGINE=InnoDB COMMENT='商品';
+
+-- 幂等升级：历史库 t_product 补齐审核状态两列（列不存在时才 ADD）
+SET @pd1 = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_product ADD COLUMN review_status TINYINT DEFAULT 0 COMMENT ''审核状态 0待审核 1通过 2驳回'' AFTER status', 'SELECT 1')
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_product' AND COLUMN_NAME='review_status');
+PREPARE pd_stmt1 FROM @pd1; EXECUTE pd_stmt1; DEALLOCATE PREPARE pd_stmt1;
+SET @pd2 = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_product ADD COLUMN reject_reason VARCHAR(255) COMMENT ''驳回原因'' AFTER review_status', 'SELECT 1')
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_product' AND COLUMN_NAME='reject_reason');
+PREPARE pd_stmt2 FROM @pd2; EXECUTE pd_stmt2; DEALLOCATE PREPARE pd_stmt2;
+-- 存量数据补齐：历史已上架商品视为审核通过（新发布的待审核商品 status=0 不受影响）
+UPDATE t_product SET review_status = 1 WHERE status = 1 AND review_status = 0;
 
 -- 购物车表
 CREATE TABLE IF NOT EXISTS t_cart (
@@ -175,7 +201,7 @@ CREATE TABLE IF NOT EXISTS t_order (
 
 -- 幂等兜底：为历史库中已存在、无默认值的 t_order.total_amount 补 DEFAULT 0
 -- （代码层已保证插入前写入总额；此处确保任何遗漏路径都不会整单失败）
-SET @ord1 = (SELECT IF(COUNT(*) = 1 AND ISNULL(COLUMN_DEFAULT),
+SET @ord1 = (SELECT IF(COUNT(*) = 1 AND MAX(COLUMN_DEFAULT) IS NULL,
     'ALTER TABLE t_order MODIFY total_amount DECIMAL(14,2) NOT NULL DEFAULT 0 COMMENT ''订单总额''', 'SELECT 1')
     FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_order' AND COLUMN_NAME='total_amount');
 PREPARE ord_stmt FROM @ord1; EXECUTE ord_stmt; DEALLOCATE PREPARE ord_stmt;
@@ -191,6 +217,81 @@ CREATE TABLE IF NOT EXISTS t_order_item (
   subtotal   DECIMAL(14,2),
   cover_url  VARCHAR(255)
 ) ENGINE=InnoDB COMMENT='订单明细';
+
+-- ==================== 营销中台：活动系统 ====================
+CREATE TABLE IF NOT EXISTS t_activity (
+  activity_id  BIGINT PRIMARY KEY AUTO_INCREMENT,
+  title        VARCHAR(100) NOT NULL COMMENT '活动名称',
+  type         VARCHAR(16) COMMENT '活动类型 register注册有礼 purchase消费有礼',
+  description  VARCHAR(500) COMMENT '活动说明',
+  start_time   DATETIME COMMENT '开始时间',
+  end_time     DATETIME COMMENT '结束时间',
+  status       TINYINT DEFAULT 0 COMMENT '0未开始 1进行中 2已结束',
+  create_time  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB COMMENT='活动';
+
+CREATE TABLE IF NOT EXISTS t_activity_participant (
+  participant_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  activity_id    BIGINT NOT NULL COMMENT '活动ID',
+  user_id        BIGINT NOT NULL COMMENT '参与用户',
+  bonus_points   INT DEFAULT 0 COMMENT '参与奖励积分',
+  join_time      DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_act_user (activity_id, user_id)
+) ENGINE=InnoDB COMMENT='活动参与记录';
+
+-- ==================== 营销中台：促销系统 ====================
+CREATE TABLE IF NOT EXISTS t_promotion (
+  promo_id       BIGINT PRIMARY KEY AUTO_INCREMENT,
+  title          VARCHAR(100) NOT NULL COMMENT '促销名称',
+  type           VARCHAR(16) NOT NULL COMMENT '促销类型 full_reduce满减 discount折扣',
+  threshold      DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT '满减门槛金额/折扣门槛',
+  benefit_amount DECIMAL(12,2) COMMENT '满减金额(满减时生效)',
+  discount_rate  DECIMAL(4,3) COMMENT '折扣率(折扣时生效, 0.95=95折)',
+  scope          VARCHAR(16) DEFAULT 'all' COMMENT '适用范围 all全场 ind行业',
+  ind_id         BIGINT COMMENT '限定行业(scope=ind时)',
+  start_time     DATETIME,
+  end_time       DATETIME,
+  status         TINYINT DEFAULT 1 COMMENT '0停用 1启用',
+  create_time    DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB COMMENT='促销';
+
+-- ==================== 营销中台：会员系统 ====================
+CREATE TABLE IF NOT EXISTS t_member_level (
+  level_id     BIGINT PRIMARY KEY AUTO_INCREMENT,
+  level_name   VARCHAR(32) NOT NULL COMMENT '等级名称',
+  min_growth   INT NOT NULL DEFAULT 0 COMMENT '成长值门槛',
+  discount_rate DECIMAL(4,3) DEFAULT 1.000 COMMENT '等级折扣率(0.95=95折)',
+  description  VARCHAR(200) COMMENT '等级权益说明',
+  sort         INT DEFAULT 0
+) ENGINE=InnoDB COMMENT='会员等级';
+
+CREATE TABLE IF NOT EXISTS t_member_card (
+  card_id    BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id    BIGINT NOT NULL UNIQUE COMMENT '用户ID',
+  level_id   BIGINT COMMENT '当前等级',
+  growth     INT DEFAULT 0 COMMENT '成长值',
+  points     INT DEFAULT 0 COMMENT '积分',
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB COMMENT='会员卡';
+
+CREATE TABLE IF NOT EXISTS t_member_point_log (
+  log_id      BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id     BIGINT NOT NULL,
+  change_type VARCHAR(32) COMMENT '积分变动类型 earn_consume 消费获得 adjust 调整',
+  change_val  INT COMMENT '变动数值(正负)',
+  ref_order_no VARCHAR(40) COMMENT '关联订单号',
+  remark      VARCHAR(200),
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB COMMENT='会员积分流水';
+
+-- 幂等种子：会员等级（存在则跳过）
+INSERT IGNORE INTO t_member_level (level_id, level_name, min_growth, discount_rate, description, sort) VALUES
+ (1,'普通会员', 0,     1.000, '基础会员权益', 1),
+ (2,'白银会员', 1000,  0.990, '98折 起',      2),
+ (3,'黄金会员', 5000,  0.970, '97折 特权',    3),
+ (4,'钻石会员', 20000, 0.950, '95折 尊享',    4);
 
 -- ==================== 第 3 步 基础字典数据 ====================
 -- 显式主键加 INSERT IGNORE: 重复执行时主键冲突被忽略, 既不报错也不会插出重复行,

@@ -2,6 +2,7 @@ package com.lanlink.shopping.controller;
 
 import com.lanlink.shopping.common.BusinessException;
 import com.lanlink.shopping.common.R;
+import com.lanlink.shopping.common.UserIdentity;
 import com.lanlink.shopping.config.UserContext;
 import com.lanlink.shopping.dto.Login2FADTO;
 import com.lanlink.shopping.dto.LoginDTO;
@@ -11,6 +12,8 @@ import com.lanlink.shopping.entity.Role;
 import com.lanlink.shopping.entity.User;
 import com.lanlink.shopping.entity.UserProfile;
 import com.lanlink.shopping.service.LoginLogService;
+import com.lanlink.shopping.service.AuditService;
+import com.lanlink.shopping.service.IdentityService;
 import com.lanlink.shopping.service.MessageService;
 import com.lanlink.shopping.service.TotpService;
 import com.lanlink.shopping.service.UserProfileService;
@@ -34,20 +37,26 @@ public class AuthController {
     private final TotpService totpService;
     private final LoginLogService loginLogService;
     private final MessageService messageService;
+    private final IdentityService identityService;
+    private final AuditService auditService;
 
     public AuthController(UserService userService, UserProfileService profileService, TotpService totpService,
-                          LoginLogService loginLogService, MessageService messageService) {
+                          LoginLogService loginLogService, MessageService messageService,
+                          IdentityService identityService, AuditService auditService) {
         this.userService = userService;
         this.profileService = profileService;
         this.totpService = totpService;
         this.loginLogService = loginLogService;
         this.messageService = messageService;
+        this.identityService = identityService;
+        this.auditService = auditService;
     }
 
     @PostMapping("/register")
-    public R<Map<String, Object>> register(@Valid @RequestBody RegisterDTO dto) {
+    public R<Map<String, Object>> register(@Valid @RequestBody RegisterDTO dto, HttpServletRequest request) {
         User u = userService.register(dto);
-        return R.ok("注册成功", toView(u));
+        auditService.record(u.getUserId(), "IDENTITY_RECOGNIZE", "注册，身份: " + UserIdentity.BUYER.getCode(), request);
+        return R.ok("注册成功", toView(u, request));
     }
 
     /**
@@ -71,7 +80,9 @@ public class AuthController {
             }
             request.getSession().setAttribute(UserContext.SESSION_KEY, u);
             loginLogService.record(u.getUserId(), dto.getPhone(), true, "登录成功", request);
-            return R.ok("登录成功", toView(u));
+            auditService.record(u.getUserId(), "IDENTITY_RECOGNIZE",
+                    "登录，身份: " + identityService.identify(u.getUserId(), u.getRoleId()).getCode(), request);
+            return R.ok("登录成功", toView(u, request));
         } catch (BusinessException e) {
             loginLogService.record(foundUserId, dto.getPhone(), false, e.getMessage(), request);
             throw e;
@@ -95,7 +106,9 @@ public class AuthController {
         if (u == null) throw new BusinessException("用户不存在");
         request.getSession().setAttribute(UserContext.SESSION_KEY, u);
         loginLogService.record(userId, u.getPhone(), true, "登录成功（两步验证）", request);
-        return R.ok("登录成功", toView(u));
+        auditService.record(userId, "IDENTITY_RECOGNIZE",
+                "登录，身份: " + identityService.identify(userId, u.getRoleId()).getCode(), request);
+        return R.ok("登录成功", toView(u, request));
     }
 
     private String maskPhone(String p) {
@@ -113,10 +126,10 @@ public class AuthController {
     public R<Map<String, Object>> me(HttpServletRequest request) {
         User u = UserContext.current(request);
         if (u == null) throw new BusinessException(401, "未登录");
-        return R.ok(toView(u));
+        return R.ok(toView(u, request));
     }
 
-    private Map<String, Object> toView(User u) {
+    private Map<String, Object> toView(User u, HttpServletRequest request) {
         Map<String, Object> map = new HashMap<>();
         map.put("userId", u.getUserId());
         map.put("phone", u.getPhone());
@@ -126,6 +139,8 @@ public class AuthController {
         Role r = userService.findRole(u.getRoleId());
         map.put("roleCode", r == null ? null : r.getRoleCode());
         map.put("roleName", r == null ? null : r.getRoleName());
+        // 实时身份（访客/普通/VIP/商户/管理员 + 权限 + VIP 达标进度）
+        map.put("identity", identityService.identityView(request));
         // 未读站内消息数（顶栏角标），login/login2fa/me 全链路生效
         map.put("unreadCount", messageService.unreadCount(u.getUserId()));
         return map;

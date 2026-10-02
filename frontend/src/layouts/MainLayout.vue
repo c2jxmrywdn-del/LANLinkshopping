@@ -7,14 +7,14 @@
           <span class="logo-text">LAN<b>Link</b>shopping</span>
         </div>
         <div class="nav-shell" ref="navShell">
-          <a-menu :selected-keys="selectedKeys" mode="horizontal" class="nav" theme="dark"
-                 @click="onNav">
-            <a-menu-item key="home">首页</a-menu-item>
-            <a-menu-item key="mall">商城</a-menu-item>
-            <a-menu-item key="orders">我的订单</a-menu-item>
-            <a-menu-item key="merchant">商户入驻</a-menu-item>
-            <a-menu-item key="merchant/products">我的商品</a-menu-item>
-          </a-menu>
+          <a-menu v-model:selectedKeys="selectedKeys" mode="horizontal" class="nav" theme="dark"
+               @click="onNav">
+          <a-menu-item key="home">首页</a-menu-item>
+          <a-menu-item key="mall">商城</a-menu-item>
+          <a-menu-item v-if="user.hasPerm('order:view')" key="orders">我的订单</a-menu-item>
+          <a-menu-item v-if="user.logged" key="merchant">商户入驻</a-menu-item>
+          <a-menu-item v-if="user.hasPerm('product:publish')" key="merchant/products">我的商品</a-menu-item>
+        </a-menu>
           <span class="nav-indicator" :style="indicatorStyle" aria-hidden="true"></span>
         </div>
         <div class="right">
@@ -38,6 +38,8 @@
                     <div class="id-scope">当前身份：<b>{{ user.identityName }}</b><br/>{{ user.identityScope }}</div>
                   </a-menu-item>
                   <a-menu-divider />
+                  <a-menu-item @click="$router.push('/activity')">🎯 活动中心</a-menu-item>
+                  <a-menu-item @click="$router.push('/membership')">💎 会员中心</a-menu-item>
                   <a-menu-item @click="$router.push('/me')">个人中心</a-menu-item>
                   <a-menu-item @click="doLogout">退出登录</a-menu-item>
                 </a-menu>

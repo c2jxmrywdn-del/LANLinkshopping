@@ -241,6 +241,18 @@ public class UserController {
         return R.ok();
     }
 
+    // ===== VIP 专属服务（需 vip:discount 权限，由 PermInterceptor 强制校验） =====
+
+    @GetMapping("/vip/benefits")
+    @com.lanlink.shopping.integration.security.RequirePerm("vip:discount")
+    public R<java.util.List<String>> vipBenefits() {
+        return R.ok(java.util.List.of(
+                "全场商品 VIP 专属价（95 折）",
+                "每月 2 张满减券",
+                "专属客服通道",
+                "积分双倍累计"));
+    }
+
     // ===== 消息通知中心 =====
 
     @GetMapping("/message/page")

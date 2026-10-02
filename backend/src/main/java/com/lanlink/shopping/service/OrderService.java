@@ -4,8 +4,11 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.lanlink.shopping.common.BusinessException;
 import com.lanlink.shopping.dto.CheckoutDTO;
 import com.lanlink.shopping.entity.*;
+import com.lanlink.shopping.integration.event.OrderPaidEvent;
+import com.lanlink.shopping.integration.pricing.PricingFacade;
 import com.lanlink.shopping.mapper.*;
 import com.lanlink.shopping.vo.OrderDetailVO;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,15 +30,25 @@ public class OrderService {
     private final OrderItemMapper orderItemMapper;
     private final UserMapper userMapper;
     private final MessageService messageService;
+    private final IdentityService identityService;
+    private final AuditService auditService;
+    private final PricingFacade pricingFacade;
+    private final ApplicationEventPublisher eventPublisher;
 
     public OrderService(CartMapper cartMapper, ProductMapper productMapper, OrderMapper orderMapper,
-                        OrderItemMapper orderItemMapper, UserMapper userMapper, MessageService messageService) {
+                        OrderItemMapper orderItemMapper, UserMapper userMapper, MessageService messageService,
+                        IdentityService identityService, AuditService auditService,
+                        PricingFacade pricingFacade, ApplicationEventPublisher eventPublisher) {
         this.cartMapper = cartMapper;
         this.productMapper = productMapper;
         this.orderMapper = orderMapper;
         this.orderItemMapper = orderItemMapper;
         this.userMapper = userMapper;
         this.messageService = messageService;
+        this.identityService = identityService;
+        this.auditService = auditService;
+        this.pricingFacade = pricingFacade;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -51,7 +64,6 @@ public class OrderService {
         }
         if (carts.isEmpty()) throw new BusinessException("购物车没有可结算的商品");
 
-        BigDecimal total = BigDecimal.ZERO;
         Order order = new Order();
         order.setOrderNo(genOrderNo());
         order.setUserId(userId);
@@ -66,14 +78,23 @@ public class OrderService {
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
 
-        // 先校验库存并累计总额，确保插入前 totalAmount 已就绪
+        // 先校验库存（并确认商品可售：仅审核通过的商品可下单），累计原价与行业
+        BigDecimal total = BigDecimal.ZERO;
+        Long orderIndId = null;
         for (Cart c : carts) {
             Product p = productMapper.selectById(c.getProdId());
             if (p == null) throw new BusinessException("商品不存在: " + c.getProdId());
+            if (p.getStatus() == null || p.getStatus() != 1) {
+                throw new BusinessException("商品暂不可购买(未通过审核或已下架): " + p.getTitle());
+            }
             if (p.getStock() < c.getQuantity()) throw new BusinessException("库存不足: " + p.getTitle());
             total = total.add(p.getPrice().multiply(BigDecimal.valueOf(c.getQuantity())));
+            if (orderIndId == null) orderIndId = p.getIndId();
         }
-        order.setTotalAmount(total);
+        // 营销中台价格编排：促销满减/折扣 与 会员等级折扣 互斥取优（采购方享有会员折扣）
+        boolean memberEligible = user != null && user.getRoleId() != null && user.getRoleId() == 1L;
+        PricingFacade.Quote quote = pricingFacade.quote(userId, total, orderIndId, memberEligible);
+        order.setTotalAmount(quote.finalAmount());
         // 生成订单主表
         orderMapper.insert(order);
 
@@ -128,6 +149,17 @@ public class OrderService {
         orderMapper.updateById(o);
         messageService.send(userId, "order", "支付成功",
                 "订单 " + orderNo + " 已支付，商家将尽快发货。", orderNo);
+        // 跨模块事件：通知营销中台（会员累计积分/成长值、消费活动自动参与）
+        eventPublisher.publishEvent(new OrderPaidEvent(this, userId, orderNo, o.getTotalAmount()));
+        // 身份平滑切换检测：支付后若累计已支付金额首次达标，采购方自动升级为 VIP（实时生效，无需重新登录）
+        User u = userMapper.selectById(userId);
+        if (u != null && u.getRoleId() != null && u.getRoleId() == 1L) {
+            java.math.BigDecimal before = identityService.paidAmount(userId).subtract(o.getTotalAmount());
+            if (before.compareTo(IdentityService.VIP_THRESHOLD) < 0
+                    && identityService.paidAmount(userId).compareTo(IdentityService.VIP_THRESHOLD) >= 0) {
+                auditService.record(userId, "IDENTITY_CHANGE", "身份升级: buyer -> vip（累计已支付达标）", null);
+            }
+        }
         return o;
     }
 

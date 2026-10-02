@@ -1,5 +1,9 @@
 <template>
   <div>
+    <div v-if="promos.length" class="promo-bar">
+      <span class="promo-title">🔥 促销进行中</span>
+      <span v-for="p in promos" :key="p.promoId" class="promo-item">{{ p.title }}</span>
+    </div>
     <div class="toolbar">
       <a-input-search v-model:value="keyword" placeholder="搜索商品名称" style="width:320px"
                       allow-clear @search="reload" />
@@ -24,8 +28,10 @@
             </div>
             <div class="ptitle">{{ p.title }}</div>
             <div class="pprice">¥{{ p.price }}</div>
+            <div v-if="user.hasPerm('vip:discount')" class="pvip">VIP 价 ¥{{ (p.price * 0.95).toFixed(2) }}</div>
             <div class="pmeta">{{ p.brand }} · 销量 {{ p.sales }}</div>
-            <a-button class="ll-add-cart" type="primary" size="small" block @click.stop="addCart(p)">加入购物车</a-button>
+            <a-button v-if="user.hasPerm('cart:manage')" class="ll-add-cart" type="primary" size="small" block @click.stop="addCart(p)">加入购物车</a-button>
+            <a-button v-else size="small" block type="default" @click="$router.push('/login')">登录后购买</a-button>
           </a-card>
         </a-col>
       </a-row>
@@ -42,13 +48,16 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { productApi, homeApi } from '../api'
+import { productApi, homeApi, promotionApi } from '../api'
 import { useCartStore } from '../store/cart'
 import { useUserStore } from '../store/user'
 
 const route = useRoute()
 const cart = useCartStore()
 const user = useUserStore()
+
+// 促销横幅（营销中台·促销系统）
+const promos = ref([])
 
 const industries = ref([])
 const list = ref([])
@@ -75,17 +84,25 @@ async function addCart(p) {
 }
 onMounted(async () => {
   industries.value = await homeApi.industries()
+  promotionApi.list().then(d => { promos.value = d || [] }).catch(() => {})
   reload()
 })
 </script>
 
 <style scoped>
+.promo-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+             background: linear-gradient(90deg, rgba(245,158,11,.12), rgba(232,121,249,.08));
+             border: 1px solid rgba(245,158,11,.35); border-radius: 8px;
+             padding: 8px 14px; margin-bottom: 14px; font-size: 13px; }
+.promo-title { font-weight: 700; color: #b45309; }
+.promo-item { color: var(--ll-gray, #4b5563); }
 .toolbar { display: flex; gap: 12px; margin-bottom: 16px; }
 .prod-card { margin-bottom: 16px; }
 .thumb { height: 120px; background: var(--ll-thumb-bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: var(--ll-thumb-fg); margin-bottom: 8px; overflow: hidden; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; }
 .ptitle { font-size: 14px; height: 40px; overflow: hidden; }
 .pprice { color: #e4393c; font-weight: 700; font-size: 18px; margin: 4px 0; }
+.pvip { color: #b45309; font-weight: 600; font-size: 13px; }
 .pmeta { color: #999; font-size: 12px; margin-bottom: 8px; }
 .pager { text-align: center; margin: 24px 0; }
 </style>

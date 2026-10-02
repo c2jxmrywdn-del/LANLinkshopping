@@ -19,9 +19,15 @@ export const productApi = {
   page: (params) => request.get('/product/page', { params }),
   detail: (id) => request.get(`/product/detail/${id}`),
   publish: (d) => request.post('/product/publish', d),
+  // 商户端：我的商品列表（含审核状态）/ 商品主图上传
+  myList: (params) => request.get('/product/my/list', { params }),
+  uploadImage: (formData) => request.post('/product/image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   // 管理后台专用
   adminList: (params) => request.get('/product/admin/list', { params }),
-  adminStatus: (prodId, status) => request.post(`/product/admin/status/${prodId}`, null, { params: { status } })
+  adminStatus: (prodId, status) => request.post(`/product/admin/status/${prodId}`, null, { params: { status } }),
+  adminReview: (prodId, reviewStatus, reason) => request.post(`/product/admin/review/${prodId}`, null, { params: { reviewStatus, reason } })
 }
 
 export const cartApi = {
@@ -91,6 +97,16 @@ export const userApi = {
 export const merchantApi = {
   apply: (d) => request.post('/merchant/apply', d),
   my: () => request.get('/merchant/my'),
+  // 营业执照上传（JPG/PNG，返回 { url }）
+  uploadLicense: (formData) => request.post('/merchant/license', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  // 税务缴纳证明上传（PDF/JPG/PNG，返回 { url }，可多次调用）
+  uploadTaxProof: (formData) => request.post('/merchant/tax-proof', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  // 税务登记号查询近 3 个月缴纳记录（返回 { records, totalAmount }）
+  taxQuery: (taxRegNo) => request.get('/merchant/tax-query', { params: { taxRegNo } }),
   // 管理后台专用
   adminList: (reviewStatus) => request.get('/merchant/admin/list', { params: { reviewStatus } }),
   adminReview: (merId, reviewStatus, reason) => request.post(`/merchant/admin/review/${merId}`, null, { params: { reviewStatus, reason } })
@@ -100,4 +116,19 @@ export const merchantApi = {
 export const adminApi = {
   auditPage: (params) => request.get('/admin/audit/page', { params }),
   auditExport: (params) => request.get('/admin/audit/export', { params, responseType: 'blob' })
+}
+
+// ===== 营销中台：活动系统 / 促销系统 / 会员系统 =====
+export const activityApi = {
+  list: () => request.get('/activity/list'),
+  join: (id) => request.post(`/activity/${id}/join`),
+  my: () => request.get('/activity/my')
+}
+
+export const promotionApi = {
+  list: () => request.get('/promotion/list')
+}
+
+export const membershipApi = {
+  my: () => request.get('/membership/my')
 }

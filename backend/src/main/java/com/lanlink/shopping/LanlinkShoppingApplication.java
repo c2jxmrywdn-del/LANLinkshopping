@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan("com.lanlink.shopping.mapper")
+@MapperScan({"com.lanlink.shopping.mapper", "com.lanlink.shopping.module.*.mapper"})
 public class LanlinkShoppingApplication {
     public static void main(String[] args) {
         SpringApplication.run(LanlinkShoppingApplication.class, args);

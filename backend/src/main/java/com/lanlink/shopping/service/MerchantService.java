@@ -31,12 +31,14 @@ public class MerchantService {
     private final MerchantMapper merchantMapper;
     private final EnterpriseMapper enterpriseMapper;
     private final QualificationMapper qualificationMapper;
+    private final AuditService auditService;
 
     public MerchantService(MerchantMapper merchantMapper, EnterpriseMapper enterpriseMapper,
-                           QualificationMapper qualificationMapper) {
+                           QualificationMapper qualificationMapper, AuditService auditService) {
         this.merchantMapper = merchantMapper;
         this.enterpriseMapper = enterpriseMapper;
         this.qualificationMapper = qualificationMapper;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -45,6 +47,9 @@ public class MerchantService {
         if (merchantMapper.selectCount(Wrappers.<Merchant>lambdaQuery().eq(Merchant::getUserId, userId)) > 0) {
             throw new BusinessException("您已提交过入驻申请");
         }
+        // 说明：营业执照/税务证明等证照材料由入驻审核通过后的商户，
+        // 通过受 merchant:manage 权限保护的 /merchant/license、/merchant/tax-proof、/merchant/tax-query 补传与绑定；
+        // 申请阶段以 taxStatus 申报驱动筛选，不再强制前置上传。
         // 创建企业
         Enterprise ent = new Enterprise();
         ent.setName(dto.getEntName());
@@ -62,6 +67,13 @@ public class MerchantService {
         m.setRegCapital(dto.getRegCapital());
         m.setTaxStatus(dto.getTaxStatus());
         m.setJoinType(dto.getJoinType());
+        m.setLicenseUrl(dto.getLicenseUrl());
+        if (dto.getTaxProofUrls() != null && !dto.getTaxProofUrls().isEmpty()) {
+            m.setTaxProofUrls(String.join(",", dto.getTaxProofUrls()));
+        }
+        if (StringUtils.hasText(dto.getTaxRegNo())) {
+            m.setTaxRegNo(dto.getTaxRegNo().trim());
+        }
         applyScreening(m);
         m.setCreateTime(LocalDateTime.now());
         m.setUpdateTime(LocalDateTime.now());
@@ -108,6 +120,83 @@ public class MerchantService {
         return merchantMapper.selectOne(Wrappers.<Merchant>lambdaQuery().eq(Merchant::getUserId, userId));
     }
 
+    /** 商户档案必须存在（证照管理仅限已入驻商户） */
+    private Merchant mustMerchant(Long userId) {
+        Merchant m = getByUser(userId);
+        if (m == null) throw new BusinessException("请先完成入驻审核后再管理证照");
+        return m;
+    }
+
+    /** 营业执照 URL 写入商户档案 */
+    public void persistLicense(Long userId, String url) {
+        Merchant m = mustMerchant(userId);
+        m.setLicenseUrl(url);
+        m.setUpdateTime(java.time.LocalDateTime.now());
+        merchantMapper.updateById(m);
+    }
+
+    /** 税务证明 URL 追加写入商户档案（逗号分隔，最多 3 份） */
+    public void persistTaxProof(Long userId, String url) {
+        Merchant m = mustMerchant(userId);
+        java.util.List<String> urls = new java.util.ArrayList<>();
+        if (StringUtils.hasText(m.getTaxProofUrls())) {
+            for (String u : m.getTaxProofUrls().split(",")) {
+                if (StringUtils.hasText(u)) urls.add(u.trim());
+            }
+        }
+        if (urls.contains(url)) return;
+        urls.add(url);
+        if (urls.size() > 3) urls = urls.subList(urls.size() - 3, urls.size());
+        m.setTaxProofUrls(String.join(",", urls));
+        m.setUpdateTime(java.time.LocalDateTime.now());
+        merchantMapper.updateById(m);
+    }
+
+    /** 税务登记号绑定至商户档案 */
+    public void persistTaxRegNo(Long userId, String taxRegNo) {
+        Merchant m = mustMerchant(userId);
+        m.setTaxRegNo(taxRegNo == null ? null : taxRegNo.trim().toUpperCase());
+        m.setUpdateTime(java.time.LocalDateTime.now());
+        merchantMapper.updateById(m);
+    }
+
+    /** 税务登记号格式：15/18/20 位数字或大写字母 */
+    private static final java.util.regex.Pattern TAX_REG_NO =
+            java.util.regex.Pattern.compile("^[0-9A-Z]{15}$|^[0-9A-Z]{18}$|^[0-9A-Z]{20}$");
+
+    /**
+     * 通过税务登记号查询近 3 个月税务缴纳记录。
+     * 演示环境：无真实税务数据源，基于登记号哈希稳定生成可复现的记录
+     * （同一登记号多次查询结果一致），用于入驻流程的纳税记录核验演示。
+     */
+    public java.util.Map<String, Object> queryTaxRecords(String taxRegNo) {
+        String no = taxRegNo == null ? "" : taxRegNo.trim().toUpperCase();
+        if (!TAX_REG_NO.matcher(no).matches()) {
+            throw new BusinessException("税务登记号格式不正确（应为 15/18/20 位数字或大写字母）");
+        }
+        java.util.Random r = new java.util.Random((long) no.hashCode() * 31 + no.length());
+        java.util.List<java.util.Map<String, Object>> records = new java.util.ArrayList<>();
+        java.time.LocalDate now = java.time.LocalDate.now();
+        java.math.BigDecimal total = java.math.BigDecimal.ZERO;
+        for (int i = 3; i >= 1; i--) {
+            java.time.LocalDate month = now.minusMonths(i);
+            java.math.BigDecimal amount = java.math.BigDecimal.valueOf(3000 + r.nextInt(47000)).setScale(2);
+            total = total.add(amount);
+            java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
+            row.put("month", month.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM")));
+            row.put("taxType", "增值税");
+            row.put("amount", amount);
+            row.put("paidAt", month.withDayOfMonth(10 + r.nextInt(18)).toString());
+            records.add(row);
+        }
+        java.util.Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("taxRegNo", no);
+        out.put("records", records);
+        out.put("totalAmount", total);
+        out.put("stable", true);
+        return out;
+    }
+
     /** 运营端: 分页查询待审/全部商户 */
     public java.util.List<Merchant> listForAdmin(Integer reviewStatus) {
         return merchantMapper.selectList(Wrappers.<Merchant>lambdaQuery()
@@ -123,6 +212,10 @@ public class MerchantService {
         m.setRejectReason(reason);
         m.setUpdateTime(LocalDateTime.now());
         merchantMapper.updateById(m);
+        // 审核通过 → 商户身份生效（身份实时计算，下次请求自动切换为 merchant）
+        if (reviewStatus != null && reviewStatus == 1 && m.getUserId() != null) {
+            auditService.record(m.getUserId(), "IDENTITY_CHANGE", "身份升级: buyer -> merchant（商户审核通过）", null);
+        }
         return m;
     }
 }

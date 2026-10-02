@@ -10,6 +10,7 @@ import com.lanlink.shopping.mapper.ProductMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -49,10 +50,26 @@ public class ProductService {
         return p;
     }
 
-    /** 商户上架商品 */
+    /**
+     * 前台商品详情：仅可售(审核通过且上架)商品对用户可见
+     */
+    public Product detailForPublic(Long id) {
+        Product p = detail(id);
+        if (p.getStatus() == null || p.getStatus() != 1) throw new BusinessException("商品不存在或已下架");
+        return p;
+    }
+
+    /**
+     * 商户发布商品：进入平台审核流程。
+     * 发布后自动置为「待审核」(review_status=0)且不可售(status=0)；
+     * 审核通过后由 review() 置为可售(status=1)并开放购买。
+     */
     public Product publish(Long merId, Product p) {
+        validatePublish(p);
         p.setMerId(merId);
-        p.setStatus(1);
+        p.setStatus(0);            // 不可售：待审核
+        p.setReviewStatus(0);      // 待审核
+        p.setRejectReason(null);
         p.setSales(0);
         p.setCreateTime(LocalDateTime.now());
         p.setUpdateTime(LocalDateTime.now());
@@ -60,9 +77,52 @@ public class ProductService {
         return p;
     }
 
-    public IPage<Product> pageByMerchant(Long merId, long current, long size) {
+    /** 发布信息合规校验（与前端表单规则一致，服务端兜底） */
+    private void validatePublish(Product p) {
+        if (p.getTitle() == null || p.getTitle().isBlank()
+                || p.getTitle().trim().length() < 2 || p.getTitle().trim().length() > 100) {
+            throw new BusinessException("商品名称需 2-100 个字符");
+        }
+        if (p.getPrice() == null || p.getPrice().compareTo(BigDecimal.ZERO) <= 0
+                || p.getPrice().compareTo(new BigDecimal("9999999")) > 0) {
+            throw new BusinessException("价格需为 0.01 ~ 9999999 之间的数值");
+        }
+        if (p.getStock() == null || p.getStock() < 1 || p.getStock() > 999999) {
+            throw new BusinessException("库存需为 1 ~ 999999 之间的整数");
+        }
+        if (p.getCatId() == null || p.getIndId() == null) {
+            throw new BusinessException("请选择行业与商品分类");
+        }
+        if (p.getCoverUrl() == null || p.getCoverUrl().isBlank()) {
+            throw new BusinessException("请上传商品主图");
+        }
+    }
+
+    /** 商户自己的商品列表（含审核状态，供商户端展示） */
+    public IPage<Product> myPage(Long merId, long current, long size) {
         return productMapper.selectPage(new Page<>(current, size),
                 Wrappers.<Product>lambdaQuery().eq(Product::getMerId, merId).orderByDesc(Product::getCreateTime));
+    }
+
+    /**
+     * 平台审核：通过 → 审核状态置 1 且自动转为可售(status=1)，开放购买权限；
+     * 驳回 → 审核状态置 2，保持不可售并记录驳回原因。
+     */
+    public Product review(Long prodId, Integer reviewStatus, String reason) {
+        Product p = productMapper.selectById(prodId);
+        if (p == null) throw new BusinessException("商品不存在");
+        if (reviewStatus == null || (reviewStatus != 1 && reviewStatus != 2)) {
+            throw new BusinessException("审核状态不合法");
+        }
+        if (reviewStatus == 2 && !StringUtils.hasText(reason)) {
+            throw new BusinessException("驳回时必须填写原因");
+        }
+        p.setReviewStatus(reviewStatus);
+        p.setRejectReason(reviewStatus == 2 ? reason : null);
+        p.setStatus(reviewStatus == 1 ? 1 : 0);
+        p.setUpdateTime(LocalDateTime.now());
+        productMapper.updateById(p);
+        return p;
     }
 
     /** 管理后台: 全量商品分页(含已下架), 可按状态/关键词筛选 */

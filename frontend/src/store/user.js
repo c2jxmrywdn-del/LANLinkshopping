@@ -5,8 +5,15 @@ export const useUserStore = defineStore('user', {
   state: () => ({ user: null }),
   getters: {
     logged: (s) => !!s.user,
-    isMerchant: (s) => s.user && s.user.roleCode === 'merchant',
-    isAdmin: (s) => s.user && s.user.roleCode === 'admin',
+    // ===== 身份类型（服务端 /auth/me 实时识别返回） =====
+    identity: (s) => (s.user && s.user.identity && s.user.identity.code) || 'guest',
+    identityName: (s) => (s.user && s.user.identity && s.user.identity.name) || '访客',
+    identityScope: (s) => (s.user && s.user.identity && s.user.identity.serviceScope) || '',
+    // 是否具备指定权限（服务端权限矩阵的镜像，仅用于展示；服务端仍做强制校验）
+    hasPerm: (s) => (perm) => (s.user && s.user.identity && s.user.identity.permissions || []).includes(perm),
+    isVip: (s) => s.identity === 'vip',
+    isMerchant: (s) => s.identity === 'merchant' || (s.user && s.user.roleCode === 'merchant'),
+    isAdmin: (s) => s.identity === 'admin' || (s.user && s.user.roleCode === 'admin'),
     unread: (s) => (s.user && s.user.unreadCount) || 0
   },
   actions: {

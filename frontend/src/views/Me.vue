@@ -14,9 +14,26 @@
             <div class="user-row">
               <a-avatar :size="56" :src="profile.profile?.avatar" class="avatar">{{ (user.user?.nickname || 'U')[0] }}</a-avatar>
               <div>
-                <div class="uname">{{ user.user?.nickname }}</div>
+                <div class="uname">
+                  {{ user.user?.nickname }}
+                  <span v-if="user.isVip" class="id-badge id-vip">VIP</span>
+                  <span v-else-if="user.isAdmin" class="id-badge id-admin">ADMIN</span>
+                  <span v-else-if="user.isMerchant" class="id-badge id-merchant">商户</span>
+                </div>
                 <div class="urole">{{ user.user?.roleName }}</div>
               </div>
+            </div>
+            <a-divider style="margin: 12px 0" />
+            <!-- 我的身份：身份类型 + 服务范围 + VIP 达标进度 -->
+            <div class="identity-box">
+              <div class="id-name">{{ user.identityName }}</div>
+              <div class="id-scope">{{ user.identityScope }}</div>
+              <template v-if="user.user?.identity?.vipPaidAmount !== undefined && !user.isVip">
+                <div class="id-vip-progress">
+                  距 VIP 还差 ¥{{ Math.max(0, user.user.identity.vipThreshold - user.user.identity.vipPaidAmount).toFixed(2) }}
+                  <div class="id-bar"><div class="id-bar-in" :style="{ width: pct }"></div></div>
+                </div>
+              </template>
             </div>
             <a-divider style="margin: 12px 0" />
             <div class="quick">{{ t('acct.card.quick') }}</div>
@@ -69,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
 import ProfilePanel from '../components/account/ProfilePanel.vue'
@@ -95,6 +112,13 @@ const activeTab = ref(VALID_TABS.includes(route.query.tab) ? route.query.tab : '
 const profileRef = ref(null)
 const dirty = ref(false)
 const clearingCache = ref(false)
+
+// VIP 达标进度百分比
+const pct = computed(() => {
+  const id = user.user?.identity
+  if (!id || !id.vipPaidAmount || !id.vipThreshold) return '0%'
+  return Math.min(100, (id.vipPaidAmount / id.vipThreshold) * 100).toFixed(0) + '%'
+})
 
 // 未保存修改守卫：切 tab / 离开页面
 function confirmDiscard(nextTab) {
@@ -166,6 +190,18 @@ onMounted(reload)
 .uname { font-size: 17px; font-weight: 700; color: var(--ll-ink); }
 .urole { font-size: 13px; color: var(--ll-muted); margin-top: 2px; }
 .quick { font-size: 13px; color: var(--ll-gray2); margin-bottom: 8px; }
+/* 身份卡片 */
+.identity-box { background: var(--ll-page); border-radius: 10px; padding: 10px 12px; }
+.id-name { font-size: 15px; font-weight: 700; color: var(--ll-ink); }
+.id-scope { font-size: 12px; color: var(--ll-gray, #4b5563); margin-top: 2px; line-height: 1.6; }
+.id-vip-progress { margin-top: 8px; font-size: 12px; color: #b45309; }
+.id-bar { height: 6px; border-radius: 3px; background: #e5e7eb; margin-top: 4px; overflow: hidden; }
+.id-bar-in { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #b45309, #f59e0b); }
+.id-badge { display: inline-block; font-size: 10px; font-weight: 700; line-height: 1;
+            padding: 2px 5px; border-radius: 4px; margin-left: 6px; vertical-align: 2px; }
+.id-vip { background: #b45309; color: #fff; }
+.id-admin { background: #1e6eb8; color: #fff; }
+.id-merchant { background: #0f766e; color: #fff; }
 .right-title { font-size: 14px; font-weight: 700; color: var(--ll-ink); margin-bottom: 10px; }
 .info-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; }
 .info-row .k { color: var(--ll-muted); }

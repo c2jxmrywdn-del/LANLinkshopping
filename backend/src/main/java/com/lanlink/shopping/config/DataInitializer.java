@@ -3,6 +3,10 @@ package com.lanlink.shopping.config;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.lanlink.shopping.entity.*;
 import com.lanlink.shopping.mapper.*;
+import com.lanlink.shopping.module.activity.entity.Activity;
+import com.lanlink.shopping.module.activity.mapper.ActivityMapper;
+import com.lanlink.shopping.module.promotion.entity.Promotion;
+import com.lanlink.shopping.module.promotion.mapper.PromotionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -34,23 +38,30 @@ public class DataInitializer implements CommandLineRunner {
     private final CategoryMapper categoryMapper;
     private final ThirdAuthMapper thirdAuthMapper;
     private final MessageMapper messageMapper;
+    private final ActivityMapper activityMapper;
+    private final PromotionMapper promotionMapper;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(UserMapper userMapper, RoleMapper roleMapper, EnterpriseMapper enterpriseMapper,
                            MerchantMapper merchantMapper, ProductMapper productMapper,
                            CategoryMapper categoryMapper, ThirdAuthMapper thirdAuthMapper,
                            MessageMapper messageMapper,
+                           ActivityMapper activityMapper, PromotionMapper promotionMapper,
                            PasswordEncoder passwordEncoder) {
         this.userMapper = userMapper; this.roleMapper = roleMapper;
         this.enterpriseMapper = enterpriseMapper; this.merchantMapper = merchantMapper;
         this.productMapper = productMapper; this.categoryMapper = categoryMapper;
         this.thirdAuthMapper = thirdAuthMapper;
         this.messageMapper = messageMapper;
+        this.activityMapper = activityMapper;
+        this.promotionMapper = promotionMapper;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) {
+        // 营销中台演示数据：与主初始化解耦，已存在的库也补种子（幂等）
+        seedMarketingDemo();
         // 第三方授权演示数据：与主初始化解耦，已存在的库也会补种子（按 用户+应用 幂等判断）
         seedThirdAuthDemo();
         // 站内消息演示数据：按 用户+类型+标题 幂等判断
@@ -109,6 +120,47 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         log.info("==== 初始化完成: 3用户/1商户/10商品, 演示账号密码均为 123456 ====");
+    }
+
+    /** 营销中台演示数据：活动 + 促销（按标题幂等，重复启动不会叠加） */
+    private void seedMarketingDemo() {
+        seedActivity("新客注册有礼", "register", "注册即送 100 积分，首单更享专属优惠。");
+        seedActivity("行业采购节·消费有礼", "purchase", "活动期间完成任意订单支付，自动累计积分并参与满减专场。");
+        seedPromotion("全场满 500 减 50", "full_reduce", new BigDecimal("500"), new BigDecimal("50"), null, "all", null);
+        seedPromotion("建材行业 95 折", "discount", new BigDecimal("100"), null, new BigDecimal("0.95"), "ind", 1L);
+    }
+
+    private void seedActivity(String title, String type, String desc) {
+        if (activityMapper.selectCount(Wrappers.<Activity>lambdaQuery().eq(Activity::getTitle, title)) > 0) return;
+        Activity a = new Activity();
+        a.setTitle(title);
+        a.setType(type);
+        a.setDescription(desc);
+        a.setStartTime(LocalDateTime.now().minusDays(1));
+        a.setEndTime(LocalDateTime.now().plusDays(30));
+        a.setStatus(1); // 进行中
+        a.setCreateTime(LocalDateTime.now());
+        a.setUpdateTime(LocalDateTime.now());
+        activityMapper.insert(a);
+    }
+
+    private void seedPromotion(String title, String type, BigDecimal threshold, BigDecimal benefit,
+                               BigDecimal rate, String scope, Long indId) {
+        if (promotionMapper.selectCount(Wrappers.<Promotion>lambdaQuery().eq(Promotion::getTitle, title)) > 0) return;
+        Promotion p = new Promotion();
+        p.setTitle(title);
+        p.setType(type);
+        p.setThreshold(threshold);
+        p.setBenefitAmount(benefit);
+        p.setDiscountRate(rate);
+        p.setScope(scope);
+        p.setIndId(indId);
+        p.setStartTime(LocalDateTime.now().minusDays(1));
+        p.setEndTime(LocalDateTime.now().plusDays(30));
+        p.setStatus(1);
+        p.setCreateTime(LocalDateTime.now());
+        p.setUpdateTime(LocalDateTime.now());
+        promotionMapper.insert(p);
     }
 
     private User mkUser(String phone, String nick, Long roleId, Long entId) {

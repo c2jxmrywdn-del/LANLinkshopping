@@ -40,6 +40,7 @@
             <a-tag v-else :color="rvColor(record.reviewStatus)">{{ rvText(record.reviewStatus) }}</a-tag>
             <div v-if="record.reviewStatus === 1" class="saleable">{{ record.status === 1 ? '可售中' : '已下架' }}</div>
           </template>
+          <template v-else-if="column.key === 'op'"><a-button type="link" size="small" @click="$router.push('/product/' + record.prodId)">查看商品</a-button></template>
           <template v-else-if="column.key === 'time'">{{ (record.createTime || '').replace('T', ' ') }}</template>
         </template>
       </a-table>
@@ -69,6 +70,7 @@ const cols = [
   { title: '库存', key: 'stock', width: 90 },
   { title: '销量', dataIndex: 'sales', width: 90 },
   { title: '审核状态', key: 'rv', width: 140 },
+  { title: '操作', key: 'op', width: 100 },
   { title: '发布时间', key: 'time', width: 170 }
 ]
 

@@ -79,6 +79,8 @@
 .ll-wordmark .ll-lan { color: #fff; }
 .ll-wordmark .ll-link { color: var(--ll-amber); font-weight: 700; }
 .ll-wordmark .ll-shopping { color: inherit; font-weight: 700; }
+.ll-wordmark-on-light .ll-lan { color: var(--ll-ink); }
+.ll-wordmark-on-light .ll-shopping { color: var(--ll-ink); }
 
 /* 兼容旧 .wordmark 标记 */
 .wordmark .ll-link { color: var(--ll-amber-strong); }

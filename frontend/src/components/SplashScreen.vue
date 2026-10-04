@@ -208,18 +208,23 @@ onBeforeUnmount(() => clearTimeout(timer))
 }
 .ss-flowR { stroke: #C8A45C; }
 
+/* 与首页 MainLayout.logo-text 完全复用同一品牌字标规范：
+   font-family / font-weight / letter-spacing / LAN-Link-shopping 分色均来自 .ll-wordmark。
+   启动画面只放大字号，不改变字形关系，保证“进入前后”品牌识别一致。 */
 .ss-wordmark {
   margin-top: 18px;
+  font-family: inherit;
   font-size: 48px;
   line-height: 1;
   font-weight: 700;
-  letter-spacing: -1px;
+  letter-spacing: -0.35px;
+  white-space: nowrap;
   opacity: 0;
   animation: ssFadeUp .7s 1.55s ease forwards;
 }
-.ss-wordmark .ll-lan { color: #FFFFFF; }
-.ss-wordmark .ll-link { color: var(--ll-amber, #F59E0B); font-weight: 700; }
-.ss-wordmark .ll-shopping { color: rgba(255,255,255,.92); font-weight: 700; }
+.ss-wordmark .ll-lan { color: #fff; }
+.ss-wordmark .ll-link { color: var(--ll-amber); font-weight: 700; }
+.ss-wordmark .ll-shopping { color: inherit; font-weight: 700; }
 .ss-tagline {
   margin-top: 8px; font-size: 14px; letter-spacing: 4px; color: #AEB7C4;
   opacity: 0; animation: ssFadeUp .7s 1.72s ease forwards;

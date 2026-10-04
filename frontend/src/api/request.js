@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue'
 import router from '../router'
+import { showBusyLoading, hideBusyLoading } from '../utils/busy'
 
 const request = axios.create({
   baseURL: '/api',
@@ -52,6 +53,11 @@ request.interceptors.response.use(
     if (res.config.responseType === 'blob') return res.data
     const body = res.data
     if (body && body.code !== 200) {
+      if ([429, 502, 503, 504].includes(Number(body.code))) {
+        showBusyLoading({ reason: 'congestion' })
+        hideBusyLoading(5200)
+        return Promise.reject(new Error(body.message || '系统繁忙'))
+      }
       // CSRF 令牌失效：换新后重放一次
       if (isCsrfFailure(body.code, body) && !res.config._retried && isUserMutation(res.config)) {
         return retryWithCsrf(res.config)
@@ -66,11 +72,18 @@ request.interceptors.response.use(
       }
       return Promise.reject(new Error(body.message))
     }
+    hideBusyLoading(180)
     return body.data
   },
   (err) => {
     // HTTP 层 403 的 CSRF 失效（后端直接以状态码返回时）
     const resp = err.response
+    const isCongested = !!(resp && [429, 502, 503, 504].includes(Number(resp.status))) || err.code === 'ECONNABORTED' || /timeout/i.test(err.message || '')
+    if (isCongested) {
+      showBusyLoading({ reason: 'congestion' })
+      hideBusyLoading(5200)
+      return Promise.reject(err)
+    }
     if (resp && err.config && isCsrfFailure(resp.status, resp.data) && !err.config._retried && isUserMutation(err.config)) {
       return retryWithCsrf(err.config)
     }

@@ -62,7 +62,19 @@
       <main><router-view /></main>
     </a-layout-content>
     <a-layout-footer class="footer" @click="secretTap">
-      LANLinkshopping · 一种聚合型一体多元化解决方案电商平台（B2B 毕业设计演示）
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="footer-wordmark ll-wordmark"><span class="ll-lan">LAN</span><span class="ll-link">Link</span><span class="ll-shopping">shopping</span></div>
+          <p>让每一次连接，都产生价值。</p>
+          <small>CONNECTED COMMERCE · B2B DEMO PLATFORM</small>
+        </div>
+        <div class="footer-links">
+          <button type="button" @click.stop="$router.push('/mall')">商城</button>
+          <button type="button" @click.stop="$router.push('/about')">关于我们</button>
+          <button type="button" @click.stop="$router.push({ path: '/about', hash: '#contact' })">联系我们</button>
+        </div>
+        <div class="footer-meta">LANLinkshopping · 一种聚合型一体多元化解决方案电商平台<br/><span>B2B 毕业设计演示 · © {{ new Date().getFullYear() }}</span></div>
+      </div>
     </a-layout-footer>
   </a-layout>
 </template>
@@ -182,8 +194,7 @@ function secretTap() {
 .id-scope { font-size: 12px; color: var(--ll-gray, #4b5563); line-height: 1.6; white-space: normal; }
 .id-scope b { color: var(--ll-ink, #0f172a); }
 .content { max-width: 1200px; margin: 0 auto; width: 100%; padding: 24px 16px; }
-.footer { text-align: center; color: #4b5563 !important; background: var(--ll-page); }
-.footer .ant-layout-footer { color: inherit; }
+.footer{padding:0 16px!important;color:#4b5563!important;background:var(--ll-page);border-top:1px solid #D9D3C7}.footer-inner{max-width:1200px;margin:0 auto;min-height:150px;padding:30px 0 24px;display:grid;grid-template-columns:1.4fr .7fr 1.4fr;gap:30px;align-items:center}.footer-brand{border-left:3px solid var(--ll-amber);padding-left:16px}.footer-wordmark{font-size:24px;line-height:1}.footer-wordmark .ll-lan{color:var(--ll-navy)}.footer-wordmark .ll-link{color:var(--ll-amber-strong)}.footer-wordmark .ll-shopping{color:var(--ll-navy)}.footer-brand p{margin:9px 0 4px;color:var(--ll-navy);font-size:13px;font-weight:700}.footer-brand small{color:#7B8492;font-size:9px;letter-spacing:.13em}.footer-links{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.footer-links button{border:0;background:transparent;color:#667085;cursor:pointer;font:inherit;font-size:12px;padding:7px 9px;border-radius:8px;transition:.2s ease}.footer-links button:hover{color:var(--ll-navy);background:rgba(200,164,92,.12)}.footer-meta{text-align:right;color:#667085;font-size:11px;line-height:1.8}.footer-meta span{color:#98A2B3}
 
 /* 响应式：平板/移动端收紧间距与字号，导航色变与滑动指示条在各尺寸均生效 */
 @media (max-width: 991px) {
@@ -200,6 +211,7 @@ function secretTap() {
   .logo { margin-right: 10px; }
   .logo-text { display: none; }
   .header :deep(.ant-menu-horizontal .ant-menu-item) { font-size: 14px; padding-inline: 12px; }
-  .right { gap: 10px; }
+   .right { gap: 10px; }
+  .footer-inner{grid-template-columns:1fr;gap:18px;padding:24px 0}.footer-links{justify-content:flex-start}.footer-meta{text-align:left;grid-column:auto}
 }
 </style>

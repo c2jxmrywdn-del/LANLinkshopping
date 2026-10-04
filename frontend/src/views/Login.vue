@@ -1,7 +1,7 @@
 <template>
   <main class="wrap">
     <a-card class="box">
-      <template #title><span class="wordmark">LAN<span class="ll-link">Link</span>shopping</span></template>
+      <template #title><span class="ll-wordmark ll-wordmark-on-light"><span class="ll-lan">LAN</span><span class="ll-link">Link</span><span class="ll-shopping">shopping</span></span></template>
       <a-tabs v-model:activeKey="tab" centered>
         <!-- ===== 登录 ===== -->
         <a-tab-pane key="login" tab="登录">

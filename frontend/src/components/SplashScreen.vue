@@ -5,6 +5,10 @@
         <span class="ss-gradient-orb ss-orb-brick"></span>
         <span class="ss-gradient-orb ss-orb-gold"></span>
         <span class="ss-gradient-orb ss-orb-cyan"></span>
+        <span class="ss-liquid-ribbon ss-ribbon-a"></span>
+        <span class="ss-liquid-ribbon ss-ribbon-b"></span>
+        <span class="ss-liquid-surface"></span>
+        <span class="ss-liquid-sheen"></span>
         <span class="ss-gradient-noise"></span>
       </div>
 
@@ -111,6 +115,70 @@ onBeforeUnmount(() => clearTimeout(timer))
   background: radial-gradient(circle, rgba(30,110,184,.96) 0%, rgba(30,110,184,.4) 45%, transparent 72%);
   animation: ssOrbCyan 8.7s ease-in-out -1s infinite alternate;
 }
+.ss-liquid-ribbon {
+  position: absolute;
+  width: 72vw; height: 28vh;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.10);
+  background:
+    linear-gradient(105deg,
+      rgba(255,255,255,.035) 0%,
+      rgba(200,164,92,.085) 28%,
+      rgba(255,255,255,.055) 48%,
+      rgba(30,110,184,.065) 72%,
+      rgba(255,255,255,.025) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.16),
+    inset 0 -18px 42px rgba(19,35,58,.12),
+    0 18px 80px rgba(0,0,0,.10);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  filter: blur(.2px);
+  mix-blend-mode: screen;
+  will-change: transform;
+  pointer-events: none;
+}
+.ss-ribbon-a {
+  left: -12vw; top: 17vh;
+  transform: rotate(-13deg);
+  animation: ssLiquidA 8.5s cubic-bezier(.45,0,.25,1) infinite alternate;
+}
+.ss-ribbon-b {
+  right: -15vw; bottom: 12vh;
+  width: 66vw; height: 24vh;
+  transform: rotate(16deg);
+  opacity: .72;
+  animation: ssLiquidB 10s cubic-bezier(.45,0,.25,1) -2.4s infinite alternate;
+}
+.ss-liquid-surface {
+  position: absolute; inset: 4.5%;
+  border-radius: 42px;
+  border: 1px solid rgba(255,255,255,.075);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.008) 42%, rgba(255,255,255,.028));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.13),
+    inset 0 0 90px rgba(255,255,255,.018),
+    0 20px 90px rgba(0,0,0,.12);
+  backdrop-filter: blur(7px) saturate(122%);
+  -webkit-backdrop-filter: blur(7px) saturate(122%);
+  pointer-events: none;
+}
+.ss-liquid-sheen {
+  position: absolute;
+  width: 46vw; height: 130vh;
+  left: 27vw; top: -15vh;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0) 30%,
+    rgba(255,255,255,.075) 49%,
+    rgba(255,255,255,.018) 55%,
+    transparent 72%);
+  filter: blur(16px);
+  transform: rotate(12deg) translateX(-72%);
+  animation: ssSheen 7.5s cubic-bezier(.45,0,.25,1) infinite;
+  pointer-events: none;
+}
 .ss-gradient-noise {
   position: absolute; inset: 0; opacity: .04;
   background-image: radial-gradient(rgba(251,249,241,.55) .6px, transparent .6px);
@@ -182,6 +250,23 @@ onBeforeUnmount(() => clearTimeout(timer))
 @keyframes ssOrbBrick { from { transform: translate3d(0,0,0) scale(.88); opacity:.10; } to { transform: translate3d(210px,130px,0) scale(1.18); opacity:.19; } }
 @keyframes ssOrbGold { from { transform: translate3d(0,0,0) scale(1.04); opacity:.10; } to { transform: translate3d(-165px,105px,0) scale(.86); opacity:.19; } }
 @keyframes ssOrbCyan { from { transform: translate3d(-40px,0,0) scale(.86); opacity:.08; } to { transform: translate3d(120px,-165px,0) scale(1.16); opacity:.17; } }
+@keyframes ssLiquidA {
+  from { transform: translate3d(-3vw,-2vh,0) rotate(-13deg) scale(.96); }
+  50% { transform: translate3d(8vw,4vh,0) rotate(-7deg) scale(1.05); }
+  to { transform: translate3d(15vw,-3vh,0) rotate(-2deg) scale(1.10); }
+}
+@keyframes ssLiquidB {
+  from { transform: translate3d(5vw,4vh,0) rotate(16deg) scale(.92); }
+  50% { transform: translate3d(-7vw,-2vh,0) rotate(10deg) scale(1.06); }
+  to { transform: translate3d(-16vw,3vh,0) rotate(5deg) scale(1.12); }
+}
+@keyframes ssSheen {
+  0% { transform: rotate(12deg) translateX(-72%); opacity: 0; }
+  14% { opacity: .25; }
+  52% { opacity: .72; }
+  86% { opacity: .18; }
+  100% { transform: rotate(12deg) translateX(72%); opacity: 0; }
+}
 @keyframes ssNoiseDrift { from { transform: translate3d(0,0,0); } to { transform: translate3d(12px,8px,0); } }
 @keyframes ssDraw { to { stroke-dashoffset: 0; } }
 @keyframes ssPop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.35); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
@@ -198,7 +283,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 @media (prefers-reduced-motion: reduce) {
   .ss-leave-leave-active { transition: opacity .15s linear; }
   .ss-leave-leave-to { transform: none; }
-  .ss-bg::after, .ss-gradient-orb, .ss-gradient-noise,
+  .ss-bg::after, .ss-gradient-orb, .ss-liquid-ribbon, .ss-liquid-surface, .ss-liquid-sheen, .ss-gradient-noise,
   .ss-ringA, .ss-ringB, .ss-core, .ss-dot, .ss-flow,
   .ss-wordmark, .ss-tagline, .ss-progress, .ss-skip { animation: none !important; }
   .ss-ring { stroke-dashoffset: 0; }

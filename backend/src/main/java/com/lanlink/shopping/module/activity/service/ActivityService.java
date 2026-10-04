@@ -6,6 +6,7 @@ import com.lanlink.shopping.module.activity.entity.Activity;
 import com.lanlink.shopping.module.activity.entity.ActivityParticipant;
 import com.lanlink.shopping.module.activity.mapper.ActivityMapper;
 import com.lanlink.shopping.module.activity.mapper.ActivityParticipantMapper;
+import com.lanlink.shopping.module.membership.service.MembershipService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,10 +23,13 @@ public class ActivityService {
 
     private final ActivityMapper activityMapper;
     private final ActivityParticipantMapper participantMapper;
+    private final MembershipService membershipService;
 
-    public ActivityService(ActivityMapper activityMapper, ActivityParticipantMapper participantMapper) {
+    public ActivityService(ActivityMapper activityMapper, ActivityParticipantMapper participantMapper,
+                           MembershipService membershipService) {
         this.activityMapper = activityMapper;
         this.participantMapper = participantMapper;
+        this.membershipService = membershipService;
     }
 
     /** 进行中的活动列表（含是否已参与标记） */
@@ -69,6 +73,8 @@ public class ActivityService {
         p.setBonusPoints(100); // 参与奖励 100 积分
         p.setJoinTime(LocalDateTime.now());
         participantMapper.insert(p);
+        membershipService.awardPoints(userId, p.getBonusPoints(), "activity:" + activityId,
+                "活动参与奖励：" + a.getTitle());
     }
 
     /** 我的参与记录 */
@@ -98,6 +104,8 @@ public class ActivityService {
                 p.setBonusPoints(100);
                 p.setJoinTime(now);
                 participantMapper.insert(p);
+                membershipService.awardPoints(userId, p.getBonusPoints(), "activity:" + a.getActivityId(),
+                        "消费活动奖励：" + a.getTitle());
             }
         }
     }

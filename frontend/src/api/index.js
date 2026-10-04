@@ -154,7 +154,8 @@ export const trafficApi = {
   sources: (days = 30) => request.get('/merchant/traffic/sources', { params: { days } }),
   conversion: (days = 30) => request.get('/merchant/traffic/conversion', { params: { days } }),
   diagnosis: (days = 30) => request.get('/merchant/traffic/diagnosis', { params: { days } }),
-  track: (event) => request.post('/merchant/traffic/events', event)
+  track: (event) => request.post('/merchant/traffic/events', event),
+  trackPage: (event) => { const key='ll_traffic_session'; let sid=sessionStorage.getItem(key); if(!sid){sid=crypto.randomUUID();sessionStorage.setItem(key,sid)} return request.post('/merchant/traffic/events',{...event,sessionId:sid,deviceType:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'pc',pageUrl:location.pathname}) }
 }
 
 // ===== 管理后台审计（/admin/**，AuthInterceptor 已限定 admin 角色） =====

@@ -29,11 +29,9 @@ function bootstrapLogged() {
 
 watch(() => user.logged, (v) => { if (v) bootstrapLogged() })
 onMounted(() => {
-  try {
-    showSplash.value = sessionStorage.getItem('ll-startup-seen') !== '1'
-  } catch (_) {
-    showSplash.value = true
-  }
+  // 首次进入及每次刷新均播放完整启动过渡。
+  // 启动动画自身控制约 5s 的节奏，完成后再进入工作台。
+  showSplash.value = true
   if (user.logged) bootstrapLogged()
 })
 </script>

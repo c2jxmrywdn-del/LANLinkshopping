@@ -14,7 +14,7 @@
     </a-layout-sider>
     <a-layout>
       <a-layout-header class="admin-header">
-        <span class="title"><span class="wordmark">LAN<span class="ll-link">Link</span>shopping</span> 管理后台</span>
+        <span class="title"><span class="ll-wordmark ll-wordmark-on-light"><span class="ll-lan">LAN</span><span class="ll-link">Link</span><span class="ll-shopping">shopping</span></span> 管理后台</span>
         <a-space>
           <span class="who">{{ user.user && user.user.nickname }}（平台运营）</span>
           <a-button size="small" @click="backFront">返回前台</a-button>

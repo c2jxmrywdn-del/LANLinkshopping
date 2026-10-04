@@ -27,6 +27,43 @@
   --ll-ring-gradient: linear-gradient(135deg, var(--ll-indigo) 0%, var(--ll-azure) 100%);
   --ll-spark-gradient: linear-gradient(90deg, var(--ll-amber) 0%, var(--ll-coral) 100%);
 
+  /* =====================================================
+     Brand System v1 · Hero / Glass / Logo / Motion
+     首页 Hero、About Hero、Splash 启动过渡统一读取这些 Token。
+     ===================================================== */
+  --ll-brand-base: #13233A;
+  --ll-brand-base-deep: #0B1220;
+  --ll-brand-surface: #1F3864;
+  --ll-brand-red: #9B2D20;
+  --ll-brand-gold: #C8A45C;
+  --ll-brand-blue: #1E6EB8;
+  --ll-brand-gold-soft: #F6D38A;
+  --ll-brand-hero-gradient: linear-gradient(125deg, var(--ll-brand-base) 0%, var(--ll-brand-surface) 58%, #233F5F 100%);
+  --ll-brand-ambient-gradient: conic-gradient(from 120deg at 50% 50%, rgba(155,45,32,.09), rgba(200,164,92,.12), rgba(30,110,184,.12), rgba(155,45,32,.09));
+  --ll-brand-glow-red: rgba(155,45,32,.24);
+  --ll-brand-glow-gold: rgba(200,164,92,.18);
+  --ll-brand-glow-blue: rgba(30,110,184,.18);
+
+  /* Liquid-glass material */
+  --ll-glass-bg: rgba(255,255,255,.055);
+  --ll-glass-bg-strong: rgba(255,255,255,.085);
+  --ll-glass-border: rgba(255,255,255,.18);
+  --ll-glass-highlight: rgba(255,255,255,.16);
+  --ll-glass-shadow: 0 24px 70px rgba(19,35,58,.18);
+  --ll-glass-blur: 18px;
+  --ll-glass-blur-soft: 10px;
+  --ll-glass-saturate: 135%;
+
+  /* Logo motion */
+  --ll-logo-reveal-duration: .7s;
+  --ll-logo-reveal-delay: 1.55s;
+  --ll-logo-ring-duration: 1s;
+  --ll-logo-core-delay: 1.15s;
+  --ll-logo-ease: cubic-bezier(.2,.8,.2,1);
+  --ll-brand-transition: .65s;
+  --ll-brand-sheen-duration: 7.5s;
+  --ll-brand-ambient-duration: 8.5s;
+
   /* 页面装饰 / 语义色 */
   --ll-white:  #ffffff;
   --ll-gray:   #4b5563;   /* 次要说明文字（浅色底对比度 ≥4.5:1） */

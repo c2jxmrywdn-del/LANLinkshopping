@@ -1,59 +1,10 @@
-<template>
-  <div class="ac-wrap">
-    <a-alert type="info" show-icon class="tip"
-             message="营销中台 · 活动中心"
-             description="参与活动可获得积分奖励；「消费有礼」类活动在订单支付后由系统自动参与。" />
-    <a-spin :spinning="loading">
-      <div v-if="acts.length" class="acts">
-        <a-card v-for="a in acts" :key="a.activityId" :bordered="false" class="act-card">
-          <div class="act-type">
-            <a-tag :color="a.type === 'register' ? 'blue' : 'gold'">{{ a.type === 'register' ? '注册有礼' : '消费有礼' }}</a-tag>
-          </div>
-          <div class="act-title">{{ a.title }}</div>
-          <div class="act-desc">{{ a.description }}</div>
-          <div class="act-actions">
-            <a-button v-if="a.joined" disabled>已参与</a-button>
-            <a-button v-else type="primary" :loading="joiningId === a.activityId" @click="join(a)">立即参与</a-button>
-          </div>
-        </a-card>
-      </div>
-      <a-empty v-else-if="!loading" description="暂无可参与的活动" />
-    </a-spin>
-  </div>
-</template>
-
-<script setup>
-import { ref, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
-import { activityApi } from '../api'
-
-const acts = ref([])
-const loading = ref(false)
-const joiningId = ref(null)
-
-async function join(a) {
-  joiningId.value = a.activityId
-  try {
-    await activityApi.join(a.activityId)
-    message.success('参与成功，奖励 100 积分', 3)
-    a.joined = true
-  } catch (e) { /* 拦截器已提示（如重复参与） */ }
-  finally { joiningId.value = null }
-}
-
-onMounted(async () => {
-  loading.value = true
-  try { acts.value = (await activityApi.list()) || [] } catch (e) { /* 拦截器已提示 */ }
-  finally { loading.value = false }
-})
-</script>
-
+<template><div class="sys">
+  <div class="hero"><div><div class="eyebrow">LANLINK ACTIVITY</div><h1>活动中心</h1><p>发现平台活动、领取奖励并追踪参与记录。</p></div><div class="actions"><a-button @click="$router.push('/activity/my')">我的活动</a-button><a-button @click="$router.push('/activity/rules')">活动规则</a-button></div></div>
+  <div class="grid"><a-card v-for="a in acts" :key="a.activityId" :bordered="false" class="act" @click="$router.push('/activity/'+a.activityId)"><div class="top"><a-tag color="gold">{{a.type==='register'?'注册有礼':'消费有礼'}}</a-tag><span>{{a.joined?'已参与':'进行中'}}</span></div><h2>{{a.title}}</h2><p>{{a.description}}</p><div class="foot"><span>奖励 +100 积分</span><a-button type="link" @click.stop="$router.push('/activity/'+a.activityId)">{{a.joined?'查看详情':'立即参与 →'}}</a-button></div></a-card></div>
+  <a-empty v-if="!acts.length&&!loading" description="暂无可参与活动"/><a-spin :spinning="loading"/>
+  <a-card :bordered="false" class="guide"><b>活动闭环</b><span>活动广场 → 活动详情 → 参与确认 → 积分流水</span><a-button type="link" @click="$router.push('/membership/points')">去看积分</a-button></a-card>
+</div></template>
+<script setup>import {ref,onMounted} from 'vue';import {activityApi} from '../api';const acts=ref([]),loading=ref(false);onMounted(async()=>{loading.value=true;try{acts.value=(await activityApi.list())||[]}catch(e){}finally{loading.value=false}})</script>
 <style scoped>
-.ac-wrap { max-width: 820px; }
-.tip { margin-bottom: 16px; }
-.acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
-.act-card { border-radius: 12px; }
-.act-title { font-size: 16px; font-weight: 700; margin: 6px 0; }
-.act-desc { font-size: 13px; color: var(--ll-gray, #4b5563); min-height: 40px; }
-.act-actions { margin-top: 12px; }
+.sys{max-width:1040px;margin:0 auto}.hero{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:20px}.eyebrow{font-size:11px;letter-spacing:.18em;color:var(--ll-primary)}h1{margin:5px 0;font-size:30px}.hero p{margin:0;color:var(--ll-muted)}.actions{display:flex;gap:8px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.act{border-radius:20px;cursor:pointer;transition:transform .2s,box-shadow .2s}.act:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(19,35,58,.08)}.top,.foot{display:flex;justify-content:space-between;align-items:center;gap:10px}.top span{font-size:12px;color:var(--ll-muted)}h2{margin:18px 0 7px}.act p{min-height:42px;color:var(--ll-muted);font-size:13px}.foot{border-top:1px solid #eee8de;margin-top:16px;padding-top:12px}.foot span{font-size:12px;color:#9b2d20}.guide{border-radius:18px;margin-top:16px;display:flex;align-items:center;gap:14px}.guide span{color:var(--ll-muted);flex:1}@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.hero{flex-direction:column}.grid{grid-template-columns:1fr}.guide{align-items:flex-start;flex-direction:column}}
 </style>

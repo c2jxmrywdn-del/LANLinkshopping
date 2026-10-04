@@ -36,6 +36,6 @@ onMounted(() => { if (user.logged) bootstrapLogged() })
 
 <style>
 * { box-sizing: border-box; }
-body { margin: 0; font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif; background: #f5f6f8; }
+body { margin: 0; font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif; background: #f5f6f8; overflow-x: hidden; }
 a { text-decoration: none; color: inherit; }
 </style>

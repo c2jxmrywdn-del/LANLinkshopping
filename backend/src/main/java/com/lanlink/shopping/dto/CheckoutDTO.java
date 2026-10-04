@@ -20,4 +20,6 @@ public class CheckoutDTO {
     private String remark;
     /** 支付方式 balance 余额 / corporate 对公转账 / term 账期 */
     private String payType = "corporate";
+    /** 本单使用的积分数（积分抵现，0 或 null 表示不使用；上限受单笔抵扣比例约束） */
+    private Integer usePoints;
 }

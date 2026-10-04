@@ -4,8 +4,10 @@ import com.lanlink.shopping.common.R;
 import com.lanlink.shopping.config.UserContext;
 import com.lanlink.shopping.dto.CheckoutDTO;
 import com.lanlink.shopping.entity.Order;
+import com.lanlink.shopping.integration.security.RequirePerm;
 import com.lanlink.shopping.service.OrderService;
 import com.lanlink.shopping.vo.OrderDetailVO;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +35,15 @@ public class OrderController {
     @GetMapping("/my")
     public R<List<Order>> my(HttpServletRequest request) {
         return R.ok(orderService.myOrders(UserContext.currentUserId(request)));
+    }
+
+    /** 管理端订单分页（交易管理，可按支付状态过滤，仅平台运营） */
+    @GetMapping("/admin/list")
+    @RequirePerm("admin:all")
+    public R<Page<Order>> adminList(@RequestParam(defaultValue = "1") long page,
+                                    @RequestParam(defaultValue = "10") long size,
+                                    @RequestParam(required = false) Integer payStatus) {
+        return R.ok(orderService.adminOrders(page, size, payStatus));
     }
 
     @GetMapping("/detail/{orderNo}")

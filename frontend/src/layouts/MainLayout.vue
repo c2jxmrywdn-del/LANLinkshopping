@@ -8,12 +8,16 @@
         </div>
         <div class="nav-shell" ref="navShell">
           <a-menu v-model:selectedKeys="selectedKeys" mode="horizontal" class="nav" theme="dark"
-               @click="onNav">
+               :ellipsis="false" @click="onNav">
           <a-menu-item key="home">首页</a-menu-item>
           <a-menu-item key="mall">商城</a-menu-item>
           <a-menu-item v-if="user.hasPerm('order:view')" key="orders">我的订单</a-menu-item>
-          <a-menu-item v-if="user.logged" key="merchant">商户入驻</a-menu-item>
+          <!-- 商户模块：管理员直达后台「商户管理」；未入驻用户显示「商户入驻」；已入驻商户原位替换为流量管理 -->
+          <a-menu-item v-if="user.isAdmin" key="admin/merchants">商户管理</a-menu-item>
+          <a-menu-item v-else-if="user.logged && !user.isMerchant" key="merchant">商户入驻</a-menu-item>
+          <a-menu-item v-if="user.hasPerm('merchant:manage')" key="merchant/traffic">流量管理</a-menu-item>
           <a-menu-item v-if="user.hasPerm('product:publish')" key="merchant/products">我的商品</a-menu-item>
+          <a-menu-item key="about">关于我们</a-menu-item>
         </a-menu>
           <span class="nav-indicator" :style="indicatorStyle" aria-hidden="true"></span>
         </div>
@@ -38,6 +42,7 @@
                     <div class="id-scope">当前身份：<b>{{ user.identityName }}</b><br/>{{ user.identityScope }}</div>
                   </a-menu-item>
                   <a-menu-divider />
+                  <a-menu-item @click="$router.push('/wallet')">💰 我的钱包</a-menu-item>
                   <a-menu-item @click="$router.push('/activity')">🎯 活动中心</a-menu-item>
                   <a-menu-item @click="$router.push('/membership')">💎 会员中心</a-menu-item>
                   <a-menu-item @click="$router.push('/me')">个人中心</a-menu-item>
@@ -81,7 +86,9 @@ const NAV_PATHS = [
   { key: 'mall', match: (p) => p === '/mall' || p.startsWith('/product') },
   { key: 'orders', match: (p) => p.startsWith('/orders') },
   { key: 'merchant/products', match: (p) => p.startsWith('/merchant/products') },
+  { key: 'merchant/traffic', match: (p) => p.startsWith('/merchant/traffic') },
   { key: 'merchant', match: (p) => p === '/merchant' },
+  { key: 'about', match: (p) => p === '/about' },
 ]
 const selectedKeys = computed(() => {
   const hit = NAV_PATHS.find((n) => n.match(route.path))
@@ -185,6 +192,12 @@ function secretTap() {
   .header-inner { gap: 8px; }
 }
 @media (max-width: 767px) {
+  /* 移动端：头部两行布局——品牌+操作区在上，导航独占一行可横向滑动（防 flex 压缩塌缩为 0） */
+  .header { height: auto; }
+  .header-inner { flex-wrap: wrap; height: auto; padding: 6px 12px; }
+  .nav-shell { flex-basis: 100%; order: 3; overflow-x: auto; scrollbar-width: none; }
+  .nav-shell::-webkit-scrollbar { display: none; }
+  .nav { white-space: nowrap; }
   .logo { margin-right: 10px; }
   .logo-text { display: none; }
   .header :deep(.ant-menu-horizontal .ant-menu-item) { font-size: 14px; padding-inline: 12px; }

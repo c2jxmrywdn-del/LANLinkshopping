@@ -69,6 +69,9 @@ public class MerchantService {
         m.setJoinType(dto.getJoinType());
         m.setLicenseUrl(dto.getLicenseUrl());
         if (dto.getTaxProofUrls() != null && !dto.getTaxProofUrls().isEmpty()) {
+            if (dto.getTaxProofUrls().size() > 3) {
+                throw new BusinessException("纳税记录最多上传 3 份");
+            }
             m.setTaxProofUrls(String.join(",", dto.getTaxProofUrls()));
         }
         if (StringUtils.hasText(dto.getTaxRegNo())) {
@@ -204,16 +207,46 @@ public class MerchantService {
                 .orderByDesc(Merchant::getCreateTime));
     }
 
-    /** 运营端: 人工审核(通过/驳回) */
+    /**
+     * 运营端: 商户详情（资料维护/资质核验视图）。
+     * 聚合商户档案、企业工商信息、已具备资质清单，并计算资质材料完整度。
+     */
+    public java.util.Map<String, Object> adminDetail(Long merId) {
+        Merchant m = merchantMapper.selectById(merId);
+        if (m == null) throw new BusinessException("商户不存在");
+        Enterprise ent = m.getEntId() == null ? null : enterpriseMapper.selectById(m.getEntId());
+        java.util.List<Qualification> quals = qualificationMapper.selectList(
+                Wrappers.<Qualification>lambdaQuery().eq(Qualification::getMerId, merId));
+        int taxProofCount = StringUtils.hasText(m.getTaxProofUrls()) ? m.getTaxProofUrls().split(",").length : 0;
+        java.util.Map<String, Object> readiness = new java.util.LinkedHashMap<>();
+        readiness.put("hasLicense", StringUtils.hasText(m.getLicenseUrl()));
+        readiness.put("taxProofCount", taxProofCount);
+        readiness.put("hasTaxRegNo", StringUtils.hasText(m.getTaxRegNo()));
+        readiness.put("qualificationCount", quals.size());
+        java.util.Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("merchant", m);
+        out.put("enterprise", ent);
+        out.put("qualifications", quals);
+        out.put("certReadiness", readiness);
+        return out;
+    }
+
+    /** 运营端: 人工审核(通过/驳回)。驳回必须给出原因（供商户整改与流程跟踪） */
     public Merchant review(Long merId, Integer reviewStatus, String reason) {
         Merchant m = merchantMapper.selectById(merId);
         if (m == null) throw new BusinessException("商户不存在");
+        if (reviewStatus == null || reviewStatus < 1 || reviewStatus > 2) {
+            throw new BusinessException("审核状态不合法");
+        }
+        if (reviewStatus == 2 && !StringUtils.hasText(reason)) {
+            throw new BusinessException("驳回时必须填写原因");
+        }
         m.setReviewStatus(reviewStatus);
-        m.setRejectReason(reason);
+        m.setRejectReason(reviewStatus == 2 ? reason.trim() : null);
         m.setUpdateTime(LocalDateTime.now());
         merchantMapper.updateById(m);
         // 审核通过 → 商户身份生效（身份实时计算，下次请求自动切换为 merchant）
-        if (reviewStatus != null && reviewStatus == 1 && m.getUserId() != null) {
+        if (reviewStatus == 1 && m.getUserId() != null) {
             auditService.record(m.getUserId(), "IDENTITY_CHANGE", "身份升级: buyer -> merchant（商户审核通过）", null);
         }
         return m;

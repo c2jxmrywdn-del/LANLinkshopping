@@ -42,7 +42,29 @@ export const orderApi = {
   my: () => request.get('/order/my'),
   detail: (orderNo) => request.get(`/order/detail/${orderNo}`),
   pay: (orderNo) => request.post(`/order/pay/${orderNo}`),
-  cancel: (orderNo) => request.post(`/order/cancel/${orderNo}`)
+  cancel: (orderNo) => request.post(`/order/cancel/${orderNo}`),
+  // 管理后台：订单分页（交易管理，可按支付状态过滤）
+  adminList: (params) => request.get('/order/admin/list', { params })
+}
+
+// ===== 支付系统（多渠道：wallet 钱包 / mock 模拟 / wechat / alipay） =====
+export const paymentApi = {
+  // 发起支付：{ orderNo, channel } → wallet 同步完成；mock 返回模拟令牌；wechat 返回 codeUrl；alipay 返回 form
+  create: (orderNo, channel) => request.post('/payment/create', { orderNo, channel }),
+  // mock 模式下"模拟支付成功"
+  mockConfirm: (orderNo) => request.post('/payment/mock-confirm', null, { params: { orderNo } }),
+  // 支付状态查询（未支付时对真实渠道主动对账）
+  query: (orderNo) => request.get(`/payment/query/${orderNo}`),
+  // 我的交易记录
+  my: () => request.get('/payment/my'),
+  // 发起退款（仅平台运营）
+  refund: (orderNo, amount, reason) => request.post('/payment/refund', { orderNo, amount, reason })
+}
+
+// ===== 钱包 =====
+export const walletApi = {
+  my: () => request.get('/wallet/my'),
+  recharge: (amount, remark) => request.post('/wallet/recharge', { amount, remark })
 }
 
 // ===== 账号中心（/user/**，非 GET 请求自动携带 CSRF 令牌，见 request.js） =====
@@ -97,6 +119,16 @@ export const userApi = {
 export const merchantApi = {
   apply: (d) => request.post('/merchant/apply', d),
   my: () => request.get('/merchant/my'),
+  // 入驻申请材料上传（申请阶段，仅需登录）：kind=license 工商执照(JPG/PNG) | taxProof 纳税记录(JPG/PNG/PDF)，≤10MB
+  applyUpload: (kind, file, onProgress) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return request.post('/merchant/apply-upload', fd, {
+      params: { kind },
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => { if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100)) }
+    })
+  },
   // 营业执照上传（JPG/PNG，返回 { url }）
   uploadLicense: (formData) => request.post('/merchant/license', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
@@ -109,7 +141,16 @@ export const merchantApi = {
   taxQuery: (taxRegNo) => request.get('/merchant/tax-query', { params: { taxRegNo } }),
   // 管理后台专用
   adminList: (reviewStatus) => request.get('/merchant/admin/list', { params: { reviewStatus } }),
+  adminDetail: (merId) => request.get(`/merchant/admin/detail/${merId}`),
   adminReview: (merId, reviewStatus, reason) => request.post(`/merchant/admin/review/${merId}`, null, { params: { reviewStatus, reason } })
+}
+
+// ===== 商户端：流量管理（经营数据统计） =====
+export const trafficApi = {
+  overview: () => request.get('/merchant/traffic/overview'),
+  trend: (days = 30) => request.get('/merchant/traffic/trend', { params: { days } }),
+  channels: (days = 30) => request.get('/merchant/traffic/channels', { params: { days } }),
+  products: () => request.get('/merchant/traffic/products')
 }
 
 // ===== 管理后台审计（/admin/**，AuthInterceptor 已限定 admin 角色） =====
@@ -130,5 +171,7 @@ export const promotionApi = {
 }
 
 export const membershipApi = {
-  my: () => request.get('/membership/my')
+  my: () => request.get('/membership/my'),
+  // 积分抵现试算：返回 { points 实际抵扣积分, amount 抵扣金额, maxAmount 本单上限, balance 积分余额 }
+  redeemQuote: (points, orderAmount) => request.get('/membership/redeem-quote', { params: { points, orderAmount } })
 }

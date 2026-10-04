@@ -196,6 +196,13 @@ CREATE TABLE IF NOT EXISTS t_order (
   remark       VARCHAR(255) COMMENT '备注',
   create_time  DATETIME DEFAULT CURRENT_TIMESTAMP,
   pay_time     DATETIME,
+  pay_channel  VARCHAR(16) COMMENT '支付渠道 wechat/alipay/mock',
+  transaction_id VARCHAR(64) COMMENT '第三方渠道交易号',
+  prepay_id    VARCHAR(64) COMMENT '微信预下单号',
+  refund_status VARCHAR(16) DEFAULT 'none' COMMENT '退款状态 none/processing/success',
+  refund_id    VARCHAR(64) COMMENT '渠道退款单号',
+  refund_amount DECIMAL(14,2) COMMENT '已退金额',
+  refund_time  DATETIME COMMENT '退款完成时间',
   update_time  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB COMMENT='订单';
 
@@ -315,3 +322,63 @@ INSERT IGNORE INTO t_category (cat_id, parent_id, ind_id, name, level, sort) VAL
 -- 本脚本到此结束。用户/企业/商户/商品等示例数据由 DataInitializer 在启动时以 BCrypt 写入,
 -- 且只在 t_user 为空时执行一次, 所以重启后端不会重复插入, 也不会覆盖你改过的数据。
 -- 执行后的自检 SQL 与预期结果写在 README 第二节 初始化数据库 小节。
+
+-- ==================== 支付流水日志表 ====================
+CREATE TABLE IF NOT EXISTS t_payment_log (
+  id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+  order_no    VARCHAR(40) COMMENT '订单号',
+  channel     VARCHAR(16) COMMENT 'wechat/alipay/mock/wallet',
+  action      VARCHAR(16) COMMENT 'CREATE/NOTIFY/QUERY/REFUND/VERIFY_FAIL/ERROR',
+  direction   VARCHAR(8)  COMMENT 'OUT 请求渠道 / IN 渠道回调',
+  success     TINYINT DEFAULT 0 COMMENT '0失败 1成功',
+  detail      VARCHAR(2000) COMMENT '脱敏后的关键信息',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_order (order_no),
+  KEY idx_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='支付流水日志';
+
+-- 幂等补列：历史库中已存在的 t_order 缺少支付渠道/退款字段时逐一补齐
+-- （CREATE TABLE IF NOT EXISTS 不会为已存在的表加列，与上方 total_amount 兜底同理）
+SET @paycol = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_order ADD COLUMN pay_channel VARCHAR(16) COMMENT ''支付渠道 wechat/alipay/mock/wallet''', 'SELECT 1')
+  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_order' AND COLUMN_NAME='pay_channel');
+PREPARE pay_stmt FROM @paycol; EXECUTE pay_stmt; DEALLOCATE PREPARE pay_stmt;
+SET @paycol = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_order ADD COLUMN transaction_id VARCHAR(64) COMMENT ''渠道交易号''', 'SELECT 1')
+  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_order' AND COLUMN_NAME='transaction_id');
+PREPARE pay_stmt FROM @paycol; EXECUTE pay_stmt; DEALLOCATE PREPARE pay_stmt;
+SET @paycol = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_order ADD COLUMN prepay_id VARCHAR(64) COMMENT ''预下单号''', 'SELECT 1')
+  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_order' AND COLUMN_NAME='prepay_id');
+PREPARE pay_stmt FROM @paycol; EXECUTE pay_stmt; DEALLOCATE PREPARE pay_stmt;
+SET @paycol = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_order ADD COLUMN refund_status VARCHAR(16) DEFAULT ''none'' COMMENT ''退款状态 none/processing/success''', 'SELECT 1')
+  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_order' AND COLUMN_NAME='refund_status');
+PREPARE pay_stmt FROM @paycol; EXECUTE pay_stmt; DEALLOCATE PREPARE pay_stmt;
+SET @paycol = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_order ADD COLUMN refund_id VARCHAR(64) COMMENT ''渠道退款单号''', 'SELECT 1')
+  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_order' AND COLUMN_NAME='refund_id');
+PREPARE pay_stmt FROM @paycol; EXECUTE pay_stmt; DEALLOCATE PREPARE pay_stmt;
+SET @paycol = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_order ADD COLUMN refund_amount DECIMAL(14,2) COMMENT ''已退金额''', 'SELECT 1')
+  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_order' AND COLUMN_NAME='refund_amount');
+PREPARE pay_stmt FROM @paycol; EXECUTE pay_stmt; DEALLOCATE PREPARE pay_stmt;
+SET @paycol = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_order ADD COLUMN refund_time DATETIME COMMENT ''退款完成时间''', 'SELECT 1')
+  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_order' AND COLUMN_NAME='refund_time');
+PREPARE pay_stmt FROM @paycol; EXECUTE pay_stmt; DEALLOCATE PREPARE pay_stmt;
+
+-- ==================== 钱包（支付系统） ====================
+CREATE TABLE IF NOT EXISTS t_wallet (
+  id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id     BIGINT NOT NULL COMMENT '所属用户',
+  balance     DECIMAL(14,2) NOT NULL DEFAULT 0.00 COMMENT '余额(元)',
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_wallet_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户钱包';
+
+CREATE TABLE IF NOT EXISTS t_wallet_log (
+  id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id       BIGINT NOT NULL COMMENT '所属用户',
+  change_type   VARCHAR(16) NOT NULL COMMENT 'recharge充值/pay消费/refund退款入账',
+  amount        DECIMAL(14,2) NOT NULL COMMENT '变动金额(带符号, 消费为负)',
+  balance_after DECIMAL(14,2) NOT NULL COMMENT '变动后余额',
+  ref_order_no  VARCHAR(40) COMMENT '关联订单号',
+  remark        VARCHAR(255) COMMENT '备注',
+  create_time   DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_wallet_user (user_id),
+  KEY idx_wallet_order (ref_order_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='钱包流水';

@@ -28,9 +28,12 @@
         <a-form-item label="支付方式">
           <a-radio-group v-model:value="form.payType">
             <a-radio value="corporate">对公转账</a-radio>
-            <a-radio value="balance">企业钱包</a-radio>
+            <a-radio value="balance">企业钱包<span v-if="walletLoaded" class="wallet-tip">（余额 ¥{{ walletBalance.toFixed(2) }}<template v-if="walletInsufficient">，不足</template>）</span></a-radio>
             <a-radio value="term">账期/尾款</a-radio>
           </a-radio-group>
+          <div v-if="form.payType === 'balance' && walletInsufficient" class="wallet-warn">
+            钱包余额不足，可在支付前前往 <a @click="$router.push('/wallet')">我的钱包</a> 充值。
+          </div>
         </a-form-item>
         <a-form-item label="备注"><a-input v-model:value="form.remark" /></a-form-item>
         <a-button type="primary" html-type="submit" size="large" block :loading="loading">提交订单</a-button>
@@ -41,20 +44,45 @@
         <span>{{ i.title }} × {{ i.quantity }}</span><span>¥{{ i.subtotal }}</span>
       </div>
       <a-divider />
-      <div class="row total"><span>应付合计</span><b>¥{{ cart.total }}</b></div>
+      <!-- 积分抵现（会员系统）：余额实时试算，合计联动 -->
+      <div class="points-box" v-if="pointsLoaded">
+        <div class="points-head">
+          <a-checkbox v-model:checked="usePoints">积分抵现</a-checkbox>
+          <span class="points-balance">可用 <b>{{ memberPoints }}</b> 积分</span>
+        </div>
+        <template v-if="usePoints">
+          <div class="points-input" v-if="memberPoints > 0">
+            <a-input-number v-model:value="pointsInput" :min="0" :max="memberPoints"
+                            :step="100" :precision="0" style="width: 100%"
+                            placeholder="输入使用的积分数" />
+            <a-button size="small" @click="useAllPoints">全部</a-button>
+          </div>
+          <div class="points-hint">
+            {{ pointsHint }}
+            <span v-if="user.isVip" class="points-vip">VIP 消费享 ×{{ rule.vipEarnMultiplier }} 积分</span>
+          </div>
+        </template>
+        <div class="points-hint" v-else>{{ rule.redeemPointsPerYuan }} 积分抵 1 元，单笔最多抵应付金额的 {{ rule.redeemMaxPercent }}%</div>
+      </div>
+      <div class="row points-deduct" v-if="redeemAmount > 0">
+        <span>积分抵扣（{{ quotePoints }} 积分）</span><b class="deduct">-¥{{ redeemAmount }}</b>
+      </div>
+      <div class="row total"><span>应付合计</span><b>¥{{ payableTotal }}</b></div>
     </a-card>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
-import { orderApi, userApi } from '../api'
+import { orderApi, userApi, membershipApi, walletApi } from '../api'
 import { useCartStore } from '../store/cart'
+import { useUserStore } from '../store/user'
 
 const router = useRouter()
 const cart = useCartStore()
+const user = useUserStore()
 const loading = ref(false)
 const form = reactive({ receiver: '', phone: '', address: '', remark: '', payType: 'corporate' })
 
@@ -62,6 +90,59 @@ const form = reactive({ receiver: '', phone: '', address: '', remark: '', payTyp
 const addrList = ref([])
 const addrLoaded = ref(false)
 const selectedAddrId = ref(null)
+
+// ===== 积分抵现（会员系统）：余额加载 + 防抖试算 + 合计联动 =====
+const pointsLoaded = ref(false)
+const memberPoints = ref(0)
+const rule = ref({ pointsPerYuanEarn: 1, redeemPointsPerYuan: 100, redeemMaxPercent: 10, vipEarnMultiplier: 2 })
+const usePoints = ref(false)
+const pointsInput = ref(null)
+const quotePoints = ref(0)   // 试算返回的实际抵扣积分
+const redeemAmount = ref(0)  // 试算返回的抵扣金额（元）
+let quoteTimer = null
+
+// 应付合计 = 商品金额 - 积分抵扣（促销/会员折扣以后端结算为准）
+const payableTotal = computed(() => Math.max(0, cart.total - redeemAmount.value).toFixed(2))
+
+const pointsHint = computed(() => {
+  const per = rule.value.redeemPointsPerYuan
+  if (redeemAmount.value > 0) {
+    return `本单可抵 ¥${redeemAmount.value}（${per} 积分 = 1 元，单笔上限 ${rule.value.redeemMaxPercent}%）`
+  }
+  return `${per} 积分 = 1 元，单笔最多抵应付金额的 ${rule.value.redeemMaxPercent}%`
+})
+
+function useAllPoints() {
+  if (memberPoints.value > 0) pointsInput.value = memberPoints.value
+}
+
+// 输入变化后 400ms 防抖试算，避免频繁请求
+watch([pointsInput, usePoints], () => {
+  clearTimeout(quoteTimer)
+  if (!usePoints.value || !pointsInput.value || pointsInput.value <= 0) {
+    quotePoints.value = 0
+    redeemAmount.value = 0
+    return
+  }
+  quoteTimer = setTimeout(runQuote, 400)
+})
+
+async function runQuote() {
+  if (!cart.total || !pointsInput.value) return
+  try {
+    const q = await membershipApi.redeemQuote(pointsInput.value, cart.total)
+    quotePoints.value = q?.points || 0
+    redeemAmount.value = Number(q?.amount) || 0
+  } catch (e) {
+    quotePoints.value = 0
+    redeemAmount.value = 0
+  }
+}
+
+// ===== 企业钱包余额展示（payType=balance 时联动提示） =====
+const walletLoaded = ref(false)
+const walletBalance = ref(0)
+const walletInsufficient = computed(() => walletBalance.value < (cart.total - redeemAmount.value))
 
 onMounted(async () => {
   try {
@@ -73,6 +154,19 @@ onMounted(async () => {
   }
   const def = addrList.value.find(a => a.isDefault === 1) || addrList.value[0]
   if (def) applyAddr(def)
+  // 加载会员积分余额与规则（失败不阻塞结算流程）
+  try {
+    const m = await membershipApi.my()
+    memberPoints.value = m?.card?.points || 0
+    if (m?.rule) rule.value = m.rule
+  } catch (e) { /* 未登录或接口异常时隐藏积分区块 */ }
+  finally { pointsLoaded.value = true }
+  // 加载钱包余额（企业钱包支付提示）
+  try {
+    const w = await walletApi.my()
+    walletBalance.value = Number(w?.balance || 0)
+  } catch (e) { walletBalance.value = 0 }
+  finally { walletLoaded.value = true }
 })
 
 function applyAddr(a) {
@@ -97,7 +191,9 @@ async function submit() {
     const order = await orderApi.checkout({
       cartIds: cart.checkedItems.map(i => i.cartId),
       receiver: form.receiver, phone: form.phone, address: form.address,
-      remark: form.remark, payType: form.payType
+      remark: form.remark, payType: form.payType,
+      // 积分抵现：勾选且输入有效时携带（后端按实际应付金额同口径校验）
+      usePoints: usePoints.value && pointsInput.value > 0 ? pointsInput.value : null
     })
     await cart.load()
     Modal.confirm({
@@ -132,4 +228,20 @@ async function submit() {
 .addr-dtag { margin-left: auto; margin-right: 0; }
 .addr-line { font-size: 13px; color: var(--ll-gray, #4b5563); }
 .addr-empty { margin-bottom: 16px; }
+/* 积分抵现 */
+.points-box { background: rgba(30, 110, 184, .04); border: 1px dashed rgba(30, 110, 184, .25);
+              border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+.points-head { display: flex; justify-content: space-between; align-items: center; }
+.points-balance { font-size: 12px; color: var(--ll-muted, #64748b); }
+.points-balance b { color: var(--ll-primary, #1e6eb8); }
+.points-input { display: flex; gap: 8px; margin-top: 8px; }
+.points-hint { font-size: 12px; color: var(--ll-muted, #64748b); margin-top: 6px; line-height: 1.6; }
+.points-vip { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 8px;
+              background: rgba(180, 83, 9, .1); color: #b45309; font-weight: 600; }
+.points-deduct { color: var(--ll-gray, #4b5563); font-size: 13px; }
+.points-deduct .deduct { color: #10b981; font-size: 15px; }
+/* 企业钱包余额提示 */
+.wallet-tip { font-size: 12px; color: var(--ll-muted, #64748b); }
+.wallet-warn { margin-top: 6px; font-size: 12px; color: #b45309; }
+.wallet-warn a { color: var(--ll-primary, #1e6eb8); cursor: pointer; }
 </style>

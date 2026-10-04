@@ -65,7 +65,10 @@ public class AuthInterceptor implements HandlerInterceptor {
                 || uri.startsWith("/category/")
                 // 商品仅公开浏览(分页/详情)；发布/图片上传/我的列表/审核均需登录
                 || uri.equals("/product/page")
-                || uri.startsWith("/product/detail/");
+                || uri.startsWith("/product/detail/")
+                // 支付渠道异步通知与同步回跳：无登录态，公开放行（内部已做签名校验）
+                || uri.startsWith("/payment/notify/")
+                || uri.equals("/payment/alipay/return");
     }
 
     private void write(HttpServletResponse response, R<?> body) throws Exception {

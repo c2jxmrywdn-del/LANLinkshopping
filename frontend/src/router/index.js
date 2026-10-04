@@ -20,10 +20,13 @@ const routes = [
     { path: 'cart', name: 'cart', component: () => import('../views/Cart.vue'), meta: { auth: true, perms: ['cart:manage'] } },
     { path: 'checkout', name: 'checkout', component: () => import('../views/Checkout.vue'), meta: { auth: true, perms: ['order:create'] } },
     { path: 'orders', name: 'orders', component: () => import('../views/MyOrders.vue'), meta: { auth: true, perms: ['order:view'] } },
+    { path: 'wallet', name: 'wallet', component: () => import('../views/Wallet.vue'), meta: { auth: true } },
     { path: 'merchant', name: 'merchant', component: () => import('../views/MerchantApply.vue'), meta: { auth: true } },
     { path: 'merchant/products', name: 'merchant-products', component: () => import('../views/MerchantProducts.vue'), meta: { auth: true, perms: ['product:publish'] } },
+    { path: 'merchant/traffic', name: 'merchant-traffic', component: () => import('../views/MerchantTraffic.vue'), meta: { auth: true, perms: ['merchant:manage'] } },
     { path: 'activity', name: 'activity', component: () => import('../views/ActivityCenter.vue'), meta: { auth: true } },
     { path: 'membership', name: 'membership', component: () => import('../views/MembershipCenter.vue'), meta: { auth: true } },
+    { path: 'about', name: 'about', component: () => import('../views/AboutUs.vue') },
     { path: 'me', name: 'me', component: () => import('../views/Me.vue'), meta: { auth: true, perms: ['profile:manage'] } }
   ]},
   { path: '/login', name: 'login', component: () => import('../views/Login.vue') },
@@ -35,6 +38,7 @@ const routes = [
     { path: 'dashboard', name: 'admin-dash', component: () => import('../views/admin/AdminDashboard.vue') },
     { path: 'merchants', name: 'admin-merchants', component: () => import('../views/admin/MerchantReview.vue') },
     { path: 'products', name: 'admin-products', component: () => import('../views/admin/AdminProducts.vue') },
+    { path: 'payments', name: 'admin-payments', component: () => import('../views/admin/AdminPayments.vue') },
     { path: 'audit', name: 'admin-audit', component: () => import('../views/admin/AdminAuditLog.vue') }
   ]}
 ]

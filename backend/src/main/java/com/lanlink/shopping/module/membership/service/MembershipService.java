@@ -12,10 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import com.lanlink.shopping.module.membership.constant.MemberRule;
 
 /**
  * 会员系统服务（营销中台·独立模块）。
@@ -56,12 +58,12 @@ public class MembershipService {
         return card;
     }
 
-    /** 累计成长值 + 积分（订单支付后调用；幂等由业务方保证） */
+    /** 累计成长值 + 积分（订单支付后调用；幂等由业务方保证）。multiplier 为积分倍数（VIP=2，普通=1）。 */
     @Transactional
-    public void earnGrowth(Long userId, BigDecimal orderAmount, String orderNo) {
+    public void earnGrowth(Long userId, BigDecimal orderAmount, String orderNo, int multiplier) {
         MemberCard card = getOrCreateCard(userId);
         int growth = orderAmount == null ? 0 : orderAmount.intValue();
-        int points = orderAmount == null ? 0 : orderAmount.intValue();
+        int points = orderAmount == null ? 0 : orderAmount.intValue() * Math.max(1, multiplier);
         card.setGrowth(card.getGrowth() == null ? 0 : card.getGrowth() + growth);
         card.setPoints(card.getPoints() == null ? 0 : card.getPoints() + points);
         card.setLevelId(levelForGrowth(card.getGrowth()));
@@ -73,9 +75,142 @@ public class MembershipService {
         log.setChangeType("earn_consume");
         log.setChangeVal(points);
         log.setRefOrderNo(orderNo);
-        log.setRemark("订单消费获得积分");
+        log.setRemark(multiplier > 1 ? "订单消费获得积分（VIP双倍）" : "订单消费获得积分");
         log.setCreateTime(LocalDateTime.now());
         pointLogMapper.insert(log);
+    }
+
+    // ===== 积分抵现（参考 mall/litemall 下单积分抵扣设计） =====
+
+    /**
+     * 抵现试算：计算指定积分数在给定订单金额下实际可抵扣的积分与金额。
+     * 约束：不超过积分余额；不超过单笔上限（应付金额的 REDEEM_MAX_PERCENT%）。
+     * @return {points: 实际抵扣积分, amount: 抵扣金额, maxAmount: 本单可抵上限金额, balance: 当前积分余额}
+     */
+    public Map<String, Object> redeemQuote(Long userId, Integer points, BigDecimal orderAmount) {
+        MemberCard card = getOrCreateCard(userId);
+        int balance = card.getPoints() == null ? 0 : card.getPoints();
+        BigDecimal maxAmount = orderAmount == null ? BigDecimal.ZERO
+                : orderAmount.multiply(BigDecimal.valueOf(MemberRule.REDEEM_MAX_PERCENT))
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.DOWN);
+        int want = points == null ? 0 : Math.min(points, balance);
+        BigDecimal amount = MemberRule.pointsToAmount(want);
+        // 超过本单上限：按上限金额反算可用积分
+        if (amount.compareTo(maxAmount) > 0) {
+            amount = maxAmount;
+            want = amount.multiply(BigDecimal.valueOf(MemberRule.REDEEM_POINTS_PER_YUAN)).intValue();
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("points", Math.max(0, want));
+        out.put("amount", amount);
+        out.put("maxAmount", maxAmount);
+        out.put("balance", balance);
+        return out;
+    }
+
+    /**
+     * 下单抵现：扣减积分并写 redeem_order 流水。
+     * 由 OrderService 在结算事务内调用；抵扣积分经 redeemQuote 同口径校验。
+     * @return 实际抵扣金额（元）
+     */
+    @Transactional
+    public BigDecimal redeemPoints(Long userId, int points, BigDecimal orderAmount, String orderNo) {
+        if (points <= 0) return BigDecimal.ZERO;
+        Map<String, Object> q = redeemQuote(userId, points, orderAmount);
+        int actual = ((Number) q.get("points")).intValue();
+        BigDecimal amount = (BigDecimal) q.get("amount");
+        if (actual <= 0 || amount.signum() <= 0) {
+            throw new BusinessException("积分不足以抵现，或超出本单抵扣上限");
+        }
+        MemberCard card = getOrCreateCard(userId);
+        card.setPoints(Math.max(0, (card.getPoints() == null ? 0 : card.getPoints()) - actual));
+        card.setUpdateTime(LocalDateTime.now());
+        cardMapper.updateById(card);
+
+        MemberPointLog log = new MemberPointLog();
+        log.setUserId(userId);
+        log.setChangeType(MemberRule.CHANGE_REDEEM);
+        log.setChangeVal(-actual);
+        log.setRefOrderNo(orderNo);
+        log.setRemark("下单积分抵现 -" + amount + " 元");
+        log.setCreateTime(LocalDateTime.now());
+        pointLogMapper.insert(log);
+        return amount;
+    }
+
+    /**
+     * 取消返还：订单取消时按 redeem_order 流水返还积分（幂等：已有 refund 流水则跳过）。
+     * @return 返还积分数（无抵现记录返回 0）
+     */
+    @Transactional
+    public int refundPoints(Long userId, String orderNo) {
+        List<MemberPointLog> redeems = pointLogMapper.selectList(Wrappers.<MemberPointLog>lambdaQuery()
+                .eq(MemberPointLog::getUserId, userId)
+                .eq(MemberPointLog::getRefOrderNo, orderNo)
+                .eq(MemberPointLog::getChangeType, MemberRule.CHANGE_REDEEM));
+        if (redeems.isEmpty()) return 0;
+        // 幂等：该订单已返还过则跳过
+        Long refunded = pointLogMapper.selectCount(Wrappers.<MemberPointLog>lambdaQuery()
+                .eq(MemberPointLog::getUserId, userId)
+                .eq(MemberPointLog::getRefOrderNo, orderNo)
+                .eq(MemberPointLog::getChangeType, MemberRule.CHANGE_REFUND));
+        if (refunded != null && refunded > 0) return 0;
+
+        int points = redeems.stream().mapToInt(l -> Math.abs(l.getChangeVal() == null ? 0 : l.getChangeVal())).sum();
+        MemberCard card = getOrCreateCard(userId);
+        card.setPoints((card.getPoints() == null ? 0 : card.getPoints()) + points);
+        card.setUpdateTime(LocalDateTime.now());
+        cardMapper.updateById(card);
+
+        MemberPointLog log = new MemberPointLog();
+        log.setUserId(userId);
+        log.setChangeType(MemberRule.CHANGE_REFUND);
+        log.setChangeVal(points);
+        log.setRefOrderNo(orderNo);
+        log.setRemark("订单取消，积分返还");
+        log.setCreateTime(LocalDateTime.now());
+        pointLogMapper.insert(log);
+        return points;
+    }
+
+    /**
+     * 退款扣回：全额退款时扣回该订单支付所得积分（幂等：已有 earn_reversal 流水则跳过）。
+     * 与 refundPoints（返还抵现积分）方向相反，全额退款时两者都会执行，保证积分账目与订单状态一致。
+     * @return 扣回积分数（无所得记录返回 0）
+     */
+    @Transactional
+    public int reverseEarn(Long userId, String orderNo) {
+        List<MemberPointLog> earns = pointLogMapper.selectList(Wrappers.<MemberPointLog>lambdaQuery()
+                .eq(MemberPointLog::getUserId, userId)
+                .eq(MemberPointLog::getRefOrderNo, orderNo)
+                .eq(MemberPointLog::getChangeType, "earn_consume"));
+        if (earns.isEmpty()) return 0;
+        // 幂等：该订单已扣回过则跳过
+        Long reversed = pointLogMapper.selectCount(Wrappers.<MemberPointLog>lambdaQuery()
+                .eq(MemberPointLog::getUserId, userId)
+                .eq(MemberPointLog::getRefOrderNo, orderNo)
+                .eq(MemberPointLog::getChangeType, MemberRule.CHANGE_EARN_REVERSAL));
+        if (reversed != null && reversed > 0) return 0;
+
+        int points = earns.stream().mapToInt(l -> Math.abs(l.getChangeVal() == null ? 0 : l.getChangeVal())).sum();
+        MemberCard card = getOrCreateCard(userId);
+        // 扣回所得积分，不扣成负数（积分可能已被消费）
+        int deducted = Math.min(points, card.getPoints() == null ? 0 : card.getPoints());
+        if (deducted > 0) {
+            card.setPoints(card.getPoints() - deducted);
+            card.setUpdateTime(LocalDateTime.now());
+            cardMapper.updateById(card);
+        }
+
+        MemberPointLog log = new MemberPointLog();
+        log.setUserId(userId);
+        log.setChangeType(MemberRule.CHANGE_EARN_REVERSAL);
+        log.setChangeVal(-points);
+        log.setRefOrderNo(orderNo);
+        log.setRemark("订单全额退款，扣回支付所得积分");
+        log.setCreateTime(LocalDateTime.now());
+        pointLogMapper.insert(log);
+        return points;
     }
 
     /** 依据成长值匹配最高等级 */
@@ -105,6 +240,13 @@ public class MembershipService {
         out.put("card", card);
         out.put("level", level);
         out.put("levels", levels);
+        // 积分规则（前端展示：获取比例 / 抵现比例 / 单笔上限 / VIP 倍数）
+        Map<String, Object> rule = new LinkedHashMap<>();
+        rule.put("pointsPerYuanEarn", MemberRule.POINTS_PER_YUAN_EARN);
+        rule.put("redeemPointsPerYuan", MemberRule.REDEEM_POINTS_PER_YUAN);
+        rule.put("redeemMaxPercent", MemberRule.REDEEM_MAX_PERCENT);
+        rule.put("vipEarnMultiplier", MemberRule.VIP_EARN_MULTIPLIER);
+        out.put("rule", rule);
         out.put("pointsLog", pointLogMapper.selectList(Wrappers.<MemberPointLog>lambdaQuery()
                 .eq(MemberPointLog::getUserId, userId).orderByDesc(MemberPointLog::getLogId).last("LIMIT 20")));
         return out;

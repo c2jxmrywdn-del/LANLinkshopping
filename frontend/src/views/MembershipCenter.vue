@@ -29,6 +29,29 @@
           </a-table>
         </a-card>
 
+        <!-- 积分规则（获取/抵现/上限/VIP 倍数） -->
+        <a-card :bordered="false" class="mc-card" title="积分规则">
+          <div class="rule-grid">
+            <div class="rule-item">
+              <div class="rule-num">{{ data.rule?.pointsPerYuanEarn ?? 1 }} 积分</div>
+              <div class="rule-label">消费 1 元获得</div>
+            </div>
+            <div class="rule-item">
+              <div class="rule-num">{{ data.rule?.redeemPointsPerYuan ?? 100 }} 积分</div>
+              <div class="rule-label">可抵扣 1 元</div>
+            </div>
+            <div class="rule-item">
+              <div class="rule-num">{{ data.rule?.redeemMaxPercent ?? 10 }}%</div>
+              <div class="rule-label">单笔抵现上限</div>
+            </div>
+            <div class="rule-item">
+              <div class="rule-num">×{{ data.rule?.vipEarnMultiplier ?? 2 }}</div>
+              <div class="rule-label">VIP 积分倍数</div>
+            </div>
+          </div>
+          <div class="rule-tip">积分在订单支付后到账；使用积分抵现的订单若取消，积分将自动返还。</div>
+        </a-card>
+
         <!-- 积分流水 -->
         <a-card :bordered="false" class="mc-card" title="积分流水">
           <a-empty v-if="!data.pointsLog?.length" description="暂无积分流水" />
@@ -109,4 +132,11 @@ onMounted(async () => {
 .pl-order { font-size: 12px; color: var(--ll-muted, #64748b); }
 .pl-time { font-size: 12px; color: var(--ll-gray2, #999); }
 .pl-val { font-weight: 700; color: #10b981; }
+/* 积分规则卡片 */
+.rule-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.rule-item { background: rgba(30, 110, 184, .05); border-radius: 10px; padding: 14px 10px; text-align: center; }
+.rule-num { font-size: 20px; font-weight: 800; color: var(--ll-primary, #1e6eb8); }
+.rule-label { font-size: 12px; color: var(--ll-muted, #64748b); margin-top: 4px; }
+.rule-tip { font-size: 12px; color: var(--ll-muted, #64748b); margin-top: 12px; }
+@media (max-width: 640px) { .rule-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>

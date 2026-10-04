@@ -36,6 +36,8 @@ public class MerchantController {
     /** 税务证明上传目录 */
     private static final String TAX_PROOF_DIR = System.getProperty("user.dir") + File.separator + "uploads" + File.separator + "tax-proofs";
     private static final long MAX_SIZE = 5 * 1024 * 1024;
+    /** 入驻申请材料上传上限：10MB（工商信息/纳税记录） */
+    private static final long APPLY_MAX_SIZE = 10 * 1024 * 1024;
     /** 营业执照最小边长（像素）：保证执照信息完整可辨 */
     private static final int MIN_LICENSE_EDGE = 400;
 
@@ -44,6 +46,30 @@ public class MerchantController {
     public R<Merchant> apply(@Valid @RequestBody MerchantApplyDTO dto, HttpServletRequest request) {
         Long userId = UserContext.currentUserId(request);
         return R.ok("入驻申请已提交", merchantService.apply(userId, null, dto));
+    }
+
+    /**
+     * 入驻申请材料上传（申请阶段专用，仅需登录）：工商信息/纳税记录在提交申请前先行上传，
+     * 返回 { url } 随申请表单一并提交。与已入驻商户的 /license、/tax-proof（merchant:manage）权限隔离。
+     */
+    @PostMapping("/apply-upload")
+    public R<Map<String, String>> applyUpload(@RequestParam("file") MultipartFile file,
+                                              @RequestParam String kind,
+                                              HttpServletRequest request) throws IOException {
+        Long userId = UserContext.currentUserId(request);
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("请选择文件");
+        if (file.getSize() > APPLY_MAX_SIZE) throw new IllegalArgumentException("文件大小不能超过 10MB");
+        String detected = sniff(file);
+        boolean license = "license".equals(kind);
+        if (license && !"jpg".equals(detected) && !"png".equals(detected)) {
+            throw new IllegalArgumentException("工商信息（营业执照）仅支持 JPG/PNG 格式");
+        }
+        if (!license && !"pdf".equals(detected) && !"jpg".equals(detected) && !"png".equals(detected)) {
+            throw new IllegalArgumentException("纳税记录仅支持 JPG/PNG/PDF 格式");
+        }
+        String url = save(file, license ? LICENSE_DIR : TAX_PROOF_DIR,
+                license ? "licenses" : "tax-proofs", userId, detected);
+        return R.ok("上传成功", Map.of("url", url));
     }
 
     /** 我的商户信息 */
@@ -87,6 +113,12 @@ public class MerchantController {
     @GetMapping("/admin/list")
     public R<List<Merchant>> adminList(@RequestParam(required = false) Integer reviewStatus) {
         return R.ok(merchantService.listForAdmin(reviewStatus));
+    }
+
+    /** 运营端: 商户详情（工商信息/资质/证照完整度，资料维护与资质验证视图） */
+    @GetMapping("/admin/detail/{merId}")
+    public R<Map<String, Object>> adminDetail(@PathVariable Long merId) {
+        return R.ok(merchantService.adminDetail(merId));
     }
 
     /** 运营端: 审核通过/驳回 */

@@ -1,37 +1,5 @@
 <template>
   <div>
-    <!-- ===== 证照管理（商户专属：营业执照 / 税务证明 / 税务登记号查询） ===== -->
-    <a-card title="证照管理" class="cert-card" v-if="!notMerchant">
-      <a-row :gutter="24">
-        <!-- 营业执照 -->
-        <a-col :span="12">
-          <div class="cert-title">营业执照</div>
-          <a-upload v-model:file-list="licenseFiles" list-type="picture-card" accept="image/jpeg,image/png"
-                    :max-count="1" :before-upload="beforeLicense" :custom-request="doUploadLicense">
-            <div v-if="licenseFiles.length === 0">
-              <plus-outlined />
-              <div class="up-hint">上传执照</div>
-            </div>
-          </a-upload>
-          <div class="hint">JPG/PNG，≤5MB，需≥400×400 完整清晰</div>
-          <div v-if="cert.licenseUrl" class="cert-link">已上传：<a :href="cert.licenseUrl" target="_blank">查看</a></div>
-        </a-col>
-        <!-- 税务记录 -->
-        <a-col :span="12">
-          <div class="cert-title">税务缴纳证明（近 3 个月，最多 3 份）</div>
-          <a-upload v-model:file-list="taxFiles" accept=".pdf,.jpg,.jpeg,.png"
-                    :max-count="3" :before-upload="beforeTaxFile" :custom-request="doUploadTaxProof">
-            <a-button><upload-outlined />上传证明（PDF/JPG）</a-button>
-          </a-upload>
-          <div class="tax-query-row">
-            <a-input v-model:value="taxRegNo" placeholder="税务登记号查询（15/18/20 位）" style="flex:1" allow-clear />
-            <a-button type="primary" :loading="querying" @click="queryTax">查询</a-button>
-          </div>
-          <div v-if="taxRecords" class="tax-ok">已查询到近 3 个月缴纳记录，合计 ¥{{ taxRecords.totalAmount }}（登记号已绑定）</div>
-        </a-col>
-      </a-row>
-    </a-card>
-
     <a-card title="我的商品">
       <template #extra>
         <a-space>
@@ -42,7 +10,7 @@
 
       <a-alert v-if="notMerchant" type="warning" show-icon style="margin-bottom:16px"
                message="尚未成为入驻商户"
-               description="完成商户入驻并通过审核后，即可发布商品与管理证照。">
+               description="完成商户入驻并通过审核后，即可发布与管理商品。">
         <template #action>
           <a-button size="small" type="primary" @click="$router.push('/merchant')">去入驻</a-button>
         </template>
@@ -83,10 +51,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { PlusOutlined, UploadOutlined } from '@ant-design/icons-vue'
-import { productApi, merchantApi } from '../api'
+import { productApi } from '../api'
 import ProductPublishForm from '../components/merchant/ProductPublishForm.vue'
 
 const rows = ref([])
@@ -95,68 +62,6 @@ const notMerchant = ref(false)
 const publishOpen = ref(false)
 const current = ref(1)
 const total = ref(0)
-
-// ===== 证照管理（商户专属：上传即绑定商户档案） =====
-const cert = reactive({ licenseUrl: '' })
-const licenseFiles = ref([])
-const taxFiles = ref([])
-const taxRegNo = ref('')
-const querying = ref(false)
-const taxRecords = ref(null)
-
-function beforeLicense(file) {
-  if (!['image/jpeg', 'image/png'].includes(file.type)) { message.error('营业执照仅支持 JPG/PNG 格式'); return false }
-  if (file.size > 5 * 1024 * 1024) { message.error('图片不能超过 5MB'); return false }
-  if (file.size < 30 * 1024) { message.error('图片过小，可能不清晰，请重新拍摄或扫描'); return false }
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => {
-      if (img.naturalWidth < 400 || img.naturalHeight < 400) {
-        message.error('图片尺寸过小（需≥400×400），请上传完整清晰的营业执照'); reject()
-      } else { resolve(true) }
-    }
-    img.onerror = () => { message.error('图片无法解析，请更换文件'); reject() }
-    img.src = URL.createObjectURL(file)
-  })
-}
-function doUploadLicense({ file, onSuccess, onError }) {
-  const fd = new FormData()
-  fd.append('file', file)
-  merchantApi.uploadLicense(fd)
-    .then(data => { cert.licenseUrl = data.url; onSuccess(data) })
-    .catch(e => onError(e))
-}
-function beforeTaxFile(file) {
-  if (!['application/pdf', 'image/jpeg', 'image/png'].includes(file.type)) { message.error('仅支持 PDF/JPG/PNG 格式'); return false }
-  if (file.size > 5 * 1024 * 1024) { message.error('单个文件不能超过 5MB'); return false }
-  return true
-}
-function doUploadTaxProof({ file, onSuccess, onError }) {
-  const fd = new FormData()
-  fd.append('file', file)
-  merchantApi.uploadTaxProof(fd)
-    .then(data => onSuccess(data))
-    .catch(e => onError(e))
-}
-async function queryTax() {
-  const no = taxRegNo.value.trim().toUpperCase()
-  if (!/^[0-9A-Z]{15}$|^[0-9A-Z]{18}$|^[0-9A-Z]{20}$/.test(no)) { message.error('税务登记号格式不正确（15/18/20 位数字或大写字母）'); return }
-  querying.value = true
-  try {
-    taxRecords.value = await merchantApi.taxQuery(no)
-    message.success('查询成功，登记号已绑定至商户档案')
-  } finally { querying.value = false }
-}
-async function loadCert() {
-  try {
-    const m = await merchantApi.my()
-    if (m) {
-      cert.licenseUrl = m.licenseUrl || ''
-      if (cert.licenseUrl) licenseFiles.value = [{ uid: '-1', name: 'license', status: 'done', url: cert.licenseUrl }]
-      if (m.taxRegNo) taxRegNo.value = m.taxRegNo
-    }
-  } catch (e) { /* 拦截器已提示 */ }
-}
 
 const cols = [
   { title: '商品', key: 'prod' },
@@ -189,17 +94,10 @@ async function load() {
   } finally { loading.value = false }
 }
 
-onMounted(() => { load(); loadCert() })
+onMounted(load)
 </script>
 
 <style scoped>
-.cert-card { margin-bottom: 16px; border-radius: 12px; }
-.cert-title { font-weight: 600; margin-bottom: 10px; }
-.up-hint { font-size: 12px; margin-top: 4px; }
-.hint { font-size: 12px; color: var(--ll-gray2, #4b5563); margin-top: 4px; }
-.cert-link { font-size: 13px; margin-top: 6px; }
-.tax-query-row { display: flex; gap: 8px; margin-top: 12px; }
-.tax-ok { font-size: 13px; color: #10b981; margin-top: 8px; }
 .prod-cell { display: flex; gap: 10px; align-items: center; }
 .thumb { width: 48px; height: 48px; border-radius: 6px; background: var(--ll-thumb-bg, #eef1f6);
          display: flex; align-items: center; justify-content: center; overflow: hidden;

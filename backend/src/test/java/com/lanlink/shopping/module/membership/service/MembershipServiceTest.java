@@ -13,6 +13,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 /**
@@ -69,11 +70,21 @@ class MembershipServiceTest {
         when(cardMapper.selectOne(any())).thenReturn(null); // 自动建卡
         when(levelMapper.selectList(any())).thenReturn(List.of(level(1L, "普通会员", 0)));
 
-        service.earnGrowth(2L, new BigDecimal("1250"), "TEST-ORDER-1");
+        service.earnGrowth(2L, new BigDecimal("1250"), "TEST-ORDER-1", 1);
 
         verify(cardMapper, times(1)).insert(any(MemberCard.class));      // 建卡
         verify(cardMapper, times(1)).updateById(any(MemberCard.class));  // 更新成长值/积分
         verify(logMapper, times(1)).insert(any(com.lanlink.shopping.module.membership.entity.MemberPointLog.class)); // 积分流水
+    }
+
+    @Test
+    void vipEarnsDoublePoints() {
+        when(cardMapper.selectOne(any())).thenReturn(null);
+        when(levelMapper.selectList(any())).thenReturn(List.of(level(1L, "普通会员", 0)));
+        // VIP multiplier=2：1250 元 → 2500 积分
+        service.earnGrowth(2L, new BigDecimal("1250"), "TEST-ORDER-2", 2);
+        verify(logMapper, times(1)).insert(argThat((com.lanlink.shopping.module.membership.entity.MemberPointLog l) ->
+                l.getChangeVal() == 2500 && l.getRemark().contains("VIP双倍")));
     }
 
     @Test

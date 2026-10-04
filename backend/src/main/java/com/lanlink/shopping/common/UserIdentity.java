@@ -27,7 +27,7 @@ public enum UserIdentity {
     MERCHANT("merchant", "商户", "商品发布与管理、商户中心、订单履约",
             List.of("product:view", "product:search", "cart:manage", "order:create", "order:view",
                     "address:manage", "profile:manage", "merchant:manage", "product:publish")),
-    ADMIN("admin", "管理员", "全部前台服务 + 平台运营后台（商品审核、商户审核、审计日志）",
+    ADMIN("admin", "管理员", "全部前台服务 + 平台运营后台（数据概览、商户管理、商品管理、交易管理、审计日志）",
             List.of("admin:all"));
 
     /** 稳定标识（前端/日志使用） */

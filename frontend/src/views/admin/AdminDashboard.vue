@@ -16,7 +16,7 @@
           </template>
         </template>
       </a-table>
-      <a-button type="link" @click="$router.push({name:'admin-merchants'})">前往商户审核 →</a-button>
+      <a-button type="link" @click="$router.push({name:'admin-merchants'})">前往商户管理 →</a-button>
     </a-card>
   </div>
 </template>

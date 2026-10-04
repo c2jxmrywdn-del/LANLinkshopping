@@ -23,5 +23,18 @@ public class Order {
     private String remark;
     private LocalDateTime createTime;
     private LocalDateTime payTime;
+    /** 支付渠道：wechat | alipay | mock */
+    private String payChannel;
+    /** 第三方渠道交易号 */
+    private String transactionId;
+    /** 微信预下单号 */
+    private String prepayId;
+    /** 退款状态：none | processing | success */
+    private String refundStatus;
+    /** 渠道退款单号 */
+    private String refundId;
+    /** 已退金额 */
+    private BigDecimal refundAmount;
+    private LocalDateTime refundTime;
     private LocalDateTime updateTime;
 }

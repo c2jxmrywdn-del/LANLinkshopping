@@ -27,5 +27,8 @@ __pycache__/
 # 上传目录（头像等运行时文件）
 backend/uploads/
 
+# 支付真实凭证（API 密钥/应用私钥/证书路径），勿提交；模板见 application-payment.yml.example
+backend/src/main/resources/application-payment.yml
+
 # IDE 规划文档
 .trae/

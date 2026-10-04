@@ -1,91 +1,408 @@
 <template>
-  <div class="about-wrap">
-    <!-- 页内锚点导航 -->
-    <div class="anchor-bar">
-      <a-anchor :offset-top="80" :items="anchors" @click="onAnchor" />
-    </div>
-
-    <a-card :bordered="false" class="ab-card" id="company">
-      <template #title><span class="ab-ico">🏢</span> 公司介绍</template>
-      <p>
-        <b>LANLinkshopping</b> 是一个聚合型、一体多元化的 B2B 电商解决方案平台，致力于为中小企业与
-        各行业商户提供商品展示、在线交易、供应链协同的一站式数字化服务。
-        平台连接采购方、入驻商户与平台运营三方，通过身份识别、会员体系、营销中台与多渠道支付系统，
-        构建安全、高效、可信赖的企业级采购体验。
-      </p>
-      <div class="ab-grid">
-        <div class="ab-item"><div class="ab-num">4+</div><div class="ab-label">覆盖行业（建筑/纺织/石化/电子）</div></div>
-        <div class="ab-item"><div class="ab-num">5</div><div class="ab-label">用户身份体系（访客/采购方/VIP/商户/运营）</div></div>
-        <div class="ab-item"><div class="ab-num">3</div><div class="ab-label">营销中台模块（活动/促销/会员）</div></div>
-        <div class="ab-item"><div class="ab-num">4</div><div class="ab-label">支付渠道（钱包/微信/支付宝/模拟）</div></div>
+  <div class="about-page">
+    <!-- 头部：品牌叙事 + 快速入口 -->
+    <section class="about-hero">
+      <div class="hero-glow hero-glow-a"></div>
+      <div class="hero-glow hero-glow-b"></div>
+      <div class="hero-copy">
+        <span class="eyebrow">ABOUT LANLINK SHOPPING</span>
+        <h1>让采购、商品与增长<br /><em>在同一个网络里连接。</em></h1>
+        <p>
+          LANLinkshopping 面向 B2B 场景，将商品展示、在线交易、会员营销、商户经营与平台运营
+          汇聚到同一套数字化交易链路中。
+        </p>
+        <div class="hero-actions">
+          <a-button type="primary" class="hero-primary" @click="goMall">进入商城 <span>→</span></a-button>
+          <a-button class="hero-secondary" @click="scrollToSection('contact')">联系平台</a-button>
+        </div>
       </div>
-    </a-card>
+      <div class="hero-orbit" aria-hidden="true">
+        <div class="orbit-ring ring-one"></div>
+        <div class="orbit-ring ring-two"></div>
+        <div class="orbit-core"><span>LL</span></div>
+        <span class="orbit-node node-a"></span>
+        <span class="orbit-node node-b"></span>
+        <span class="orbit-node node-c"></span>
+      </div>
+    </section>
 
-    <a-card :bordered="false" class="ab-card" id="contact">
-      <template #title><span class="ab-ico">📞</span> 联系方式</template>
-      <a-descriptions :column="1" size="small" bordered>
-        <a-descriptions-item label="客服热线">400-000-0000（工作日 9:00 - 18:00）</a-descriptions-item>
-        <a-descriptions-item label="商务合作">business@lanlinkshopping.example.com</a-descriptions-item>
-        <a-descriptions-item label="技术支持">support@lanlinkshopping.example.com</a-descriptions-item>
-        <a-descriptions-item label="公司地址">示例市示例区科技创新园区 LANLink 大厦</a-descriptions-item>
-      </a-descriptions>
-      <a-alert type="info" show-icon class="ab-tip"
-               message="本站为毕业设计演示环境，以上联系方式为示例内容。" />
-    </a-card>
+    <!-- 页内导航：不再依赖 a-anchor 的事件签名，避免锚点点击在不同 antd 版本下失效 -->
+    <nav class="section-nav" aria-label="关于我们页面导航">
+      <button
+        v-for="item in sections"
+        :key="item.key"
+        type="button"
+        :class="{ active: activeSection === item.key }"
+        @click="scrollToSection(item.key)"
+      >
+        <span>{{ item.index }}</span>{{ item.title }}
+      </button>
+    </nav>
 
-    <a-card :bordered="false" class="ab-card" id="terms">
-      <template #title><span class="ab-ico">📄</span> 服务条款</template>
-      <ol class="ab-legal">
-        <li><b>账号与实名</b>：用户应使用真实企业信息注册并完成身份认证，妥善保管账号密码及两步验证凭证，因账号保管不善造成的损失由用户自行承担。</li>
-        <li><b>交易规范</b>：平台商品信息由入驻商户发布并经平台审核；采购方下单前应仔细核对商品规格、价格与库存，订单一经支付即构成有效交易凭证。</li>
-        <li><b>支付与退款</b>：平台支持钱包余额、微信支付、支付宝等渠道。订单退款将原路退回支付账户；使用积分抵现的订单退款后积分按规则返还/扣回。</li>
-        <li><b>商户义务</b>：入驻商户应保证商品质量与证照信息真实有效，按约定时效发货；违规商户平台有权下架商品直至终止合作。</li>
-        <li><b>免责声明</b>：因不可抗力、系统维护等导致的服务中断，平台将提前公告并及时恢复，但不承担由此产生的间接损失。</li>
-      </ol>
-    </a-card>
+    <main>
+      <!-- 我们解决什么 -->
+      <section id="company" class="about-section intro-section">
+        <div class="section-heading">
+          <span class="section-kicker">01 · PLATFORM</span>
+          <h2>不是单一商城，而是一条完整的交易链路</h2>
+          <p>从“找到商品”到“完成交易”，再到“持续经营”，每一个角色都有对应的工作台与能力。</p>
+        </div>
 
-    <a-card :bordered="false" class="ab-card" id="privacy">
-      <template #title><span class="ab-ico">🔒</span> 隐私政策</template>
-      <ol class="ab-legal">
-        <li><b>信息收集</b>：为提供交易与物流服务，我们收集账号信息（手机号、企业信息）、收货地址与订单数据；敏感凭证（支付密钥、证书）加密存储且绝不外泄。</li>
-        <li><b>信息使用</b>：用户数据仅用于身份识别、订单履约、会员权益计算与安全审计（登录日志、越权记录），不出售或共享给任何无关第三方。</li>
-        <li><b>信息保护</b>：全站采用 HTTPS 传输、BCrypt 密码散列、支付流水脱敏日志与权限拦截体系，支付渠道交互遵循微信支付/支付宝官方安全规范。</li>
-        <li><b>用户权利</b>：您可在「个人中心」查看、更正资料，管理收货地址与第三方授权；注销账号后数据将按法规要求删除或匿名化。</li>
-        <li><b>Cookie 说明</b>：仅使用必要会话 Cookie 维持登录态，不用于跨站广告追踪。</li>
-      </ol>
-    </a-card>
+        <div class="capability-grid">
+          <article v-for="item in capabilities" :key="item.title" class="capability-card">
+            <div class="capability-icon">{{ item.icon }}</div>
+            <div>
+              <span class="card-index">{{ item.index }}</span>
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.desc }}</p>
+            </div>
+            <span class="card-arrow">↗</span>
+          </article>
+        </div>
+      </section>
+
+      <!-- 平台架构 -->
+      <section class="about-section architecture-section">
+        <div class="section-heading compact">
+          <span class="section-kicker">02 · ECOSYSTEM</span>
+          <h2>五种身份，一套协同逻辑</h2>
+          <p>身份决定可见内容与操作边界；权限由前端路由与后端接口共同校验。</p>
+        </div>
+
+        <div class="identity-layout">
+          <div class="identity-visual">
+            <div class="identity-center">
+              <strong>LAN</strong><span>Link</span>
+              <small>交易网络</small>
+            </div>
+            <div
+              v-for="(item, index) in identities"
+              :key="item.code"
+              class="identity-node"
+              :class="'identity-' + index"
+            >
+              <b>{{ item.label }}</b>
+              <span>{{ item.code }}</span>
+            </div>
+          </div>
+
+          <div class="identity-list">
+            <div v-for="item in identities" :key="item.code" class="identity-row">
+              <div class="identity-tag">{{ item.short }}</div>
+              <div class="identity-copy">
+                <strong>{{ item.label }}</strong>
+                <span>{{ item.desc }}</span>
+              </div>
+              <span class="identity-status">{{ item.scope }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 能力矩阵 -->
+      <section class="about-section matrix-section">
+        <div class="matrix-card">
+          <div class="matrix-head">
+            <div>
+              <span class="section-kicker">03 · CAPABILITY MAP</span>
+              <h2>从获客到复购，能力彼此衔接</h2>
+            </div>
+            <span class="matrix-badge">DEMO PLATFORM</span>
+          </div>
+          <div class="matrix-grid">
+            <div v-for="item in modules" :key="item.title" class="module-card">
+              <span class="module-number">{{ item.number }}</span>
+              <div class="module-icon">{{ item.icon }}</div>
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.desc }}</p>
+              <div class="module-tags">
+                <span v-for="tag in item.tags" :key="tag">{{ tag }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 联系方式 -->
+      <section id="contact" class="about-section contact-section">
+        <div class="contact-intro">
+          <span class="section-kicker">04 · CONTACT</span>
+          <h2>需要合作或技术支持？</h2>
+          <p>演示环境中的联系方式均为示例信息。你可以直接复制邮箱，或通过电话 / 邮件客户端发起联系。</p>
+          <a-alert type="info" show-icon message="本站为毕业设计演示环境，以下联系方式为示例内容。" />
+        </div>
+
+        <div class="contact-grid">
+          <article class="contact-card">
+            <span class="contact-icon">☎</span>
+            <span class="contact-label">客服热线</span>
+            <strong>400-000-0000</strong>
+            <small>工作日 09:00 – 18:00</small>
+            <a-button block @click="copyText('400-000-0000', '客服电话')">复制号码</a-button>
+          </article>
+          <article class="contact-card">
+            <span class="contact-icon">✉</span>
+            <span class="contact-label">商务合作</span>
+            <strong>business@lanlinkshopping.example.com</strong>
+            <small>合作、入驻与商务咨询</small>
+            <a-button block @click="copyText('business@lanlinkshopping.example.com', '商务邮箱')">复制邮箱</a-button>
+          </article>
+          <article class="contact-card">
+            <span class="contact-icon">⌘</span>
+            <span class="contact-label">技术支持</span>
+            <strong>support@lanlinkshopping.example.com</strong>
+            <small>产品、接口与演示环境支持</small>
+            <a-button block @click="copyText('support@lanlinkshopping.example.com', '技术邮箱')">复制邮箱</a-button>
+          </article>
+        </div>
+      </section>
+
+      <!-- 法务信息：折叠而非长文本堆叠 -->
+      <section id="terms" class="about-section legal-section">
+        <div class="legal-tabs" role="tablist">
+          <button :class="{ active: legalTab === 'terms' }" type="button" @click="legalTab = 'terms'">
+            服务条款 <span>01</span>
+          </button>
+          <button :class="{ active: legalTab === 'privacy' }" type="button" @click="legalTab = 'privacy'">
+            隐私政策 <span>02</span>
+          </button>
+        </div>
+
+        <article class="legal-panel">
+          <template v-if="legalTab === 'terms'">
+            <div class="legal-title">
+              <span>TERMS OF SERVICE</span>
+              <h2>服务条款</h2>
+              <p>用于演示平台交易、账号与商户经营的基本规则。</p>
+            </div>
+            <ol class="legal-list">
+              <li><b>账号与实名</b><span>用户应使用真实企业信息注册并完成身份认证，妥善保管账号、密码及两步验证凭证。</span></li>
+              <li><b>交易规范</b><span>商品由入驻商户发布并经平台审核；下单前请核对规格、价格与库存。</span></li>
+              <li><b>支付与退款</b><span>演示环境支持钱包、模拟、微信与支付宝渠道；真实渠道需完成对应商户配置。</span></li>
+              <li><b>商户义务</b><span>商户应保证商品质量与证照信息真实有效，并按约定时效履约。</span></li>
+              <li><b>服务中断</b><span>因系统维护、不可抗力等导致服务中断时，平台将尽快恢复服务。</span></li>
+            </ol>
+          </template>
+
+          <template v-else>
+            <div class="legal-title">
+              <span>PRIVACY POLICY</span>
+              <h2>隐私政策</h2>
+              <p>说明演示平台如何处理账号、订单与必要的安全审计数据。</p>
+            </div>
+            <ol class="legal-list">
+              <li><b>信息收集</b><span>为提供交易与履约服务，平台可能处理账号、企业资料、收货地址与订单数据。</span></li>
+              <li><b>信息使用</b><span>数据用于身份识别、订单履约、会员权益计算与安全审计，不用于无关用途。</span></li>
+              <li><b>信息保护</b><span>平台采用 HTTPS、密码散列、支付流水脱敏与权限拦截等安全措施。</span></li>
+              <li><b>用户权利</b><span>用户可在个人中心查看、更正资料并管理收货地址与第三方授权。</span></li>
+              <li><b>Cookie</b><span>仅使用维持登录态所需的会话机制，不用于跨站广告追踪。</span></li>
+            </ol>
+          </template>
+        </article>
+      </section>
+    </main>
   </div>
 </template>
 
 <script setup>
-const anchors = [
-  { key: 'company', href: '#company', title: '公司介绍' },
-  { key: 'contact', href: '#contact', title: '联系方式' },
-  { key: 'terms', href: '#terms', title: '服务条款' },
-  { key: 'privacy', href: '#privacy', title: '隐私政策' }
+import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { message } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const activeSection = ref('company')
+const legalTab = ref('terms')
+
+const sections = [
+  { key: 'company', index: '01', title: '平台定位' },
+  { key: 'contact', index: '04', title: '联系我们' },
+  { key: 'terms', index: '05', title: '服务条款' }
 ]
 
-// 锚点点击平滑滚动（卡片 id 与锚点一致）
-function onAnchor(e, link) {
-  e.preventDefault()
-  document.getElementById(link.href.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+const capabilities = [
+  { index: '01', icon: '⌁', title: '商品与采购', desc: '商品浏览、搜索、详情、购物车与订单形成一条连续路径。' },
+  { index: '02', icon: '◎', title: '商户经营', desc: '商户入驻、商品发布与流量分析形成经营闭环。' },
+  { index: '03', icon: '◇', title: '营销中台', desc: '活动、促销与会员能力共同作用于交易转化与复购。' },
+  { index: '04', icon: '↗', title: '平台运营', desc: '管理员通过商户、商品、支付与审计模块维护平台秩序。' }
+]
+
+const identities = [
+  { code: 'GUEST', short: 'G', label: '访客', desc: '未登录用户，可浏览与搜索商品', scope: '浏览' },
+  { code: 'BUYER', short: 'B', label: '普通用户', desc: '已登录采购方，进入交易流程', scope: '采购' },
+  { code: 'VIP', short: 'V', label: 'VIP 用户', desc: '满足累计支付门槛的采购方', scope: '权益' },
+  { code: 'MERCHANT', short: 'M', label: '商户', desc: '审核通过后管理商品与经营数据', scope: '经营' },
+  { code: 'ADMIN', short: 'A', label: '管理员', desc: '平台运营身份，负责审核与治理', scope: '运营' }
+]
+
+const modules = [
+  { number: '01', icon: '◌', title: '交易', desc: '商品 → 购物车 → 结算 → 支付 → 订单', tags: ['订单', '钱包', '支付'] },
+  { number: '02', icon: '✦', title: '营销', desc: '活动、促销与会员权益协同工作', tags: ['活动', '促销', '会员'] },
+  { number: '03', icon: '⌁', title: '增长', desc: '商户流量、来源、转化与诊断形成经营反馈', tags: ['流量', '转化', '诊断'] }
+]
+
+let observer
+onMounted(() => {
+  const targets = ['company', 'contact', 'terms'].map(id => document.getElementById(id)).filter(Boolean)
+  observer = new IntersectionObserver(entries => {
+    const visible = entries
+      .filter(entry => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
+    if (visible[0]?.target?.id) activeSection.value = visible[0].target.id
+  }, { rootMargin: '-96px 0px -55% 0px', threshold: [0.15, 0.35, 0.6] })
+  targets.forEach(el => observer.observe(el))
+})
+onBeforeUnmount(() => observer?.disconnect())
+
+function scrollToSection(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  activeSection.value = id
+}
+function goMall() {
+  router.push('/mall')
+}
+async function copyText(text, label) {
+  try {
+    await navigator.clipboard.writeText(text)
+    message.success(label + '已复制')
+  } catch {
+    message.warning('当前浏览器不允许自动复制，请手动复制：' + text)
+  }
 }
 </script>
 
 <style scoped>
-.about-wrap { max-width: 860px; margin: 0 auto; position: relative; }
-.anchor-bar { position: sticky; top: 72px; z-index: 10; margin-bottom: 12px;
-              background: var(--ll-page, #f5f6f8); }
-.ab-card { border-radius: 12px; margin-bottom: 16px; scroll-margin-top: 140px; }
-.ab-ico { margin-right: 8px; }
-.ab-card p { line-height: 1.9; color: var(--ll-gray, #4b5563); margin: 0 0 14px; }
-.ab-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.ab-item { background: rgba(30, 110, 184, .05); border-radius: 10px; padding: 14px 10px; text-align: center; }
-.ab-num { font-size: 22px; font-weight: 800; color: var(--ll-primary, #1e6eb8); }
-.ab-label { font-size: 12px; color: var(--ll-muted, #64748b); margin-top: 4px; line-height: 1.5; }
-.ab-tip { margin-top: 14px; }
-.ab-legal { padding-left: 20px; margin: 0; color: var(--ll-gray, #4b5563); }
-.ab-legal li { line-height: 2; margin-bottom: 6px; }
-.ab-legal b { color: var(--ll-ink, #0f172a); }
-@media (max-width: 640px) { .ab-grid { grid-template-columns: repeat(2, 1fr); } }
+.about-page { --ab-navy: #13233A; --ab-ink: #0F172A; --ab-muted: #667085; --ab-line: #D9D3C7; --ab-paper: #FBF9F1; --ab-paper2: #F5F0E8; --ab-gold: #C8A45C; --ab-red: #9B2D20; --ab-blue: #1E6EB8; color: var(--ab-ink); padding-bottom: 24px; }
+.about-hero { min-height: 430px; position: relative; overflow: hidden; border-radius: 28px; padding: 64px 68px; display: flex; align-items: center; background: linear-gradient(125deg, #13233A 0%, #1F3864 58%, #233F5F 100%); box-shadow: 0 24px 70px rgba(19,35,58,.18); }
+.hero-copy { position: relative; z-index: 2; max-width: 650px; }
+.eyebrow, .section-kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .16em; color: var(--ab-gold); }
+.eyebrow::before, .section-kicker::before { content: ''; width: 24px; height: 1px; background: currentColor; }
+.hero-copy h1 { margin: 16px 0 16px; color: #fff; font-size: clamp(34px, 4vw, 54px); line-height: 1.12; letter-spacing: -.045em; font-weight: 750; }
+.hero-copy h1 em { color: #F6D38A; font-style: normal; }
+.hero-copy p { max-width: 620px; margin: 0; color: rgba(255,255,255,.72); font-size: 15px; line-height: 1.9; }
+.hero-actions { display: flex; gap: 12px; margin-top: 28px; }
+.hero-primary { border: 0; background: linear-gradient(100deg, #C8A45C, #F59E0B); color: #13233A; font-weight: 750; box-shadow: 0 10px 28px rgba(200,164,92,.22); }
+.hero-primary:hover { filter: brightness(1.06); color: #13233A; }
+.hero-secondary { color: #fff; background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.25); backdrop-filter: blur(10px); }
+.hero-secondary:hover { color: #fff; border-color: rgba(255,255,255,.55); background: rgba(255,255,255,.12); }
+.hero-glow { position: absolute; border-radius: 999px; filter: blur(30px); opacity: .28; }
+.hero-glow-a { width: 300px; height: 300px; right: 18%; top: -80px; background: #9B2D20; }
+.hero-glow-b { width: 360px; height: 360px; right: -70px; bottom: -160px; background: #C8A45C; }
+.hero-orbit { position: absolute; width: 400px; height: 400px; right: 70px; top: 18px; opacity: .92; }
+.orbit-ring { position: absolute; inset: 42px; border: 1px solid rgba(255,255,255,.15); border-radius: 50%; transform: rotate(-18deg) skewX(-8deg); }
+.ring-two { inset: 82px 12px; transform: rotate(28deg) skewY(-7deg); border-color: rgba(200,164,92,.3); }
+.orbit-core { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 108px; height: 108px; border-radius: 32px; display: grid; place-items: center; background: linear-gradient(145deg, rgba(255,255,255,.17), rgba(255,255,255,.04)); border: 1px solid rgba(255,255,255,.24); box-shadow: inset 0 1px rgba(255,255,255,.35), 0 24px 50px rgba(0,0,0,.18); backdrop-filter: blur(18px); }
+.orbit-core strong { font-size: 26px; color: #fff; letter-spacing: -.08em; }
+.orbit-core span { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -.08em; }
+.orbit-core::after { content: 'SHOPPING'; position: absolute; bottom: 18px; font-size: 7px; letter-spacing: .18em; color: rgba(255,255,255,.55); }
+.orbit-node { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: #F6D38A; box-shadow: 0 0 20px rgba(245,158,11,.75); }
+.node-a { left: 64px; top: 104px; } .node-b { right: 34px; top: 205px; } .node-c { left: 104px; bottom: 64px; }
+
+.section-nav { position: sticky; top: 64px; z-index: 20; display: flex; gap: 6px; margin: 18px 0 34px; padding: 7px; border: 1px solid rgba(217,211,199,.8); border-radius: 14px; background: rgba(251,249,241,.86); box-shadow: 0 8px 24px rgba(19,35,58,.06); backdrop-filter: blur(16px); }
+.section-nav button { border: 0; background: transparent; color: #667085; border-radius: 9px; padding: 9px 14px; cursor: pointer; font: inherit; font-size: 13px; transition: .2s ease; }
+.section-nav button span { margin-right: 7px; font-size: 10px; opacity: .55; }
+.section-nav button:hover { color: var(--ab-navy); background: rgba(200,164,92,.1); }
+.section-nav button.active { color: var(--ab-navy); background: #fff; box-shadow: 0 3px 12px rgba(19,35,58,.08); font-weight: 700; }
+
+.about-section { scroll-margin-top: 130px; margin-bottom: 64px; }
+.section-heading { max-width: 760px; margin-bottom: 24px; }
+.section-heading.compact { max-width: 720px; }
+.section-heading h2, .contact-intro h2, .legal-title h2, .matrix-head h2 { margin: 10px 0 8px; font-size: clamp(25px, 3vw, 36px); line-height: 1.2; letter-spacing: -.035em; color: var(--ab-navy); }
+.section-heading p, .contact-intro p { margin: 0; color: var(--ab-muted); line-height: 1.8; font-size: 14px; }
+
+.capability-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.capability-card { min-height: 220px; position: relative; padding: 22px; border: 1px solid var(--ab-line); border-radius: 18px; background: linear-gradient(145deg, #fff, var(--ab-paper)); transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+.capability-card:hover { transform: translateY(-4px); border-color: rgba(200,164,92,.7); box-shadow: 0 18px 38px rgba(19,35,58,.09); }
+.capability-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: var(--ab-navy); color: #F6D38A; font-size: 21px; margin-bottom: 34px; }
+.card-index { font-size: 10px; color: var(--ab-red); font-weight: 800; letter-spacing: .14em; }
+.capability-card h3 { margin: 6px 0; font-size: 18px; color: var(--ab-navy); }
+.capability-card p { margin: 0; color: var(--ab-muted); line-height: 1.7; font-size: 13px; }
+.card-arrow { position: absolute; right: 20px; top: 20px; color: #98A2B3; font-size: 18px; }
+
+.identity-layout { display: grid; grid-template-columns: 1.05fr .95fr; gap: 26px; align-items: stretch; }
+.identity-visual { min-height: 390px; position: relative; border-radius: 22px; overflow: hidden; background: var(--ab-navy); }
+.identity-visual::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(200,164,92,.18), transparent 32%), radial-gradient(circle at 20% 15%, rgba(155,45,32,.24), transparent 30%); }
+.identity-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 132px; height: 132px; border-radius: 38px; display: grid; place-content: center; text-align: center; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.22); box-shadow: inset 0 1px rgba(255,255,255,.25), 0 22px 50px rgba(0,0,0,.2); backdrop-filter: blur(18px); }
+.identity-center strong { color: #fff; font-size: 24px; letter-spacing: -.06em; }
+.identity-center span { color: #F6D38A; font-size: 24px; font-weight: 800; letter-spacing: -.06em; }
+.identity-center small { margin-top: 7px; color: rgba(255,255,255,.58); letter-spacing: .12em; font-size: 8px; }
+.identity-node { position: absolute; min-width: 92px; padding: 9px 12px; text-align: center; border-radius: 12px; color: #fff; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(8px); }
+.identity-node b { display: block; font-size: 12px; } .identity-node span { font-size: 9px; color: rgba(255,255,255,.48); letter-spacing: .08em; }
+.identity-0 { left: 26px; top: 40px; } .identity-1 { right: 26px; top: 40px; } .identity-2 { right: 22px; bottom: 44px; } .identity-3 { left: 50%; bottom: 24px; transform: translateX(-50%); } .identity-4 { left: 22px; bottom: 44px; }
+.identity-node::after { content: ''; position: absolute; width: 54px; height: 1px; background: rgba(246,211,138,.38); top: 50%; }
+.identity-0::after, .identity-4::after { left: 100%; transform: rotate(18deg); transform-origin: left; }
+.identity-1::after, .identity-2::after { right: 100%; transform: rotate(-18deg); transform-origin: right; }
+.identity-3::after { display: none; }
+
+.identity-list { display: grid; gap: 8px; }
+.identity-row { min-height: 70px; display: grid; grid-template-columns: 42px 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; border: 1px solid var(--ab-line); border-radius: 14px; background: #fff; }
+.identity-tag { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--ab-paper2); color: var(--ab-navy); font-weight: 800; }
+.identity-copy { min-width: 0; display: grid; gap: 3px; } .identity-copy strong { color: var(--ab-navy); font-size: 14px; } .identity-copy span { color: var(--ab-muted); font-size: 12px; }
+.identity-status { color: var(--ab-red); font-size: 11px; font-weight: 700; white-space: nowrap; }
+
+.matrix-card { padding: 28px; border-radius: 22px; background: var(--ab-paper2); border: 1px solid var(--ab-line); }
+.matrix-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; margin-bottom: 20px; }
+.matrix-head h2 { margin-bottom: 0; }
+.matrix-badge { padding: 6px 9px; border: 1px solid rgba(155,45,32,.25); color: var(--ab-red); border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: .12em; white-space: nowrap; }
+.matrix-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.module-card { position: relative; padding: 22px; min-height: 190px; border-radius: 17px; background: #fff; border: 1px solid rgba(217,211,199,.9); overflow: hidden; }
+.module-number { position: absolute; top: 14px; right: 16px; color: rgba(19,35,58,.15); font-size: 28px; font-weight: 800; }
+.module-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; background: var(--ab-navy); color: #F6D38A; }
+.module-card h3 { margin: 16px 0 5px; color: var(--ab-navy); font-size: 17px; }
+.module-card p { margin: 0; color: var(--ab-muted); font-size: 12px; line-height: 1.65; }
+.module-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 16px; }
+.module-tags span { padding: 4px 7px; border-radius: 6px; background: var(--ab-paper); color: #667085; font-size: 10px; }
+
+.contact-section { display: grid; grid-template-columns: .78fr 1.22fr; gap: 26px; align-items: start; }
+.contact-intro { padding-top: 8px; }
+.contact-intro .ant-alert { margin-top: 18px; }
+.contact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.contact-card { min-height: 220px; display: flex; flex-direction: column; padding: 20px; border: 1px solid var(--ab-line); border-radius: 17px; background: #fff; }
+.contact-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; background: var(--ab-navy); color: #F6D38A; }
+.contact-label { margin-top: 18px; color: var(--ab-muted); font-size: 11px; }
+.contact-card strong { margin: 5px 0; color: var(--ab-navy); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.contact-card small { color: #98A2B3; line-height: 1.5; min-height: 36px; }
+.contact-card .ant-btn { margin-top: auto; }
+
+.legal-section { padding-bottom: 10px; }
+.legal-tabs { display: flex; gap: 4px; padding: 5px; width: fit-content; border: 1px solid var(--ab-line); border-radius: 12px; background: var(--ab-paper2); margin-bottom: 14px; }
+.legal-tabs button { border: 0; background: transparent; border-radius: 8px; padding: 9px 13px; color: var(--ab-muted); cursor: pointer; font: inherit; font-size: 12px; }
+.legal-tabs button span { margin-left: 8px; opacity: .45; font-size: 9px; }
+.legal-tabs button.active { background: #fff; color: var(--ab-navy); font-weight: 700; box-shadow: 0 2px 8px rgba(19,35,58,.07); }
+.legal-panel { border: 1px solid var(--ab-line); border-radius: 20px; background: #fff; padding: 28px; }
+.legal-title span { color: var(--ab-gold); font-size: 10px; font-weight: 800; letter-spacing: .14em; }
+.legal-title h2 { margin-top: 6px; margin-bottom: 5px; }
+.legal-title p { color: var(--ab-muted); font-size: 13px; margin: 0; }
+.legal-list { margin: 22px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.legal-list li { display: grid; grid-template-columns: 110px 1fr; gap: 18px; padding: 13px 0; border-top: 1px solid #ECE8DF; }
+.legal-list b { color: var(--ab-navy); font-size: 13px; } .legal-list span { color: var(--ab-muted); font-size: 13px; line-height: 1.75; }
+
+@media (max-width: 1000px) {
+  .about-hero { padding: 52px 42px; }
+  .hero-orbit { right: -50px; opacity: .42; }
+  .capability-grid { grid-template-columns: repeat(2, 1fr); }
+  .identity-layout, .contact-section { grid-template-columns: 1fr; }
+  .contact-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+  .about-page { padding-bottom: 8px; }
+  .about-hero { min-height: 500px; border-radius: 20px; padding: 34px 24px; align-items: flex-start; }
+  .hero-copy h1 { font-size: 34px; }
+  .hero-copy p { font-size: 14px; }
+  .hero-actions { flex-wrap: wrap; }
+  .hero-orbit { width: 280px; height: 280px; right: -70px; bottom: -60px; top: auto; opacity: .5; }
+  .section-nav { top: 62px; margin: 12px 0 28px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
+  .section-nav::-webkit-scrollbar { display: none; }
+  .section-nav button { flex: 0 0 auto; }
+  .about-section { margin-bottom: 46px; }
+  .capability-grid, .matrix-grid, .contact-grid { grid-template-columns: 1fr; }
+  .capability-card { min-height: 180px; }
+  .identity-visual { min-height: 350px; }
+  .identity-node { min-width: 78px; padding-inline: 8px; }
+  .identity-0 { left: 10px; top: 28px; } .identity-1 { right: 10px; top: 28px; } .identity-2 { right: 8px; bottom: 34px; } .identity-4 { left: 8px; bottom: 34px; }
+  .identity-row { grid-template-columns: 38px 1fr; }
+  .identity-status { grid-column: 2; justify-self: start; margin-top: -5px; }
+  .matrix-card, .legal-panel { padding: 20px; }
+  .matrix-head { display: block; } .matrix-badge { display: inline-flex; margin-top: 12px; }
+  .legal-list li { grid-template-columns: 1fr; gap: 4px; }
+}
 </style>

@@ -236,7 +236,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 }
 .ss-progress-bar {
   display: block; height: 100%; width: 0;
-  background: linear-gradient(90deg, #9B2D20 0%, #C8A45C 46%, #1E6EB8 100%);
+  background: rgba(251,249,241,.82);
   animation: ssSweep 4.65s .15s cubic-bezier(.22,.8,.32,1) forwards;
 }
 .ss-skip {

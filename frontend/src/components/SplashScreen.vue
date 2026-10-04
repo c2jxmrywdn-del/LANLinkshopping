@@ -230,14 +230,14 @@ onBeforeUnmount(() => clearTimeout(timer))
   opacity: 0; animation: ssFadeUp .7s 1.72s ease forwards;
 }
 .ss-progress {
-  margin: 26px auto 0; width: 220px; height: 3px; border-radius: 3px;
-  background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.16); box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 8px 30px rgba(0,0,0,.12); overflow: hidden; opacity: 0; backdrop-filter: blur(14px) saturate(115%); -webkit-backdrop-filter: blur(14px) saturate(115%);
+  margin: 28px auto 0; width: 260px; height: 4px; border-radius: 999px; position: relative;
+  background: rgba(255,255,255,.075); border: 1px solid rgba(255,255,255,.22); box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 0 0 1px rgba(255,255,255,.025), 0 8px 30px rgba(0,0,0,.16); overflow: hidden; opacity: 0; backdrop-filter: blur(14px) saturate(115%); -webkit-backdrop-filter: blur(14px) saturate(115%);
   animation: ssFadeIn .4s 1s forwards;
 }
 .ss-progress-bar {
-  display: block; height: 100%; width: 0;
-  background: linear-gradient(90deg, rgba(255,255,255,.62), rgba(255,255,255,.9)); box-shadow: 0 0 12px rgba(255,255,255,.16), inset 0 1px 0 rgba(255,255,255,.72);
-  animation: ssSweep 4.65s .15s cubic-bezier(.22,.8,.32,1) forwards;
+  display: block; height: 100%; min-width: 2px; width: 0; border-radius: inherit;
+  background: rgba(255,255,255,.92); box-shadow: 0 0 10px rgba(255,255,255,.24), inset 0 1px 0 rgba(255,255,255,.9);
+  animation: ssSweep 4.55s .55s cubic-bezier(.22,.8,.32,1) forwards;
 }
 .ss-skip {
   position: absolute; top: 22px; right: 26px; z-index: 3;

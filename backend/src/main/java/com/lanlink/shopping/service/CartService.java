@@ -71,6 +71,13 @@ public class CartService {
         return vos;
     }
 
+    public void setChecked(Long userId, Long cartId, Integer checked) {
+        Cart c = cartMapper.selectById(cartId);
+        if (c == null || !c.getUserId().equals(userId)) throw new BusinessException("购物车项不存在");
+        c.setChecked(checked != null && checked != 0 ? 1 : 0);
+        cartMapper.updateById(c);
+    }
+
     public void remove(Long userId, Long cartId) {
         cartMapper.delete(Wrappers.<Cart>lambdaQuery()
                 .eq(Cart::getUserId, userId).eq(Cart::getCartId, cartId));

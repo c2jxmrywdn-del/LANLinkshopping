@@ -41,6 +41,8 @@
               <a-button block class="touch" @click="$router.push('/orders')">{{ t('acct.card.orders') }}</a-button>
               <a-button block class="touch" @click="$router.push('/cart')">{{ t('acct.card.cart') }}</a-button>
               <a-button block class="touch" @click="$router.push('/wallet')">我的钱包</a-button>
+              <a-button block class="touch" @click="$router.push('/membership')">会员中心</a-button>
+              <a-button block class="touch" @click="$router.push('/activity')">活动中心</a-button>
               <!-- 已入驻商户不再显示入驻入口（功能已迁移至商户端各模块） -->
               <a-button v-if="!user.isMerchant" block class="touch" @click="$router.push('/merchant')">{{ t('acct.card.merchant') }}</a-button>
             </a-space>

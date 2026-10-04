@@ -2,7 +2,7 @@
   <a-layout class="admin-root">
     <a-layout-sider :width="220" theme="dark" class="sider">
       <div class="brand">
-        <div class="brand-txt ll-wordmark"><span class="ll-lan">LAN</span><span class="ll-link">Link</span></div>
+        <div class="brand-txt ll-wordmark"><span class="ll-lan">LAN</span><span class="ll-link">Link</span><span class="ll-shopping">shopping</span></div>
       </div>
       <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline" @click="onNav">
         <a-menu-item key="admin-dash">数据概览</a-menu-item>
@@ -49,10 +49,7 @@ async function logout() { await user.logout(); router.push('/login') }
 .admin-root { min-height: 100vh; }
 .sider { box-shadow: 2px 0 8px rgba(0,0,0,.2); }
 .brand { padding: 20px 24px 16px; }
-.brand-txt {
-  font-size: 22px; font-weight: 800; letter-spacing: .5px; line-height: 1.2;
-  color: #f1f5f9;
-}
+.brand-txt { font-size: 22px; line-height: 1.2; }
 :deep(.ant-menu-dark .ant-menu-item) { letter-spacing: 1px; font-size: 14px; }
 :deep(.ant-menu-dark .ant-menu-item-selected) { background: var(--ll-accent-gradient); }
 .admin-header { background: #fff; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,21,41,.08); }

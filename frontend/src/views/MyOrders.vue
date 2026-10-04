@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div class="eyebrow">ORDER CENTER</div><h2>我的订单</h2><p class="sub">查看订单状态、支付进度与履约信息。</p>
-    <a-table :data-source="orders" :columns="cols" row-key="orderNo" :loading="loading">
+    <div class="eyebrow">ORDER CENTER</div><h2>我的订单</h2><p class="sub">查看订单状态、支付进度与履约信息。</p><div class="order-tabs"><a-radio-group v-model:value="filter" button-style="solid"><a-radio-button value="all">全部</a-radio-button><a-radio-button value="unpaid">待支付</a-radio-button><a-radio-button value="paid">已支付</a-radio-button><a-radio-button value="done">已完成</a-radio-button><a-radio-button value="closed">已关闭</a-radio-button></a-radio-group></div>
+    <a-table :data-source="filteredOrders" :columns="cols" row-key="orderNo" :loading="loading">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'total'">¥{{ record.totalAmount }}</template>
         <template v-else-if="column.key === 'pay'">
@@ -79,6 +79,8 @@ import { useUserStore } from '../store/user'
 const user = useUserStore()
 const orders = ref([])
 const loading = ref(false)
+const filter = ref('all')
+const filteredOrders = computed(() => orders.value.filter(o => filter.value === 'all' ? true : filter.value === 'unpaid' ? Number(o.payStatus) !== 1 && Number(o.payStatus) !== 2 && Number(o.orderStatus) !== 3 : filter.value === 'paid' ? Number(o.payStatus) === 1 && Number(o.orderStatus) !== 2 && Number(o.orderStatus) !== 3 && Number(o.orderStatus) !== 4 : filter.value === 'done' ? Number(o.orderStatus) === 2 : Number(o.orderStatus) === 3 || Number(o.orderStatus) === 4))
 const statusMap = { 0: '待发货', 1: '已发货', 2: '已完成', 3: '已取消', 4: '已退款' }
 const channelText = { wallet: '钱包', mock: '模拟', wechat: '微信', alipay: '支付宝' }
 const cols = [
@@ -142,7 +144,7 @@ onMounted(load)
 </script>
 
 <style scoped>
-.eyebrow{font-size:11px;letter-spacing:.16em;color:var(--ll-primary)}.sub{margin:-10px 0 16px;color:var(--ll-muted)}
+.eyebrow{font-size:11px;letter-spacing:.16em;color:var(--ll-primary)}.sub{margin:-10px 0 12px;color:var(--ll-muted)}.order-tabs{margin-bottom:16px}.order-tabs :deep(.ant-radio-button-wrapper){font-size:12px}
 .ch { font-size: 12px; color: var(--ll-muted, #64748b); margin-top: 2px; }
 .rf { font-size: 12px; color: #7c3aed; margin-top: 2px; }
 .pay-amount { font-size: 15px; margin-bottom: 14px; color: var(--ll-gray, #4b5563); }

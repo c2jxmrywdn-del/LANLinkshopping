@@ -44,13 +44,22 @@ public class PaymentProperties {
         private String appId = "";
         /** 应用私钥（RSA2，PKCS8 base64，切勿入库） */
         private String privateKey = "";
-        /** 支付宝公钥（验签用，PKCS8 base64） */
-        private String alipayPublicKey = "";
         /** 签名类型 */
         private String signType = "RSA2";
         /** 异步通知地址（留空则用 notifyBaseUrl 拼接） */
         private String notifyUrl = "";
         /** 同步跳转地址（留空则用 notifyBaseUrl 拼接） */
         private String returnUrl = "";
+
+        /** 公钥模式：false 用 alipayPublicKey 验签（普通公钥） */
+        private boolean certMode = false;
+        /** 支付宝公钥（普通公钥模式验签用，PKCS8 base64；certMode=false 时必填） */
+        private String alipayPublicKey = "";
+        /** 证书模式：应用公钥证书 appCertPublicKey_xxx.crt（certMode=true 时必填） */
+        private String appCertPath = "";
+        /** 证书模式：支付宝公钥证书 alipayCertPublicKey_RSA2.crt */
+        private String alipayPublicCertPath = "";
+        /** 证书模式：支付宝根证书 alipayRootCert.crt */
+        private String rootCertPath = "";
     }
 }

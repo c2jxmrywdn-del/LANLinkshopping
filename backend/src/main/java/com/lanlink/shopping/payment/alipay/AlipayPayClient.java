@@ -1,6 +1,7 @@
 package com.lanlink.shopping.payment.alipay;
 
 import com.alipay.api.AlipayClient;
+import com.alipay.api.CertAlipayRequest;
 import com.alipay.api.DefaultAlipayClient;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradePagePayRequest;
@@ -30,12 +31,29 @@ public class AlipayPayClient {
 
     public boolean configured() {
         PaymentProperties.Alipay a = props.getAlipay();
-        return !props.isMock() && notBlank(a.getAppId()) && notBlank(a.getPrivateKey()) && notBlank(a.getAlipayPublicKey());
+        if (props.isMock() || !notBlank(a.getAppId()) || !notBlank(a.getPrivateKey())) return false;
+        if (a.isCertMode()) {
+            return notBlank(a.getAppCertPath()) && notBlank(a.getAlipayPublicCertPath()) && notBlank(a.getRootCertPath());
+        }
+        return notBlank(a.getAlipayPublicKey());
     }
 
     private AlipayClient client() {
         PaymentProperties.Alipay a = props.getAlipay();
         try {
+            if (a.isCertMode()) {
+                CertAlipayRequest cert = new CertAlipayRequest();
+                cert.setServerUrl(a.getGatewayUrl());
+                cert.setAppId(a.getAppId());
+                cert.setPrivateKey(a.getPrivateKey());
+                cert.setFormat("json");
+                cert.setCharset("UTF-8");
+                cert.setSignType(a.getSignType());
+                cert.setCertPath(a.getAppCertPath());
+                cert.setAlipayPublicCertPath(a.getAlipayPublicCertPath());
+                cert.setRootCertPath(a.getRootCertPath());
+                return new DefaultAlipayClient(cert);
+            }
             return new DefaultAlipayClient(a.getGatewayUrl(), a.getAppId(), a.getPrivateKey(),
                     "json", "UTF-8", a.getAlipayPublicKey(), a.getSignType());
         } catch (Exception e) {
@@ -91,6 +109,9 @@ public class AlipayPayClient {
     public boolean verifyNotify(Map<String, String> params) {
         try {
             PaymentProperties.Alipay a = props.getAlipay();
+            if (a.isCertMode()) {
+                return AlipaySignature.rsaCertCheckV1(params, a.getAlipayPublicCertPath(), "UTF-8", a.getSignType());
+            }
             return AlipaySignature.rsaCheckV1(params, a.getAlipayPublicKey(), "UTF-8", a.getSignType());
         } catch (Exception e) {
             return false;

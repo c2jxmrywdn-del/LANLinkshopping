@@ -151,9 +151,8 @@ function secretTap() {
 <style scoped>
 .header { background: var(--ll-navy); padding: 0; position: sticky; top: 0; z-index: 100; }
 .header-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; height: 64px; }
-.logo { display: flex; align-items: center; gap: 8px; color: #fff; font-size: 20px; font-weight: 700; cursor: pointer; margin-right: 32px; white-space: nowrap; }
-.logo-img { width: 34px; height: 34px; border-radius: 8px; display: block; }
-.logo-text b { color: var(--ll-amber); font-weight: 700; }
+.logo { display: flex; align-items: center; gap: 9px; color: #fff; font-size: 21px; font-weight: 700; cursor: pointer; margin-right: 32px; white-space: nowrap; }
+.logo-img { width: 36px; height: 36px; border-radius: 8px; display: block; }
 .nav-shell { position: relative; flex: 1; min-width: 0; }
 .nav { background: transparent; border-bottom: none; }
 /* 导航交互态：未选中柔白，选中文字用亮青 --ll-cyan（可读性更佳）+ 指示条 --ll-accent-gradient 天蓝→青，与后台激活色同源 */

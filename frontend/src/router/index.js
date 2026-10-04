@@ -4,7 +4,6 @@ import MainLayout from '../layouts/MainLayout.vue'
 function readUser() {
   try { return JSON.parse(localStorage.getItem('ll_user') || 'null') } catch (e) { return null }
 }
-/** 判断登录用户是否具备全部所需权限（identity.permissions 来自 /auth/me） */
 function hasPerms(user, perms) {
   if (!perms || !perms.length) return true
   const owned = (user && user.identity && user.identity.permissions) || []
@@ -12,7 +11,6 @@ function hasPerms(user, perms) {
 }
 
 const routes = [
-  // ===== 用户前台 =====
   { path: '/', component: MainLayout, children: [
     { path: '', name: 'home', component: () => import('../views/Home.vue') },
     { path: 'mall', name: 'mall', component: () => import('../views/Mall.vue') },
@@ -20,19 +18,36 @@ const routes = [
     { path: 'cart', name: 'cart', component: () => import('../views/Cart.vue'), meta: { auth: true, perms: ['cart:manage'] } },
     { path: 'checkout', name: 'checkout', component: () => import('../views/Checkout.vue'), meta: { auth: true, perms: ['order:create'] } },
     { path: 'orders', name: 'orders', component: () => import('../views/MyOrders.vue'), meta: { auth: true, perms: ['order:view'] } },
+
+    // 钱包：二级总览 → 三级任务页 → 四级流水/结果详情
     { path: 'wallet', name: 'wallet', component: () => import('../views/Wallet.vue'), meta: { auth: true } },
+    { path: 'wallet/transactions', name: 'wallet-transactions', component: () => import('../views/WalletTransactions.vue'), meta: { auth: true } },
+    { path: 'wallet/transactions/:id', name: 'wallet-transaction-detail', component: () => import('../views/WalletTransactionDetail.vue'), meta: { auth: true } },
+    { path: 'wallet/recharge', name: 'wallet-recharge', component: () => import('../views/WalletRecharge.vue'), meta: { auth: true } },
+    { path: 'wallet/recharge/result/:id', name: 'wallet-recharge-result', component: () => import('../views/WalletRechargeResult.vue'), meta: { auth: true } },
+
     { path: 'merchant', name: 'merchant', component: () => import('../views/MerchantApply.vue'), meta: { auth: true } },
     { path: 'merchant/products', name: 'merchant-products', component: () => import('../views/MerchantProducts.vue'), meta: { auth: true, perms: ['product:publish'] } },
     { path: 'merchant/traffic', name: 'merchant-traffic', component: () => import('../views/MerchantTraffic.vue'), meta: { auth: true, perms: ['merchant:manage'] } },
+
+    // 活动：二级广场 → 三级详情/我的/规则 → 四级参与结果由详情页内闭环处理
     { path: 'activity', name: 'activity', component: () => import('../views/ActivityCenter.vue'), meta: { auth: true } },
+    { path: 'activity/:id', name: 'activity-detail', component: () => import('../views/ActivityDetail.vue'), meta: { auth: true } },
+    { path: 'activity/my', name: 'activity-my', component: () => import('../views/ActivityMy.vue'), meta: { auth: true } },
+    { path: 'activity/rules', name: 'activity-rules', component: () => import('../views/ActivityRules.vue'), meta: { auth: true } },
+
+    // 会员：二级总览 → 三级等级/积分/权益 → 四级积分流水
     { path: 'membership', name: 'membership', component: () => import('../views/MembershipCenter.vue'), meta: { auth: true } },
+    { path: 'membership/levels', name: 'membership-levels', component: () => import('../views/MembershipLevels.vue'), meta: { auth: true } },
+    { path: 'membership/points', name: 'membership-points', component: () => import('../views/MembershipPoints.vue'), meta: { auth: true } },
+    { path: 'membership/points/:id', name: 'membership-point-detail', component: () => import('../views/MembershipPointDetail.vue'), meta: { auth: true } },
+    { path: 'membership/benefits', name: 'membership-benefits', component: () => import('../views/MembershipBenefits.vue'), meta: { auth: true } },
+
     { path: 'about', name: 'about', component: () => import('../views/AboutUs.vue') },
     { path: 'me', name: 'me', component: () => import('../views/Me.vue'), meta: { auth: true, perms: ['profile:manage'] } }
   ]},
   { path: '/login', name: 'login', component: () => import('../views/Login.vue') },
   { path: '/register', name: 'register', component: () => import('../views/Register.vue') },
-
-  // ===== 管理员后台（与前台完全分离，无公开入口，靠隐形触发进入）=====
   { path: '/admin', component: () => import('../layouts/AdminLayout.vue'), meta: { admin: true }, children: [
     { path: '', name: 'admin-home', redirect: { name: 'admin-dash' } },
     { path: 'dashboard', name: 'admin-dash', component: () => import('../views/admin/AdminDashboard.vue') },
@@ -44,23 +59,14 @@ const routes = [
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })
-
 router.beforeEach((to) => {
   const user = readUser()
-  // 管理员后台：仅 admin 身份
   if (to.meta.admin) {
     if (!user || user.roleCode !== 'admin') return { name: 'home' }
     return true
   }
-  // 需登录：未登录跳登录页
-  if (to.meta.auth && !user) {
-    return { name: 'login', query: { redirect: to.fullPath } }
-  }
-  // 权限校验：已登录但缺少路由所需权限 → 送回首页（前端条件渲染兜底，后端另有强制校验）
-  if (to.meta.perms && user && !hasPerms(user, to.meta.perms)) {
-    return { name: 'home' }
-  }
+  if (to.meta.auth && !user) return { name: 'login', query: { redirect: to.fullPath } }
+  if (to.meta.perms && user && !hasPerms(user, to.meta.perms)) return { name: 'home' }
   return true
 })
-
 export default router

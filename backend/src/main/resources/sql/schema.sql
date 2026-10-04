@@ -382,3 +382,23 @@ CREATE TABLE IF NOT EXISTS t_wallet_log (
   KEY idx_wallet_user (user_id),
   KEY idx_wallet_order (ref_order_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='钱包流水';
+
+
+-- ==================== 商户流量中心：行为事件采集 ====================
+CREATE TABLE IF NOT EXISTS t_traffic_event (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  merchant_id BIGINT NOT NULL COMMENT '商户ID',
+  product_id BIGINT NULL COMMENT '商品ID',
+  user_id BIGINT NULL COMMENT '用户ID，可为空',
+  session_id VARCHAR(128) NOT NULL COMMENT '匿名会话标识',
+  event_type VARCHAR(32) NOT NULL COMMENT 'VISIT/VIEW_PRODUCT/CLICK_PRODUCT/FAVORITE/ADD_CART/CHECKOUT/PAY',
+  source_type VARCHAR(32) DEFAULT 'direct' COMMENT 'direct/search/category/activity/external/referral',
+  source_detail VARCHAR(255) COMMENT '来源细分，如搜索词/活动ID',
+  page_url VARCHAR(500) COMMENT '发生页面',
+  device_type VARCHAR(16) DEFAULT 'unknown' COMMENT 'pc/mobile/tablet/unknown',
+  event_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_traffic_merchant_time (merchant_id,event_time),
+  KEY idx_traffic_product_time (product_id,event_time),
+  KEY idx_traffic_session_time (session_id,event_time),
+  KEY idx_traffic_source_time (merchant_id,source_type,event_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='商户流量行为事件';

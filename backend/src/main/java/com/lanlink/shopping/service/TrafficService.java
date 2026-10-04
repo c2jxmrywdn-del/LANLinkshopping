@@ -4,117 +4,58 @@ import com.lanlink.shopping.common.BusinessException;
 import com.lanlink.shopping.entity.Merchant;
 import com.lanlink.shopping.mapper.TrafficMapper;
 import org.springframework.stereotype.Service;
+import java.math.*;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-/**
- * 商户流量统计（商户端「流量管理」）。
- * 数据口径：仅统计已支付订单（pay_status=1）；trend/productRanking 直接透出 Mapper 聚合行。
- */
 @Service
 public class TrafficService {
+    private static final int MAX_DAYS=90;
+    private static final Set<String> EVENTS=Set.of("VISIT","VIEW_PRODUCT","CLICK_PRODUCT","FAVORITE","ADD_CART","CHECKOUT","PAY");
+    private final TrafficMapper mapper; private final MerchantService merchantService;
+    public TrafficService(TrafficMapper mapper,MerchantService merchantService){this.mapper=mapper;this.merchantService=merchantService;}
 
-    private static final int MAX_DAYS = 90;
-
-    private final TrafficMapper trafficMapper;
-    private final MerchantService merchantService;
-
-    public TrafficService(TrafficMapper trafficMapper, MerchantService merchantService) {
-        this.trafficMapper = trafficMapper;
-        this.merchantService = merchantService;
+    public Map<String,Object> overview(Long userId){
+        Long m=mustMerId(userId); Map<String,Object> r=mapper.sumRecent(m,30), p=mapper.sumPrevPeriod(m,30,60), t=mapper.sumTotal(m);
+        long on=mapper.countOnSale(m), active=mapper.countActiveProducts(m), orders=num(r.get("orders")); BigDecimal a=dec(r.get("amount")), pa=dec(p.get("amount"));
+        Map<String,Object> o=new LinkedHashMap<>(); o.put("onSaleProducts",on);o.put("totalAmount",t.get("amount"));o.put("totalSold",t.get("sold"));o.put("recentAmount",r.get("amount"));o.put("recentOrders",orders);
+        o.put("prevAmount",p.get("amount"));o.put("chainGrowthPct",pa.signum()>0?a.subtract(pa).divide(pa,4,RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue():null);
+        o.put("avgOrderValue",orders>0?a.divide(BigDecimal.valueOf(orders),2,RoundingMode.HALF_UP):BigDecimal.ZERO);o.put("activeProducts",active);
+        o.put("activeRatePct",on>0?BigDecimal.valueOf(active*100L).divide(BigDecimal.valueOf(on),1,RoundingMode.HALF_UP):BigDecimal.ZERO);return o;
     }
-
-    /** 概览：在售商品数 / 累计销售额 / 累计销量 / 近30天销售额与订单 / 环比 / 客单价 / 动销率 */
-    public Map<String, Object> overview(Long userId) {
-        Long merId = mustMerId(userId);
-        Map<String, Object> recent = trafficMapper.sumRecent(merId, 30);
-        Map<String, Object> prev = trafficMapper.sumPrevPeriod(merId, 30, 60);
-        Map<String, Object> total = trafficMapper.sumTotal(merId);
-        long onSale = trafficMapper.countOnSale(merId);
-        long active = trafficMapper.countActiveProducts(merId);
-        java.math.BigDecimal recentAmount = toDecimal(recent == null ? null : recent.get("amount"));
-        java.math.BigDecimal prevAmount = toDecimal(prev == null ? null : prev.get("amount"));
-        long recentOrders = toLong(recent == null ? null : recent.get("orders"));
-
-        Map<String, Object> out = new LinkedHashMap<>();
-        out.put("onSaleProducts", onSale);
-        out.put("totalAmount", total == null ? 0 : total.get("amount"));
-        out.put("totalSold", total == null ? 0 : total.get("sold"));
-        out.put("recentAmount", recent == null ? 0 : recent.get("amount"));
-        out.put("recentOrders", recentOrders);
-        // 环比：（本期-上期）/上期，上期为 0 时不计算（null 前端显示为 —）
-        out.put("prevAmount", prev == null ? 0 : prev.get("amount"));
-        out.put("chainGrowthPct", prevAmount.signum() > 0
-                ? recentAmount.subtract(prevAmount)
-                        .divide(prevAmount, 4, java.math.RoundingMode.HALF_UP)
-                        .multiply(java.math.BigDecimal.valueOf(100))
-                        .doubleValue()
-                : null);
-        // 客单价：近 30 天销售额 / 订单数
-        out.put("avgOrderValue", recentOrders > 0
-                ? recentAmount.divide(java.math.BigDecimal.valueOf(recentOrders), 2, java.math.RoundingMode.HALF_UP)
-                : java.math.BigDecimal.ZERO);
-        // 动销率：有销量商品 / 在售商品
-        out.put("activeProducts", active);
-        out.put("activeRatePct", onSale > 0
-                ? java.math.BigDecimal.valueOf(active * 100L)
-                        .divide(java.math.BigDecimal.valueOf(onSale), 1, java.math.RoundingMode.HALF_UP)
-                : java.math.BigDecimal.ZERO);
-        return out;
+    public List<Map<String,Object>> trend(Long userId,Integer days){
+        int d=norm(days); List<Map<String,Object>> rows=mapper.trendByDay(mustMerId(userId),d); Map<String,Map<String,Object>> by=new HashMap<>(); for(Map<String,Object> r:rows)by.put(String.valueOf(r.get("date")),r);
+        List<Map<String,Object>> out=new ArrayList<>(); LocalDate cur=LocalDate.now().minusDays(d-1L); for(int i=0;i<d;i++){String k=cur.format(DateTimeFormatter.ISO_LOCAL_DATE);Map<String,Object> r=by.get(k);
+            if(r==null){r=new LinkedHashMap<>();r.put("date",k);r.put("amount",BigDecimal.ZERO);r.put("orders",0L);}out.add(r);cur=cur.plusDays(1);}return out;
     }
-
-    /** 近 N 天按日趋势（补零填充无销售日期，图表连续不失真） */
-    public List<Map<String, Object>> trend(Long userId, Integer days) {
-        Long merId = mustMerId(userId);
-        int d = days == null || days <= 0 ? 30 : Math.min(days, MAX_DAYS);
-        List<Map<String, Object>> rows = trafficMapper.trendByDay(merId, d);
-        Map<String, Map<String, Object>> byDate = new LinkedHashMap<>();
-        for (Map<String, Object> r : rows) {
-            byDate.put(String.valueOf(r.get("date")), r);
-        }
-        List<Map<String, Object>> filled = new java.util.ArrayList<>();
-        java.time.LocalDate cur = java.time.LocalDate.now().minusDays(d - 1L);
-        for (int i = 0; i < d; i++) {
-            String key = cur.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE);
-            Map<String, Object> row = byDate.get(key);
-            if (row == null) {
-                row = new LinkedHashMap<>();
-                row.put("date", key);
-                row.put("amount", java.math.BigDecimal.ZERO);
-                row.put("orders", 0L);
-            }
-            filled.add(row);
-            cur = cur.plusDays(1);
-        }
-        return filled;
+    public List<Map<String,Object>> channels(Long u,Integer d){return mapper.channelStats(mustMerId(u),norm(d));}
+    public List<Map<String,Object>> productRanking(Long u,Integer d){return mapper.productRanking(mustMerId(u),norm(d));}
+    public List<Map<String,Object>> sources(Long u,Integer d){return mapper.sourceStats(mustMerId(u),norm(d));}
+    public Map<String,Object> conversion(Long u,Integer d){
+        Long m=mustMerId(u);int n=norm(d);Map<String,Object> f=mapper.funnel(m,n);long v=num(f.get("visits")),views=num(f.get("views")),c=num(f.get("carts")),p=num(f.get("pays"));
+        Map<String,Object> o=new LinkedHashMap<>();o.put("visits",v);o.put("views",views);o.put("carts",c);o.put("pays",p);o.put("viewRate",rate(views,v));o.put("cartRate",rate(c,views));o.put("payRate",rate(p,c));o.put("overallRate",rate(p,v));o.put("products",mapper.productFunnel(m,n));return o;
     }
-
-    /** 支付渠道分布（近 N 天成交，渠道管理与转化优化视角） */
-    public List<Map<String, Object>> channels(Long userId, Integer days) {
-        Long merId = mustMerId(userId);
-        int d = days == null || days <= 0 ? 30 : Math.min(days, MAX_DAYS);
-        return trafficMapper.channelStats(merId, d);
+    public List<Map<String,Object>> diagnosis(Long u,Integer d){
+        Map<String,Object> f=mapper.funnel(mustMerId(u),norm(d));long v=num(f.get("visits")),views=num(f.get("views")),c=num(f.get("carts")),p=num(f.get("pays"));List<Map<String,Object>> out=new ArrayList<>();
+        if(v==0){add(out,"NO_DATA","暂无流量事件","当前窗口没有采集到访问事件，请确认商城页面已接入流量采集。","info");return out;}
+        if(rate(views,v)<30)add(out,"VIEW_LOSS","访问→商品浏览流失较高","优化首页曝光、搜索结果与落地页首屏。","warning");
+        if(rate(c,views)<10)add(out,"CART_LOSS","商品浏览→加购偏低","检查价格、规格、库存与商品详情页决策信息。","warning");
+        if(rate(p,c)<20)add(out,"PAY_LOSS","加购→支付偏低","检查结算流程、支付渠道及费用提示。","warning");
+        if(out.isEmpty())add(out,"HEALTHY","流量转化健康","继续扩大高转化商品与优质来源的曝光。","success");return out;
     }
-
-    /** 商品维度销量/销售额排行 */
-    public List<Map<String, Object>> productRanking(Long userId) {
-        Long merId = mustMerId(userId);
-        return trafficMapper.productRanking(merId);
+    public void track(Map<String,Object> raw){
+        String event=String.valueOf(raw.getOrDefault("eventType",""));if(!EVENTS.contains(event))throw new BusinessException("不支持的流量事件");
+        String sid=String.valueOf(raw.getOrDefault("sessionId",""));if(sid.length()<8||sid.length()>128)throw new BusinessException("无效会话标识");
+        Object mid=raw.get("merchantId");if(mid==null)throw new BusinessException("缺少商户标识");
+        Map<String,Object> e=new HashMap<>();e.put("merchantId",mid);e.put("productId",raw.get("productId"));e.put("userId",raw.get("userId"));e.put("sessionId",sid);
+        e.put("eventType",event);e.put("sourceType",clip(raw.getOrDefault("sourceType","direct"),32));e.put("sourceDetail",clip(raw.get("sourceDetail"),255));e.put("pageUrl",clip(raw.get("pageUrl"),500));e.put("deviceType",clip(raw.getOrDefault("deviceType","unknown"),16));mapper.insertEvent(e);
     }
-
-    private Long mustMerId(Long userId) {
-        Merchant m = merchantService.getByUser(userId);
-        if (m == null) throw new BusinessException("仅入驻商户可查看流量数据");
-        return m.getMerId();
-    }
-
-    private static java.math.BigDecimal toDecimal(Object o) {
-        return o == null ? java.math.BigDecimal.ZERO : new java.math.BigDecimal(String.valueOf(o));
-    }
-
-    private static long toLong(Object o) {
-        return o == null ? 0L : Long.parseLong(String.valueOf(o));
-    }
+    private Long mustMerId(Long u){Merchant m=merchantService.getByUser(u);if(m==null)throw new BusinessException("仅入驻商户可查看流量数据");return m.getMerId();}
+    private int norm(Integer d){return d==null||d<=0?30:Math.min(d,MAX_DAYS);}
+    private static BigDecimal dec(Object o){return o==null?BigDecimal.ZERO:new BigDecimal(String.valueOf(o));}
+    private static long num(Object o){return o==null?0:Long.parseLong(String.valueOf(o));}
+    private static double rate(long a,long b){return b==0?0:Math.round(a*10000.0/b)/100.0;}
+    private static String clip(Object o,int n){if(o==null)return null;String s=String.valueOf(o);return s.length()>n?s.substring(0,n):s;}
+    private static void add(List<Map<String,Object>> x,String code,String title,String suggestion,String level){Map<String,Object> m=new LinkedHashMap<>();m.put("code",code);m.put("title",title);m.put("suggestion",suggestion);m.put("level",level);x.add(m);}
 }

@@ -13,25 +13,29 @@ import { useUserStore } from './store/user'
 import { useSettingsStore } from './store/settings'
 import { fetchCsrfToken } from './api/request'
 
-const showSplash = ref(true)
-// 动画期间锁定页面滚动
-watch(showSplash, (v) => {
-  document.body.style.overflow = v ? 'hidden' : ''
-}, { immediate: true })
+const showSplash = ref(false)
+watch(showSplash, (v) => { document.body.style.overflow = v ? 'hidden' : '' }, { immediate: true })
 
 const user = useUserStore()
 const settings = useSettingsStore()
 const isDark = ref(false)
 watch(() => settings.isDark, (v) => { isDark.value = !!v }, { immediate: true })
 
-// 已登录时：预取 CSRF 令牌 + 加载系统设置（主题/字号/语言实时应用）
-async function bootstrapLogged() {
+function bootstrapLogged() {
   if (!user.logged) return
-  try { await fetchCsrfToken() } catch (e) { /* 令牌获取失败不影响浏览 */ }
+  fetchCsrfToken().catch(() => {})
   settings.load().catch(() => {})
 }
+
 watch(() => user.logged, (v) => { if (v) bootstrapLogged() })
-onMounted(() => { if (user.logged) bootstrapLogged() })
+onMounted(() => {
+  try {
+    showSplash.value = sessionStorage.getItem('ll-startup-seen') !== '1'
+  } catch (_) {
+    showSplash.value = true
+  }
+  if (user.logged) bootstrapLogged()
+})
 </script>
 
 <style>

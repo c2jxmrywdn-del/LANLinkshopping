@@ -35,7 +35,7 @@
           </g>
         </svg>
 
-        <div class="ss-wordmark">LAN<b>Link</b>shopping</div>
+        <div class="ss-wordmark"><span class="ss-lan">LAN</span><b>Link</b><span class="ss-shopping">shopping</span></div>
         <div class="ss-tagline">聚合 · 连接 · 一体多元解决方案</div>
         <div class="ss-progress" aria-hidden="true"><span class="ss-progress-bar"></span></div>
       </div>
@@ -55,12 +55,11 @@ let timer = null
 function finish() {
   if (!visible.value) return
   visible.value = false
-  try { sessionStorage.setItem('ll-startup-seen', '1') } catch (_) {}
   setTimeout(() => emit('done'), 650)
 }
 
 onMounted(() => {
-  timer = setTimeout(finish, 2100)
+  timer = setTimeout(finish, 5000)
 })
 
 onBeforeUnmount(() => clearTimeout(timer))
@@ -72,7 +71,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   display: flex; align-items: center; justify-content: center;
   overflow: hidden; isolation: isolate;
 }
-.ss-leave-leave-active { transition: opacity .6s ease, transform .6s ease; }
+.ss-leave-leave-active { transition: opacity .65s ease, transform .65s cubic-bezier(.2,.8,.2,1); }
 .ss-leave-leave-to { opacity: 0; transform: scale(1.035); }
 
 .ss-bg {
@@ -80,40 +79,40 @@ onBeforeUnmount(() => clearTimeout(timer))
   background:
     radial-gradient(90% 80% at 50% 45%, rgba(30,110,184,.12), transparent 64%),
     linear-gradient(135deg, #13233A 0%, #101B2D 52%, #0B1220 100%);
-  animation: ssBgIn .65s ease both;
+  animation: ssBgIn .8s ease both;
 }
 .ss-bg::after {
-  content: ""; position: absolute; inset: -20%;
+  content: ""; position: absolute; inset: -22%;
   background: conic-gradient(from 120deg at 50% 50%,
-    rgba(155,45,32,.07),
-    rgba(200,164,92,.09),
-    rgba(30,110,184,.10),
-    rgba(155,45,32,.07));
-  filter: blur(50px);
-  animation: ssColorShift 7s ease-in-out infinite alternate;
+    rgba(155,45,32,.09),
+    rgba(200,164,92,.12),
+    rgba(30,110,184,.12),
+    rgba(155,45,32,.09));
+  filter: blur(56px);
+  animation: ssColorShift 8s ease-in-out infinite alternate;
 }
 .ss-gradient-orb {
-  position: absolute; width: 520px; height: 520px; border-radius: 50%;
-  filter: blur(46px); opacity: .16; mix-blend-mode: screen;
+  position: absolute; width: 560px; height: 560px; border-radius: 50%;
+  filter: blur(48px); opacity: .18; mix-blend-mode: screen;
   will-change: transform, opacity;
 }
 .ss-orb-brick {
-  left: -150px; top: 4%;
-  background: radial-gradient(circle, rgba(155,45,32,.95) 0%, rgba(155,45,32,.45) 42%, transparent 72%);
-  animation: ssOrbBrick 8s ease-in-out infinite alternate;
+  left: -170px; top: 2%;
+  background: radial-gradient(circle, rgba(155,45,32,.98) 0%, rgba(155,45,32,.42) 42%, transparent 72%);
+  animation: ssOrbBrick 8.2s ease-in-out infinite alternate;
 }
 .ss-orb-gold {
-  right: -120px; top: 18%;
-  background: radial-gradient(circle, rgba(200,164,92,.9) 0%, rgba(200,164,92,.35) 45%, transparent 72%);
-  animation: ssOrbGold 9s ease-in-out -2s infinite alternate;
+  right: -140px; top: 15%;
+  background: radial-gradient(circle, rgba(200,164,92,.94) 0%, rgba(200,164,92,.38) 45%, transparent 72%);
+  animation: ssOrbGold 9.2s ease-in-out -2s infinite alternate;
 }
 .ss-orb-cyan {
-  left: 32%; bottom: -260px;
-  background: radial-gradient(circle, rgba(30,110,184,.95) 0%, rgba(30,110,184,.4) 45%, transparent 72%);
-  animation: ssOrbCyan 8.5s ease-in-out -1s infinite alternate;
+  left: 30%; bottom: -280px;
+  background: radial-gradient(circle, rgba(30,110,184,.96) 0%, rgba(30,110,184,.4) 45%, transparent 72%);
+  animation: ssOrbCyan 8.7s ease-in-out -1s infinite alternate;
 }
 .ss-gradient-noise {
-  position: absolute; inset: 0; opacity: .045;
+  position: absolute; inset: 0; opacity: .04;
   background-image: radial-gradient(rgba(251,249,241,.55) .6px, transparent .6px);
   background-size: 4px 4px;
   animation: ssNoiseDrift 6s linear infinite;
@@ -143,9 +142,18 @@ onBeforeUnmount(() => clearTimeout(timer))
 
 .ss-wordmark {
   margin-top: 18px; font-size: 30px; font-weight: 800; letter-spacing: -.5px;
-  color: #FBF9F1; opacity: 0; animation: ssFadeUp .7s 1.55s ease forwards;
+  opacity: 0; animation: ssFadeUp .7s 1.55s ease forwards;
 }
-.ss-wordmark b { color: #C8A45C; }
+.ss-lan { color: #FFFFFF; }
+.ss-wordmark b {
+  color: rgba(255, 218, 142, .9);
+  text-shadow:
+    0 0 7px rgba(200,164,92,.55),
+    0 0 22px rgba(200,164,92,.24);
+  background: linear-gradient(180deg, #FFF1C6 0%, #C8A45C 48%, #F0D79D 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.ss-shopping { color: rgba(251,249,241,.76); font-weight: 650; }
 .ss-tagline {
   margin-top: 8px; font-size: 14px; letter-spacing: 4px; color: #AEB7C4;
   opacity: 0; animation: ssFadeUp .7s 1.72s ease forwards;
@@ -158,7 +166,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 .ss-progress-bar {
   display: block; height: 100%; width: 0;
   background: linear-gradient(90deg, #9B2D20 0%, #C8A45C 46%, #1E6EB8 100%);
-  animation: ssSweep 1.95s .15s cubic-bezier(.22,.8,.32,1) forwards;
+  animation: ssSweep 4.65s .15s cubic-bezier(.22,.8,.32,1) forwards;
 }
 .ss-skip {
   position: absolute; top: 22px; right: 26px; z-index: 3;
@@ -171,9 +179,9 @@ onBeforeUnmount(() => clearTimeout(timer))
 
 @keyframes ssBgIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ssColorShift { from { transform: translate3d(-4%, -2%, 0) rotate(0deg) scale(1); } to { transform: translate3d(4%, 3%, 0) rotate(18deg) scale(1.08); } }
-@keyframes ssOrbBrick { from { transform: translate3d(0,0,0) scale(.88); opacity:.10; } to { transform: translate3d(190px,120px,0) scale(1.16); opacity:.18; } }
-@keyframes ssOrbGold { from { transform: translate3d(0,0,0) scale(1.04); opacity:.09; } to { transform: translate3d(-150px,95px,0) scale(.86); opacity:.18; } }
-@keyframes ssOrbCyan { from { transform: translate3d(-40px,0,0) scale(.86); opacity:.08; } to { transform: translate3d(110px,-150px,0) scale(1.15); opacity:.16; } }
+@keyframes ssOrbBrick { from { transform: translate3d(0,0,0) scale(.88); opacity:.10; } to { transform: translate3d(210px,130px,0) scale(1.18); opacity:.19; } }
+@keyframes ssOrbGold { from { transform: translate3d(0,0,0) scale(1.04); opacity:.10; } to { transform: translate3d(-165px,105px,0) scale(.86); opacity:.19; } }
+@keyframes ssOrbCyan { from { transform: translate3d(-40px,0,0) scale(.86); opacity:.08; } to { transform: translate3d(120px,-165px,0) scale(1.16); opacity:.17; } }
 @keyframes ssNoiseDrift { from { transform: translate3d(0,0,0); } to { transform: translate3d(12px,8px,0); } }
 @keyframes ssDraw { to { stroke-dashoffset: 0; } }
 @keyframes ssPop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.35); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }

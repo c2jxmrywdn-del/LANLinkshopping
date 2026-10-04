@@ -24,7 +24,7 @@
       </template>
     </a-table>
     <a-empty v-if="!loading && orders.length === 0" description="还没有订单">
-      <div class="head-actions"><a-button type="primary" @click="$router.push('/mall')">去下单</a-button>
+      <a-button type="primary" @click="$router.push('/mall')">去下单</a-button>
     </a-empty>
 
     <!-- 支付渠道选择弹窗 -->
@@ -142,7 +142,7 @@ onMounted(load)
 </script>
 
 <style scoped>
-.head-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}.eyebrow{font-size:11px;letter-spacing:.16em;color:var(--ll-primary)}.sub{margin:-10px 0 16px;color:var(--ll-muted)}
+.eyebrow{font-size:11px;letter-spacing:.16em;color:var(--ll-primary)}.sub{margin:-10px 0 16px;color:var(--ll-muted)}
 .ch { font-size: 12px; color: var(--ll-muted, #64748b); margin-top: 2px; }
 .rf { font-size: 12px; color: #7c3aed; margin-top: 2px; }
 .pay-amount { font-size: 15px; margin-bottom: 14px; color: var(--ll-gray, #4b5563); }

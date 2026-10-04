@@ -231,12 +231,12 @@ onBeforeUnmount(() => clearTimeout(timer))
 }
 .ss-progress {
   margin: 26px auto 0; width: 220px; height: 3px; border-radius: 3px;
-  background: rgba(251,249,241,.12); overflow: hidden; opacity: 0;
+  background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.16); box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 8px 30px rgba(0,0,0,.12); overflow: hidden; opacity: 0; backdrop-filter: blur(14px) saturate(115%); -webkit-backdrop-filter: blur(14px) saturate(115%);
   animation: ssFadeIn .4s 1s forwards;
 }
 .ss-progress-bar {
   display: block; height: 100%; width: 0;
-  background: rgba(251,249,241,.82);
+  background: linear-gradient(90deg, rgba(255,255,255,.62), rgba(255,255,255,.9)); box-shadow: 0 0 12px rgba(255,255,255,.16), inset 0 1px 0 rgba(255,255,255,.72);
   animation: ssSweep 4.65s .15s cubic-bezier(.22,.8,.32,1) forwards;
 }
 .ss-skip {

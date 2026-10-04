@@ -39,7 +39,7 @@
           </g>
         </svg>
 
-        <div class="ss-wordmark"><span class="ss-lan">LAN</span><b>Link</b><span class="ss-shopping">shopping</span></div>
+        <div class="ss-wordmark ll-wordmark"><span class="ll-lan">LAN</span><span class="ll-link">Link</span><span class="ll-shopping">shopping</span></div>
         <div class="ss-tagline">聚合 · 连接 · 一体多元解决方案</div>
         <div class="ss-progress" aria-hidden="true"><span class="ss-progress-bar"></span></div>
       </div>
@@ -209,19 +209,17 @@ onBeforeUnmount(() => clearTimeout(timer))
 .ss-flowR { stroke: #C8A45C; }
 
 .ss-wordmark {
-  margin-top: 18px; font-size: 30px; font-weight: 800; letter-spacing: -.5px;
-  opacity: 0; animation: ssFadeUp .7s 1.55s ease forwards;
+  margin-top: 18px;
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -1px;
+  opacity: 0;
+  animation: ssFadeUp .7s 1.55s ease forwards;
 }
-.ss-lan { color: #FFFFFF; }
-.ss-wordmark b {
-  color: rgba(255, 218, 142, .9);
-  text-shadow:
-    0 0 7px rgba(200,164,92,.55),
-    0 0 22px rgba(200,164,92,.24);
-  background: linear-gradient(180deg, #FFF1C6 0%, #C8A45C 48%, #F0D79D 100%);
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-}
-.ss-shopping { color: rgba(251,249,241,.76); font-weight: 650; }
+.ss-wordmark .ll-lan { color: #FFFFFF; }
+.ss-wordmark .ll-link { color: var(--ll-amber, #F59E0B); font-weight: 700; }
+.ss-wordmark .ll-shopping { color: rgba(255,255,255,.92); font-weight: 700; }
 .ss-tagline {
   margin-top: 8px; font-size: 14px; letter-spacing: 4px; color: #AEB7C4;
   opacity: 0; animation: ssFadeUp .7s 1.72s ease forwards;

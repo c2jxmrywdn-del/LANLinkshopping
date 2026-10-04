@@ -82,7 +82,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   position: absolute; inset: 0; overflow: hidden;
   background:
     radial-gradient(90% 80% at 50% 45%, rgba(30,110,184,.12), transparent 64%),
-    linear-gradient(135deg, #13233A 0%, #101B2D 52%, #0B1220 100%);
+    linear-gradient(135deg, var(--ll-brand-base) 0%, #101B2D 52%, var(--ll-brand-base-deep) 100%);
   animation: ssBgIn .8s ease both;
 }
 .ss-bg::after {
@@ -93,7 +93,7 @@ onBeforeUnmount(() => clearTimeout(timer))
     rgba(30,110,184,.12),
     rgba(155,45,32,.09));
   filter: blur(56px);
-  animation: ssColorShift 8s ease-in-out infinite alternate;
+  animation: ssColorShift var(--ll-brand-ambient-duration) ease-in-out infinite alternate;
 }
 .ss-gradient-orb {
   position: absolute; width: 560px; height: 560px; border-radius: 50%;
@@ -141,7 +141,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 .ss-ribbon-a {
   left: -12vw; top: 17vh;
   transform: rotate(-13deg);
-  animation: ssLiquidA 8.5s cubic-bezier(.45,0,.25,1) infinite alternate;
+  animation: ssLiquidA var(--ll-brand-ambient-duration) cubic-bezier(.45,0,.25,1) infinite alternate;
 }
 .ss-ribbon-b {
   right: -15vw; bottom: 12vh;
@@ -176,7 +176,7 @@ onBeforeUnmount(() => clearTimeout(timer))
     transparent 72%);
   filter: blur(16px);
   transform: rotate(12deg) translateX(-72%);
-  animation: ssSheen 7.5s cubic-bezier(.45,0,.25,1) infinite;
+  animation: ssSheen var(--ll-brand-sheen-duration) cubic-bezier(.45,0,.25,1) infinite;
   pointer-events: none;
 }
 .ss-gradient-noise {
@@ -193,20 +193,20 @@ onBeforeUnmount(() => clearTimeout(timer))
   stroke-dasharray: 1; stroke-dashoffset: 1;
   transform-box: fill-box; transform-origin: center;
 }
-.ss-ringA { stroke: #9B2D20; animation: ssDraw 1s .35s ease forwards; }
-.ss-ringB { stroke: #1E6EB8; animation: ssDraw 1s .55s ease forwards; }
+.ss-ringA { stroke: var(--ll-brand-red); animation: ssDraw var(--ll-logo-ring-duration) .35s ease forwards; }
+.ss-ringB { stroke: var(--ll-brand-blue); animation: ssDraw var(--ll-logo-ring-duration) .55s ease forwards; }
 .ss-core {
-  fill: #C8A45C; transform-box: fill-box; transform-origin: center; opacity: 0;
-  animation: ssPop .5s 1.15s ease forwards, ssGlow 2s 1.7s ease-in-out infinite;
+  fill: var(--ll-brand-gold); transform-box: fill-box; transform-origin: center; opacity: 0;
+  animation: ssPop .5s var(--ll-logo-core-delay) ease forwards, ssGlow 2s 1.7s ease-in-out infinite;
 }
 .ss-dot { transform-box: fill-box; transform-origin: center; opacity: 0; }
-.ss-cv { fill: #1E6EB8; animation: ssSlideL .6s ease forwards; }
-.ss-sp { fill: #C8A45C; animation: ssPopR .5s ease forwards; }
+.ss-cv { fill: var(--ll-brand-blue); animation: ssSlideL .6s ease forwards; }
+.ss-sp { fill: var(--ll-brand-gold); animation: ssPopR .5s ease forwards; }
 .ss-flow {
-  fill: none; stroke: #1E6EB8; stroke-width: 4; stroke-linecap: round;
+  fill: none; stroke: var(--ll-brand-blue); stroke-width: 4; stroke-linecap: round;
   stroke-dasharray: 1; stroke-dashoffset: 1; opacity: .9; animation: ssDraw .5s ease forwards;
 }
-.ss-flowR { stroke: #C8A45C; }
+.ss-flowR { stroke: var(--ll-brand-gold); }
 
 /* 与首页 MainLayout.logo-text 完全复用同一品牌字标规范：
    font-family / font-weight / letter-spacing / LAN-Link-shopping 分色均来自 .ll-wordmark。
@@ -220,7 +220,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   letter-spacing: -0.35px;
   white-space: nowrap;
   opacity: 0;
-  animation: ssFadeUp .7s 1.55s ease forwards;
+  animation: ssFadeUp var(--ll-logo-reveal-duration) var(--ll-logo-reveal-delay) ease forwards;
 }
 .ss-wordmark .ll-lan { color: #fff; }
 .ss-wordmark .ll-link { color: var(--ll-amber); font-weight: 700; }

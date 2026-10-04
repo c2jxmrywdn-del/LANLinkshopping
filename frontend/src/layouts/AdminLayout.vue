@@ -2,7 +2,7 @@
   <a-layout class="admin-root">
     <a-layout-sider :width="220" theme="dark" class="sider">
       <div class="brand">
-        <div class="brand-txt wordmark">LAN<span class="ll-link">Link</span></div>
+        <div class="brand-txt ll-wordmark"><span class="ll-lan">LAN</span><span class="ll-link">Link</span></div>
       </div>
       <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline" @click="onNav">
         <a-menu-item key="admin-dash">数据概览</a-menu-item>

@@ -35,7 +35,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { productApi } from '../api'
+import { productApi, trafficApi } from '../api'
 import { useCartStore } from '../store/cart'
 import { useUserStore } from '../store/user'
 
@@ -44,10 +44,10 @@ const cart = useCartStore(); const user = useUserStore()
 const p = ref(null)
 const qty = ref(1)
 
-onMounted(async () => { p.value = await productApi.detail(route.params.id) })
+onMounted(async () => { p.value = await productApi.detail(route.params.id); if (p.value?.merId) trafficApi.trackPage({ merchantId:p.value.merId, productId:p.value.prodId, eventType:'VIEW_PRODUCT', sourceType:route.query.source || 'direct', sourceDetail:route.query.keyword || null }).catch(() => {}) })
 
 function needLogin() { if (!user.logged) { message.warning('请先登录'); router.push('/login'); return true } return false }
-async function addCart() { if (needLogin()) return; await cart.add(p.value.prodId, qty.value); message.success('已加入购物车') }
+async function addCart() { if (needLogin()) return; await cart.add(p.value.prodId, qty.value); trafficApi.trackPage({ merchantId:p.value.merId, productId:p.value.prodId, eventType:'ADD_CART', sourceType:'product_detail' }).catch(() => {}); message.success('已加入购物车') }
 async function buyNow() { if (needLogin()) return; await cart.add(p.value.prodId, qty.value); router.push('/cart') }
 </script>
 

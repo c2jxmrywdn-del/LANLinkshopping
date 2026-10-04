@@ -251,4 +251,25 @@ public class MembershipService {
                 .eq(MemberPointLog::getUserId, userId).orderByDesc(MemberPointLog::getLogId).last("LIMIT 20")));
         return out;
     }
+    /** 活动/营销奖励发放积分，不增加成长值；积分流水独立记账。 */
+    @Transactional
+    public int awardPoints(Long userId, int points, String refNo, String remark) {
+        if (points <= 0) return 0;
+        MemberCard card = getOrCreateCard(userId);
+        int before = card.getPoints() == null ? 0 : card.getPoints();
+        card.setPoints(before + points);
+        card.setUpdateTime(LocalDateTime.now());
+        cardMapper.updateById(card);
+
+        MemberPointLog pointLog = new MemberPointLog();
+        pointLog.setUserId(userId);
+        pointLog.setChangeType("activity_reward");
+        pointLog.setChangeVal(points);
+        pointLog.setRefOrderNo(refNo);
+        pointLog.setRemark(remark == null || remark.isBlank() ? "活动奖励积分" : remark.trim());
+        pointLog.setCreateTime(LocalDateTime.now());
+        pointLogMapper.insert(pointLog);
+        return points;
+    }
+
 }

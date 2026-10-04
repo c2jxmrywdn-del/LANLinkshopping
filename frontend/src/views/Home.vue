@@ -1,18 +1,30 @@
 <template>
-  <div>
+  <div class="home-page">
+    <section class="brand-hero">
+      <div class="brand-ambient ambient-a"></div><div class="brand-ambient ambient-b"></div><div class="brand-grid" aria-hidden="true"></div>
+      <div class="brand-hero-copy">
+        <span class="brand-eyebrow">LANLINK SHOPPING · CONNECTED COMMERCE</span>
+        <div class="home-wordmark ll-wordmark" aria-label="LANLinkshopping"><span class="ll-lan">LAN</span><span class="ll-link">Link</span><span class="ll-shopping">shopping</span></div>
+        <h1>让每一次连接，都产生价值。</h1>
+        <p>连接商品、采购、商户与增长，让交易从发现开始，在同一个网络里持续发生。</p>
+        <div class="brand-actions"><a-button type="primary" class="brand-primary" @click="$router.push('/mall')">进入商城 <span>→</span></a-button><a-button class="brand-ghost" @click="$router.push('/about')">了解平台</a-button></div>
+      </div>
+      <div class="brand-orbit" aria-hidden="true"><div class="orbit-glass orbit-glass-a"></div><div class="orbit-glass orbit-glass-b"></div><div class="orbit-core"><span class="core-lan">LAN</span><span class="core-link">Link</span><small>SHOPPING NETWORK</small></div><i class="orbit-dot dot-1"></i><i class="orbit-dot dot-2"></i><i class="orbit-dot dot-3"></i></div>
+    </section>
+    <div class="brand-promise"><span>01</span><b>DISCOVER</b><em>→</em><span>02</span><b>TRANSACT</b><em>→</em><span>03</span><b>GROW</b></div>
     <BannerCarousel />
 
-    <h2 class="sec">行业解决方案</h2>
+    <h2 class="sec"><span>01</span> 行业解决方案</h2>
     <a-row :gutter="16">
       <a-col :span="6" v-for="ind in industries" :key="ind.indId">
         <a-card hoverable class="ind-card" @click="$router.push({ name: 'mall', query: { indId: ind.indId } })">
-          <div class="ind-name" :title="ind.name">{{ ind.name }}</div>
+          <div class="ind-mark">◎</div><div class="ind-name" :title="ind.name">{{ ind.name }}</div>
           <div class="ind-desc" :title="'查看'+ind.name+'专区商品'">查看{{ ind.name }}专区商品 →</div>
         </a-card>
       </a-col>
     </a-row>
 
-    <h2 class="sec">热销推荐</h2>
+    <div class="section-head"><h2 class="sec"><span>02</span> 热销推荐</h2><button class="section-link" type="button" @click="$router.push('/mall')">查看全部商品 →</button></div>
     <a-row :gutter="16">
       <a-col :span="6" v-for="p in hot" :key="p.prodId">
         <a-card hoverable class="prod-card" :cover="null" @click="$router.push('/product/' + p.prodId)">
@@ -20,7 +32,7 @@
             <img v-if="p.coverUrl" :src="p.coverUrl" :alt="p.title" loading="lazy" decoding="async" />
             <span v-else>{{ p.title.slice(0, 2) }}</span>
           </div>
-          <div class="ptitle">{{ p.title }}</div>
+          <div class="product-brand">LANLINK SELECTION</div><div class="ptitle">{{ p.title }}</div>
           <div class="pprice">¥{{ p.price }}</div>
           <div class="pmeta">销量 {{ p.sales }} · 库存 {{ p.stock }}</div>
         </a-card>
@@ -53,4 +65,15 @@ onMounted(async () => {
 .ptitle { font-size: 14px; height: 40px; overflow: hidden; }
 .pprice { color: var(--ll-price); font-weight: 700; font-size: 18px; margin-top: 4px; }
 .pmeta { color: var(--ll-gray); font-size: 12px; }
+.home-page{color:var(--ll-ink)}
+.brand-hero{min-height:430px;position:relative;overflow:hidden;border-radius:28px;padding:60px 68px;display:flex;align-items:center;isolation:isolate;background:linear-gradient(125deg,#13233A,#1F3864 58%,#233F5F);box-shadow:0 24px 70px rgba(19,35,58,.18)}
+.brand-grid{position:absolute;inset:0;opacity:.12;background-image:linear-gradient(rgba(255,255,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.12) 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(90deg,black,transparent 75%)}
+.brand-ambient{position:absolute;border-radius:999px;filter:blur(42px);pointer-events:none}.ambient-a{width:340px;height:340px;right:24%;top:-140px;background:rgba(155,45,32,.46);animation:ambientFloat 7s ease-in-out infinite}.ambient-b{width:400px;height:400px;right:-110px;bottom:-190px;background:rgba(200,164,92,.32);animation:ambientFloat 9s 1s ease-in-out infinite reverse}
+.brand-hero-copy{position:relative;z-index:2;max-width:650px}.brand-eyebrow{color:#F6D38A;font-size:10px;font-weight:800;letter-spacing:.17em}.home-wordmark{margin-top:18px;font-size:clamp(38px,5vw,58px);line-height:1}.home-wordmark .ll-lan{color:#fff}.home-wordmark .ll-link{color:var(--ll-amber)}.home-wordmark .ll-shopping{color:rgba(255,255,255,.92)}
+.brand-hero h1{margin:22px 0 12px;color:#fff;font-size:clamp(30px,4vw,48px);line-height:1.12;letter-spacing:-.045em;font-weight:750}.brand-hero p{margin:0;max-width:610px;color:rgba(255,255,255,.7);font-size:15px;line-height:1.9}.brand-actions{display:flex;gap:12px;margin-top:26px}.brand-primary{border:0;background:linear-gradient(100deg,#C8A45C,#F59E0B);color:#13233A;font-weight:750}.brand-primary:hover,.brand-primary:focus{color:#13233A;filter:brightness(1.06)}.brand-ghost{color:#fff;background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.25);backdrop-filter:blur(12px)}.brand-ghost:hover,.brand-ghost:focus{color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.55)}
+.brand-orbit{position:absolute;width:410px;height:410px;right:45px;top:10px}.orbit-glass{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.16)}.orbit-glass-a{inset:20px;transform:rotate(22deg) skewX(-8deg)}.orbit-glass-b{inset:80px 4px;transform:rotate(-25deg) skewY(-7deg);border-color:rgba(200,164,92,.28)}.orbit-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:132px;height:132px;border-radius:38px;display:grid;place-content:center;text-align:center;background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.035));border:1px solid rgba(255,255,255,.24);box-shadow:inset 0 1px rgba(255,255,255,.35),0 24px 50px rgba(0,0,0,.2);backdrop-filter:blur(18px) saturate(125%)}.core-lan,.core-link{font-size:22px;font-weight:800;letter-spacing:-.06em}.core-lan{color:#fff}.core-link{color:#F6D38A}.orbit-core small{margin-top:8px;color:rgba(255,255,255,.5);font-size:7px;letter-spacing:.17em}.orbit-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:#F6D38A;box-shadow:0 0 22px rgba(245,158,11,.75);animation:dotPulse 2.4s ease-in-out infinite}.dot-1{left:54px;top:105px}.dot-2{right:28px;top:198px;animation-delay:.7s}.dot-3{left:105px;bottom:55px;animation-delay:1.3s}
+.brand-promise{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px 0 34px;padding:13px 16px;border:1px solid #D9D3C7;border-radius:14px;background:rgba(251,249,241,.82);color:#667085;font-size:10px;letter-spacing:.13em;backdrop-filter:blur(14px)}.brand-promise span{color:#9B2D20;font-weight:800}.brand-promise b{color:#13233A}.brand-promise em{font-style:normal;color:#C8A45C;margin:0 8px}.sec span{font-size:10px;color:#C8A45C;letter-spacing:.12em;margin-right:8px;vertical-align:middle}.section-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.section-link{border:0;background:transparent;color:#1E6EB8;font:inherit;font-size:12px;cursor:pointer}.ind-mark{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#13233A;color:#F6D38A;font-size:17px;margin-bottom:9px}.product-brand{font-size:9px;letter-spacing:.14em;color:#C8A45C;font-weight:800;margin-bottom:5px}
+@keyframes ambientFloat{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-18px,18px,0) scale(1.06)}}@keyframes dotPulse{0%,100%{transform:scale(.85);opacity:.65}50%{transform:scale(1.2);opacity:1}}
+@media(max-width:1000px){.brand-hero{padding:48px 42px}.brand-orbit{right:-100px;opacity:.38}}@media(max-width:640px){.brand-hero{min-height:500px;border-radius:20px;padding:34px 24px;align-items:flex-start}.brand-hero h1{font-size:34px}.brand-orbit{width:280px;height:280px;right:-80px;top:auto;bottom:-70px}.brand-promise{justify-content:flex-start;overflow-x:auto;white-space:nowrap}.brand-actions{flex-wrap:wrap}.section-head{align-items:flex-end}}
+@media(prefers-reduced-motion:reduce){.ambient-a,.ambient-b,.orbit-dot{animation:none}}
 </style>

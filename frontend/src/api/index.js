@@ -34,6 +34,7 @@ export const cartApi = {
   add: (d) => request.post('/cart/add', d),
   list: () => request.get('/cart/list'),
   updateQty: (cartId, quantity) => request.post(`/cart/quantity/${cartId}`, null, { params: { quantity } }),
+  setChecked: (cartId, checked) => request.post(`/cart/checked/${cartId}`, null, { params: { checked } }),
   remove: (cartId) => request.delete(`/cart/${cartId}`)
 }
 

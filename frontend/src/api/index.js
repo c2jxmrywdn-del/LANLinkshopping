@@ -150,7 +150,11 @@ export const trafficApi = {
   overview: () => request.get('/merchant/traffic/overview'),
   trend: (days = 30) => request.get('/merchant/traffic/trend', { params: { days } }),
   channels: (days = 30) => request.get('/merchant/traffic/channels', { params: { days } }),
-  products: () => request.get('/merchant/traffic/products')
+  products: (days = 30) => request.get('/merchant/traffic/products', { params: { days } }),
+  sources: (days = 30) => request.get('/merchant/traffic/sources', { params: { days } }),
+  conversion: (days = 30) => request.get('/merchant/traffic/conversion', { params: { days } }),
+  diagnosis: (days = 30) => request.get('/merchant/traffic/diagnosis', { params: { days } }),
+  track: (event) => request.post('/merchant/traffic/events', event)
 }
 
 // ===== 管理后台审计（/admin/**，AuthInterceptor 已限定 admin 角色） =====

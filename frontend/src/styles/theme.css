@@ -69,8 +69,18 @@
   --ll-slide3: linear-gradient(120deg, #8a4b1f, #d98e3a);
 }
 
-/* 品牌字标统一样式：LAN 用正文色，Link 用品牌琥珀高亮（全站共用）。
-   浅色底上使用加深琥珀以保证 WCAG 2.1 对比度 ≥ 4.5:1 */
+/* 品牌字标统一规范：首页、登录、后台、启动过渡共用同一字标效果。 */
+.ll-wordmark {
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: -0.35px;
+  white-space: nowrap;
+}
+.ll-wordmark .ll-lan { color: #fff; }
+.ll-wordmark .ll-link { color: var(--ll-amber); font-weight: 700; }
+.ll-wordmark .ll-shopping { color: inherit; font-weight: 700; }
+
+/* 兼容旧 .wordmark 标记 */
 .wordmark .ll-link { color: var(--ll-amber-strong); }
 
 /* =====================================================

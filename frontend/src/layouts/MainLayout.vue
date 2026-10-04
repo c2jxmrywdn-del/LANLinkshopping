@@ -10,7 +10,7 @@
           <a-menu v-model:selectedKeys="selectedKeys" mode="horizontal" class="nav" theme="dark"
                :ellipsis="false" @click="onNav">
           <a-menu-item key="home">首页</a-menu-item>
-          <a-menu-item key="mall">商城</a-menu-item>
+          <a-menu-item key="mall">商城</a-menu-item><a-menu-item key="promotions">优惠</a-menu-item>
           <a-menu-item v-if="user.hasPerm('order:view')" key="orders">我的订单</a-menu-item>
           <!-- 商户模块：管理员直达后台「商户管理」；未入驻用户显示「商户入驻」；已入驻商户原位替换为流量管理 -->
           <a-menu-item v-if="user.isAdmin" key="admin/merchants">商户管理</a-menu-item>
@@ -96,6 +96,7 @@ const settings = useSettingsStore()
 const NAV_PATHS = [
   { key: 'home', match: (p) => p === '/' },
   { key: 'mall', match: (p) => p === '/mall' || p.startsWith('/product') },
+  { key: 'promotions', match: (p) => p.startsWith('/promotions') },
   { key: 'orders', match: (p) => p.startsWith('/orders') },
   { key: 'merchant/products', match: (p) => p.startsWith('/merchant/products') },
   { key: 'merchant/traffic', match: (p) => p.startsWith('/merchant/traffic') },

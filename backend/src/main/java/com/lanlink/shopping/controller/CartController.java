@@ -42,6 +42,13 @@ public class CartController {
         return R.ok();
     }
 
+    @PostMapping("/checked/{cartId}")
+    public R<Void> checked(@PathVariable Long cartId, @RequestParam Integer checked,
+                           HttpServletRequest request) {
+        cartService.setChecked(UserContext.currentUserId(request), cartId, checked);
+        return R.ok();
+    }
+
     @DeleteMapping("/{cartId}")
     public R<Void> remove(@PathVariable Long cartId, HttpServletRequest request) {
         cartService.remove(UserContext.currentUserId(request), cartId);

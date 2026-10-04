@@ -4,7 +4,7 @@
       <div class="header-inner">
         <div class="logo" @click="$router.push('/')">
           <img src="/logo-256.png" alt="LANLinkshopping" class="logo-img" />
-          <span class="logo-text">LAN<b>Link</b>shopping</span>
+          <span class="logo-text ll-wordmark"><span class="ll-lan">LAN</span><span class="ll-link">Link</span><span class="ll-shopping">shopping</span></span>
         </div>
         <div class="nav-shell" ref="navShell">
           <a-menu v-model:selectedKeys="selectedKeys" mode="horizontal" class="nav" theme="dark"

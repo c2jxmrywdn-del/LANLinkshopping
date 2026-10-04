@@ -1,226 +1,49 @@
 <template>
   <div class="traffic-wrap">
-    <!-- 概览指标（含环比/客单价/动销率） -->
-    <a-row :gutter="16">
-      <a-col :xs="12" :md="8" :lg="6" v-for="m in metrics" :key="m.key">
-        <a-card :bordered="false" class="t-metric">
-          <div class="t-label">{{ m.label }}</div>
-          <div class="t-num">{{ m.value }}</div>
-          <div v-if="m.sub" class="t-sub" :class="m.subClass">{{ m.sub }}</div>
-        </a-card>
-      </a-col>
-    </a-row>
-
-    <!-- 近 N 天趋势：销售额/订单量切换 + 补零连续 -->
-    <a-card :bordered="false" title="销售趋势" class="t-card">
-      <template #extra>
-        <a-space>
-          <a-radio-group v-model:value="metric" button-style="solid" size="small">
-            <a-radio-button value="amount">销售额</a-radio-button>
-            <a-radio-button value="orders">订单量</a-radio-button>
-          </a-radio-group>
-          <a-radio-group v-model:value="days" button-style="solid" size="small" @change="loadTrend">
-            <a-radio-button :value="7">7 天</a-radio-button>
-            <a-radio-button :value="30">30 天</a-radio-button>
-            <a-radio-button :value="90">90 天</a-radio-button>
-          </a-radio-group>
-        </a-space>
-      </template>
-      <a-empty v-if="!trend.length" description="暂无销售数据" />
-      <div v-else class="t-chart" @mouseleave="hoverIdx = -1">
-        <div v-for="(d, i) in trend" :key="d.date" class="t-bar-col"
-             @mouseenter="hoverIdx = i">
-          <div class="t-tip" v-if="hoverIdx === i">
-            <div>{{ d.date }}</div>
-            <div>¥{{ fmt(d.amount) }} · {{ d.orders }} 单</div>
-          </div>
-          <div class="t-bar" :class="{ dim: hoverIdx !== -1 && hoverIdx !== i }"
-               :style="{ height: barHeight(d) }"></div>
-        </div>
-      </div>
-      <div v-if="trend.length" class="t-axis">
-        <span>{{ trend[0].date }}</span>
-        <span v-if="hoverIdx >= 0" class="t-axis-hover">{{ trend[hoverIdx].date }}：¥{{ fmt(trend[hoverIdx].amount) }} / {{ trend[hoverIdx].orders }} 单</span>
-        <span v-else>窗口峰值：{{ metric === 'amount' ? '¥' + fmt(maxAmount) : maxOrders + ' 单' }}</span>
-        <span>{{ trend[trend.length - 1].date }}</span>
-      </div>
-    </a-card>
-
-    <!-- 支付渠道分布（渠道管理 / 转化优化） -->
-    <a-card :bordered="false" title="支付渠道分布（近 30 天成交）" class="t-card">
-      <a-empty v-if="!channels.length" description="暂无成交数据" />
-      <div v-else class="ch-list">
-        <div v-for="c in channels" :key="c.channel" class="ch-row">
-          <a-tag :color="channelColor[c.channel] || 'default'" class="ch-tag">{{ channelText[c.channel] || c.channel }}</a-tag>
-          <div class="ch-bar-wrap">
-            <div class="ch-bar" :style="{ width: chPct(c.amount) }"></div>
-          </div>
-          <div class="ch-num">{{ c.orders }} 单 · ¥{{ fmt(c.amount) }}（{{ chPctVal(c.amount) }}%）</div>
-        </div>
-      </div>
-      <div v-if="channels.length" class="ch-tip">
-        转化建议：占比过高的单一渠道意味着支付方式集中风险，可在结算页引导开通其他渠道分散资金路径。
-      </div>
-    </a-card>
-
-    <!-- 商品排行（动销标记） -->
-    <a-card :bordered="false" title="商品销量排行" class="t-card">
-      <template #extra>
-        <a-tag>动销率 {{ ov?.activeRatePct ?? 0 }}%（动销 {{ ov?.activeProducts ?? 0 }} / 在售 {{ ov?.onSaleProducts ?? 0 }}）</a-tag>
-      </template>
-      <a-empty v-if="!products.length" description="还没有商品数据" />
-      <a-table v-else :data-source="products" :columns="cols" row-key="prodId" :loading="loading"
-               :pagination="{ pageSize: 10 }">
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'rank'">
-            <span :class="['t-rank', { 't-rank-1': products.indexOf(record) === 0 }]">#{{ products.indexOf(record) + 1 }}</span>
-          </template>
-          <template v-else-if="column.key === 'prod'">
-            <div class="t-prod">
-              <img v-if="record.coverUrl" :src="record.coverUrl" class="t-cover" alt="" loading="lazy" />
-              <span>{{ record.title }}</span>
-              <a-tag v-if="Number(record.sold) === 0" color="default" style="margin-left:auto">滞销</a-tag>
-            </div>
-          </template>
-          <template v-else-if="column.key === 'price'">¥{{ record.price }}</template>
-          <template v-else-if="column.key === 'amount'">
-            <b class="t-amount">¥{{ fmt(record.amount) }}</b>
-            <div class="t-bar-mini" :style="{ width: amountPct(record.amount) }"></div>
-          </template>
-        </template>
-      </a-table>
-    </a-card>
+    <div class="head"><div><h2>流量管理</h2><span>统一查看来源、商品行为、转化与异常诊断</span></div><a-radio-group v-model:value="days" button-style="solid" @change="reload"><a-radio-button :value="7">7天</a-radio-button><a-radio-button :value="30">30天</a-radio-button><a-radio-button :value="90">90天</a-radio-button></a-radio-group></div>
+    <a-tabs v-model:activeKey="tab">
+      <a-tab-pane key="overview" tab="流量总览">
+        <a-row :gutter="16"><a-col v-for="m in metrics" :key="m.label" :xs="12" :lg="6"><a-card :bordered="false" class="metric"><div>{{m.label}}</div><strong>{{m.value}}</strong><small :class="m.cls">{{m.sub}}</small></a-card></a-col></a-row>
+        <a-card :bordered="false" title="销售趋势" class="card"><div class="bars"><div v-for="d in trend" :key="d.date" class="bar" :style="{height:barHeight(d)}" :title="`${d.date} ¥${fmt(d.amount)} / ${d.orders}单`"></div></div><div class="axis"><span>{{trend[0]?.date}}</span><span>{{trend[trend.length-1]?.date}}</span></div></a-card>
+        <a-row :gutter="16"><a-col :lg="12"><a-card :bordered="false" title="流量来源" class="card"><SourceList :rows="sources"/></a-card></a-col><a-col :lg="12"><a-card :bordered="false" title="转化漏斗" class="card"><Funnel :data="conversion"/></a-card></a-col></a-row>
+      </a-tab-pane>
+      <a-tab-pane key="sources" tab="流量来源"><a-card :bordered="false" class="card"><a-table :data-source="sources" :pagination="{pageSize:10}" row-key="source" :columns="sourceCols"/></a-card></a-tab-pane>
+      <a-tab-pane key="products" tab="商品流量"><a-card :bordered="false" class="card"><a-table :data-source="products" :pagination="{pageSize:10}" row-key="prodId" :columns="productCols"/></a-card></a-tab-pane>
+      <a-tab-pane key="conversion" tab="转化分析"><a-card :bordered="false" title="全链路转化" class="card"><Funnel :data="conversion"/><a-divider/><a-table :data-source="conversion.products" row-key="prodId" :pagination="{pageSize:8}" :columns="funnelCols"/></a-card></a-tab-pane>
+      <a-tab-pane key="diagnosis" tab="流量诊断"><a-card :bordered="false" class="card"><a-alert v-for="d in diagnosis" :key="d.code" :type="d.level==='success'?'success':d.level==='warning'?'warning':'info'" :message="d.title" :description="d.suggestion" show-icon class="diag"/></a-card></a-tab-pane>
+    </a-tabs>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { trafficApi } from '../api'
-
-const ov = ref(null)
-const trend = ref([])
-const channels = ref([])
-const products = ref([])
-const loading = ref(false)
-const days = ref(30)
-const metric = ref('amount')
-const hoverIdx = ref(-1)
-
-const fmt = (n) => Number(n || 0).toFixed(2)
-
-const chain = computed(() => ov.value?.chainGrowthPct)
-const metrics = computed(() => [
-  {
-    key: 'recentAmount', label: '近30天销售额', value: '¥' + fmt(ov.value?.recentAmount),
-    sub: chain.value === null || chain.value === undefined ? '环比 —' :
-      `环比 ${chain.value >= 0 ? '↑' : '↓'} ${Math.abs(Number(chain.value)).toFixed(1)}%`,
-    subClass: chain.value >= 0 ? 'up' : 'down'
-  },
-  { key: 'recentOrders', label: '近30天订单', value: ov.value?.recentOrders ?? 0 },
-  { key: 'avgOrder', label: '客单价', value: '¥' + fmt(ov.value?.avgOrderValue) },
-  {
-    key: 'activeRate', label: '动销率', value: (ov.value?.activeRatePct ?? 0) + '%',
-    sub: `动销 ${ov.value?.activeProducts ?? 0} / 在售 ${ov.value?.onSaleProducts ?? 0}`
-  },
-  { key: 'totalAmount', label: '累计销售额', value: '¥' + fmt(ov.value?.totalAmount) },
-  { key: 'totalSold', label: '累计销量', value: ov.value?.totalSold ?? 0 }
+import {ref,computed,onMounted} from 'vue'
+import {trafficApi} from '../api'
+const tab=ref('overview'),days=ref(30),ov=ref({}),trend=ref([]),sources=ref([]),products=ref([]),conversion=ref({products:[]}),diagnosis=ref([])
+const fmt=n=>Number(n||0).toFixed(2)
+const metrics=computed(()=>[
+ {label:'近30天销售额',value:'¥'+fmt(ov.value.recentAmount),sub:ov.value.chainGrowthPct==null?'环比 —':`环比 ${Number(ov.value.chainGrowthPct)>=0?'↑':'↓'} ${Math.abs(Number(ov.value.chainGrowthPct)).toFixed(1)}%`,cls:Number(ov.value.chainGrowthPct)>=0?'up':'down'},
+ {label:'近30天订单',value:ov.value.recentOrders||0,sub:'已支付订单'},
+ {label:'客单价',value:'¥'+fmt(ov.value.avgOrderValue),sub:'近30天'},
+ {label:'动销率',value:(ov.value.activeRatePct||0)+'%',sub:`动销 ${ov.value.activeProducts||0} / 在售 ${ov.value.onSaleProducts||0}`},
+ {label:'累计销售额',value:'¥'+fmt(ov.value.totalAmount),sub:'已支付'},
+ {label:'累计销量',value:ov.value.totalSold||0,sub:'件'}
 ])
+const sourceCols=[{title:'来源',dataIndex:'source'},{title:'UV',dataIndex:'uv'},{title:'商品浏览',dataIndex:'productViews'},{title:'加购',dataIndex:'carts'},{title:'支付',dataIndex:'pays'}]
+const productCols=[{title:'商品',dataIndex:'title'},{title:'浏览UV',dataIndex:'views'},{title:'加购UV',dataIndex:'carts'},{title:'支付UV',dataIndex:'pays'}]
+const funnelCols=[{title:'商品',dataIndex:'title'},{title:'浏览UV',dataIndex:'views'},{title:'加购UV',dataIndex:'carts'},{title:'支付UV',dataIndex:'pays'}]
+const maxAmount=computed(()=>Math.max(...trend.value.map(x=>Number(x.amount||0)),.01))
+const barHeight=d=>Math.max(4,Number(d.amount||0)/maxAmount.value*100)+'%'
+async function reload(){const d=days.value;try{const [o,t,s,p,c,di]=await Promise.all([trafficApi.overview(),trafficApi.trend(d),trafficApi.sources(d),trafficApi.products(d),trafficApi.conversion(d),trafficApi.diagnosis(d)]);ov.value=o;trend.value=t||[];sources.value=s||[];products.value=p||[];conversion.value=c||{products:[]};diagnosis.value=di||[]}catch(e){}}
+onMounted(reload)
+</script>
 
-const cols = [
-  { title: '排名', key: 'rank', width: 70 },
-  { title: '商品', key: 'prod' },
-  { title: '单价', key: 'price', width: 110 },
-  { title: '销量', dataIndex: 'sold', width: 90 },
-  { title: '销售额', key: 'amount', width: 200 },
-  { title: '库存', dataIndex: 'stock', width: 90 }
-]
-
-const channelText = { wallet: '钱包', mock: '模拟', wechat: '微信', alipay: '支付宝', unknown: '其他' }
-const channelColor = { wallet: 'blue', mock: 'default', wechat: 'green', alipay: 'blue', unknown: 'default' }
-
-const maxAmount = computed(() => fmt(Math.max(...trend.value.map(d => Number(d.amount || 0)), 0)))
-const maxOrders = computed(() => Math.max(...trend.value.map(d => Number(d.orders || 0)), 0))
-const maxMetric = computed(() => metric.value === 'amount'
-  ? Math.max(...trend.value.map(d => Number(d.amount || 0)), 0.01)
-  : Math.max(...trend.value.map(d => Number(d.orders || 0)), 1))
-
-function barHeight(d) {
-  const v = metric.value === 'amount' ? Number(d.amount || 0) : Number(d.orders || 0)
-  return Math.max(4, (v / maxMetric.value) * 100) + '%'
-}
-
-const chTotal = computed(() => channels.value.reduce((s, c) => s + Number(c.amount || 0), 0))
-function chPctVal(amount) {
-  if (!chTotal.value) return '0.0'
-  return ((Number(amount || 0) / chTotal.value) * 100).toFixed(1)
-}
-function chPct(amount) { return Math.max(2, Number(chPctVal(amount))) + '%' }
-
-function amountPct(amount) {
-  const max = Math.max(...products.value.map(p => Number(p.amount || 0)), 0.01)
-  return Math.max(3, (Number(amount || 0) / max) * 100) + '%'
-}
-
-async function loadAll() {
-  loading.value = true
-  try {
-    const [o, pr] = await Promise.all([trafficApi.overview(), trafficApi.products()])
-    ov.value = o
-    products.value = pr || []
-    await Promise.all([loadTrend(), loadChannels()])
-  } catch (e) { /* 拦截器已提示 */ }
-  finally { loading.value = false }
-}
-
-async function loadTrend() {
-  try { trend.value = await trafficApi.trend(days.value) || [] } catch (e) { trend.value = [] }
-}
-async function loadChannels() {
-  try { channels.value = await trafficApi.channels(30) || [] } catch (e) { channels.value = [] }
-}
-
-onMounted(loadAll)
+<script>
+export default {components:{
+  SourceList:{props:['rows'],template:`<div class="source-list"><div v-for="r in rows" :key="r.source" class="source"><b>{{r.source}}</b><span>{{r.uv}} UV</span><span>{{r.pays}} 支付</span></div></div>`},
+  Funnel:{props:['data'],template:`<div class="funnel"><div><b>访问</b><strong>{{data.visits||0}}</strong></div><i>→</i><div><b>浏览</b><strong>{{data.views||0}}</strong><small>{{data.viewRate||0}}%</small></div><i>→</i><div><b>加购</b><strong>{{data.carts||0}}</strong><small>{{data.cartRate||0}}%</small></div><i>→</i><div><b>支付</b><strong>{{data.pays||0}}</strong><small>{{data.payRate||0}}%</small></div></div>`}
+}}
 </script>
 
 <style scoped>
-.traffic-wrap { max-width: 1100px; margin: 0 auto; }
-.t-metric { border-radius: 12px; margin-bottom: 16px; }
-.t-label { font-size: 12px; color: var(--ll-muted, #64748b); }
-.t-num { font-size: 24px; font-weight: 800; color: var(--ll-primary, #1e6eb8); margin-top: 4px; }
-.t-sub { font-size: 12px; margin-top: 2px; }
-.t-sub.up { color: #10b981; }
-.t-sub.down { color: #e4393c; }
-.t-card { border-radius: 12px; margin-bottom: 16px; }
-/* 趋势条形图：hover 明细 + 其余柱淡出 */
-.t-chart { display: flex; align-items: flex-end; gap: 3px; height: 170px; padding: 8px 4px 0;
-           border-bottom: 1px solid #e5e7eb; }
-.t-bar-col { flex: 1; display: flex; align-items: flex-end; height: 100%; position: relative; }
-.t-bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 4px;
-         background: var(--ll-accent-gradient, linear-gradient(180deg, #22d3ee, #1e6eb8));
-         transition: height .3s ease, opacity .2s ease; }
-.t-bar.dim { opacity: .35; }
-.t-tip { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
-         background: #0f172a; color: #fff; font-size: 12px; padding: 6px 10px; border-radius: 6px;
-         white-space: nowrap; z-index: 5; pointer-events: none; }
-.t-axis { display: flex; justify-content: space-between; font-size: 12px; color: var(--ll-muted, #64748b); padding-top: 6px; min-height: 22px; }
-.t-axis-hover { color: var(--ll-primary, #1e6eb8); font-weight: 600; }
-/* 渠道分布 */
-.ch-list { display: flex; flex-direction: column; gap: 10px; }
-.ch-row { display: flex; align-items: center; gap: 12px; }
-.ch-tag { width: 64px; text-align: center; flex-shrink: 0; }
-.ch-bar-wrap { flex: 1; height: 12px; background: var(--ll-page, #f0f2f5); border-radius: 6px; overflow: hidden; }
-.ch-bar { height: 100%; border-radius: 6px; background: var(--ll-accent-gradient, linear-gradient(90deg, #1e6eb8, #22d3ee));
-          transition: width .4s ease; min-width: 4px; }
-.ch-num { font-size: 12px; color: var(--ll-muted, #64748b); width: 240px; text-align: right; flex-shrink: 0; }
-.ch-tip { margin-top: 12px; font-size: 12px; color: var(--ll-muted, #64748b);
-          background: rgba(30, 110, 184, .05); border-radius: 8px; padding: 8px 12px; }
-/* 排行 */
-.t-rank { font-weight: 800; color: var(--ll-muted, #64748b); }
-.t-rank-1 { color: #b45309; }
-.t-prod { display: flex; align-items: center; gap: 8px; }
-.t-cover { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
-.t-amount { color: var(--ll-ink, #0f172a); }
-.t-bar-mini { height: 4px; border-radius: 2px; margin-top: 4px;
-              background: var(--ll-accent-gradient, linear-gradient(90deg, #1e6eb8, #22d3ee)); }
-@media (max-width: 767px) { .ch-num { width: auto; } }
+.traffic-wrap{max-width:1180px;margin:0 auto}.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.head h2{margin:0 0 4px}.head span,.metric div,.metric small{color:#64748b;font-size:12px}.metric{margin-bottom:16px;border-radius:12px}.metric strong{display:block;font-size:25px;margin:6px 0}.up{color:#16a34a!important}.down{color:#dc2626!important}.card{border-radius:12px;margin-bottom:16px}.bars{height:190px;display:flex;gap:3px;align-items:flex-end;border-bottom:1px solid #e5e7eb;padding:8px 4px 0}.bar{flex:1;min-height:4px;background:linear-gradient(180deg,#22d3ee,#1e6eb8);border-radius:3px 3px 0 0}.axis{display:flex;justify-content:space-between;color:#64748b;font-size:12px;padding-top:6px}.funnel{display:flex;align-items:center;justify-content:space-around;gap:8px}.funnel>div{background:#f5f7fa;border-radius:10px;padding:14px 20px;min-width:110px;text-align:center}.funnel b,.funnel strong,.funnel small{display:block}.funnel strong{font-size:22px;margin:4px 0}.funnel small{color:#1e6eb8}.source-list{display:flex;flex-direction:column;gap:10px}.source{display:flex;justify-content:space-between;padding:10px 12px;background:#f8fafc;border-radius:8px}.diag{margin-bottom:12px}@media(max-width:700px){.head{align-items:flex-start;gap:12px;flex-direction:column}.funnel{overflow:auto;justify-content:flex-start}.funnel>div{min-width:100px}}
 </style>

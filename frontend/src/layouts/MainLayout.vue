@@ -23,10 +23,10 @@
         </div>
         <div class="right">
           <a-badge v-if="user.logged" :count="user.unread" :overflow-count="99">
-            <a-button type="text" class="ll-tap" style="color:#fff" @pointerdown="onTap" @click="$router.push('/me/messages')">🔔 消息</a-button>
+            <a-button type="text" class="ll-tap" style="color:#fff" @pointerdown="onTap" @click.stop="goMessages">🔔 消息</a-button>
           </a-badge>
           <a-badge :count="cart.count" :overflow-count="99">
-            <a-button type="text" class="ll-tap" style="color:#fff" @pointerdown="onTap" @click="$router.push('/cart')">🛒 购物车</a-button>
+            <a-button type="text" class="ll-tap" style="color:#fff" @pointerdown="onTap" @click.stop="goCart">🛒 购物车</a-button>
           </a-badge>
           <template v-if="user.logged">
             <a-dropdown>
@@ -130,6 +130,15 @@ onMounted(() => {
   window.addEventListener('resize', updateIndicator)
 })
 onBeforeUnmount(() => window.removeEventListener('resize', updateIndicator))
+
+function goMessages() {
+  if (!user.logged) return router.push({ name: 'login', query: { redirect: '/me/messages' } })
+  router.push({ name: 'account-messages' })
+}
+function goCart() {
+  if (!user.logged) return router.push({ name: 'login', query: { redirect: '/cart' } })
+  router.push({ name: 'cart' })
+}
 
 function onNav({ key }) {
   if (key === 'home') router.push('/')

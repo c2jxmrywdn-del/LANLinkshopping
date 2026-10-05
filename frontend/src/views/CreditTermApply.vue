@@ -33,3 +33,4 @@ async function submit(){loading.value=true;try{await creditTermApi.apply(form);m
 </script>
 <style scoped>
 .apply{max-width:720px;margin:0 auto}.card{border-radius:22px;box-shadow:0 18px 60px rgba(19,35,58,.08)}.eyebrow{font-size:11px;letter-spacing:.16em;color:var(--ll-primary)}h1{margin:6px 0}.sub{color:var(--ll-muted);margin-bottom:18px}.alert{margin-bottom:20px;border-radius:12px}.terms{display:flex}.actions{display:flex;justify-content:flex-end;gap:10px}
+</style>

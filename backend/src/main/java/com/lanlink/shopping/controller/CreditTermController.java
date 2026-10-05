@@ -34,6 +34,10 @@ public class CreditTermController {
     @RequirePerm("credit:view")
     public R<CreditBill> detail(@PathVariable Long id, HttpServletRequest request) { return R.ok(service.detail(UserContext.currentUserId(request), id)); }
 
+    @GetMapping("/bills/{id}/repayments")
+    @RequirePerm("credit:view")
+    public R<?> repayments(@PathVariable Long id, HttpServletRequest request) { return R.ok(service.repayments(UserContext.currentUserId(request), id)); }
+
     @PostMapping("/apply")
     @RequirePerm("credit:apply")
     public R<CreditAccount> apply(@RequestBody ApplyDTO dto, HttpServletRequest request) {

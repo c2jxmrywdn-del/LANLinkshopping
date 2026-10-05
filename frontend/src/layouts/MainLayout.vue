@@ -7,14 +7,19 @@
           <span class="logo-text ll-wordmark"><span class="ll-lan">LAN</span><span class="ll-link">Link</span><span class="ll-shopping">shopping</span></span>
         </div>
         <div class="nav-shell" ref="navShell" @mouseleave="scheduleCloseMallMenu">
-          <a-menu v-model:selectedKeys="selectedKeys" mode="horizontal" class="nav" theme="dark"
-               :ellipsis="false" @click="onNav">
+          <a-menu
+            v-model:selectedKeys="selectedKeys"
+            mode="horizontal"
+            class="nav"
+            theme="dark"
+            :ellipsis="false"
+            @click="onNav"
+          >
             <a-menu-item key="home">首页</a-menu-item>
             <a-menu-item key="mall" @mouseenter="openMallMenu">商城</a-menu-item>
             <a-menu-item key="promotions">优惠</a-menu-item>
             <a-menu-item v-if="user.hasPerm('credit:view')" key="credit-term">账期</a-menu-item>
             <a-menu-item v-if="user.hasPerm('order:view')" key="orders">我的订单</a-menu-item>
-            <!-- 商户模块：管理员直达后台「商户管理」；未入驻用户显示「商户入驻」；已入驻商户原位替换为流量管理 -->
             <a-menu-item v-if="user.isAdmin" key="admin/merchants">商户管理</a-menu-item>
             <a-menu-item v-else-if="user.logged && !user.isMerchant" key="merchant">商户入驻</a-menu-item>
             <a-menu-item v-if="user.hasPerm('merchant:manage')" key="merchant/traffic">流量管理</a-menu-item>
@@ -22,67 +27,17 @@
             <a-menu-item key="about">关于我们</a-menu-item>
           </a-menu>
 
-          <div v-show="mallMenuOpen" class="mall-mega" @mouseenter="openMallMenu">
-            <div class="mega-column mega-industries">
-              <div class="mega-heading">
-                <span>行业</span><small>INDUSTRIES</small>
-              </div>
-              <button type="button" class="mega-all" :class="{active: !activeMallIndustry}" @click.stop="openMallAll">
-                全部商品
-              </button>
-              <button
-                v-for="ind in mallIndustries"
-                :key="ind.indId"
-                type="button"
-                class="mega-item"
-                :class="{active: activeMallIndustry?.indId === ind.indId}"
-                @mouseenter="activeMallIndustry = ind"
-                @focus="activeMallIndustry = ind"
-                @click.stop="openMallIndustry(ind)"
-              >
-                <span>{{ ind.name }}</span>
-                <span class="mega-arrow">›</span>
-              </button>
-            </div>
-
-            <div class="mega-column mega-categories">
-              <div class="mega-heading">
-                <span>{{ activeMallIndustry?.name || '全部行业' }}</span>
-                <small>PRODUCT CATEGORIES</small>
-              </div>
-              <template v-if="activeMallIndustry && activeMallCategories.length">
-                <button
-                  v-for="cat in activeMallCategories"
-                  :key="cat.catId"
-                  type="button"
-                  class="mega-category"
-                  @click.stop="openMallCategory(cat)"
-                >
-                  <span class="category-dot"></span>{{ cat.name }}
-                  <em>进入</em>
-                </button>
-              </template>
-              <div v-else class="mega-empty">
-                <strong>综合商品中心</strong>
-                <span>覆盖四大行业采购需求</span>
-              </div>
-            </div>
-
-            <div class="mega-column mega-shortcuts">
-              <div class="mega-heading">
-                <span>采购入口</span><small>QUICK ACCESS</small>
-              </div>
-              <button type="button" class="shortcut-card" @click.stop="openMallAll">
-                <b>全部商品</b><span>查看全平台供给</span><i>→</i>
-              </button>
-              <button type="button" class="shortcut-card" @click.stop="openMallSales">
-                <b>热销采购</b><span>按销量快速筛选</span><i>→</i>
-              </button>
-              <button type="button" class="shortcut-card" @click.stop="openPromotions">
-                <b>采购优惠</b><span>满减与行业折扣</span><i>→</i>
-              </button>
-            </div>
-          </div>
+          <IndustryCategoryMenu
+            v-show="mallMenuOpen"
+            :visible="mallMenuOpen"
+            :selected-industry-id="route.query.indId || 0"
+            @select-all="openMallAll"
+            @select-industry="openMallIndustry"
+            @select-category="openMallCategory"
+            @quick="handleMallQuick"
+            @mouseenter="openMallMenu"
+            @mouseleave="scheduleCloseMallMenu"
+          />
 
           <span class="nav-indicator" :style="indicatorStyle" aria-hidden="true"></span>
         </div>
@@ -148,10 +103,10 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../store/user'
-import { homeApi } from '../api'
 import { useCartStore } from '../store/cart'
 import { useSettingsStore } from '../store/settings'
 import { tapFeedback } from '../utils/feedback'
+import IndustryCategoryMenu from '../components/IndustryCategoryMenu.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -176,28 +131,21 @@ const selectedKeys = computed(() => {
 })
 
 const mallMenuOpen = ref(false)
-const mallIndustries = ref([])
-const mallCategories = ref([])
-const activeMallIndustry = ref(null)
 let mallCloseTimer = null
 
-const activeMallCategories = computed(() => {
-  if (!activeMallIndustry.value) return []
-  return mallCategories.value
-    .filter((c) => Number(c.indId) === Number(activeMallIndustry.value.indId))
-    .filter((c) => Number(c.level || 1) === 1)
-    .sort((a, b) => Number(a.sort || 0) - Number(b.sort || 0))
-})
-
 function openMallMenu() {
-  if (mallCloseTimer) { clearTimeout(mallCloseTimer); mallCloseTimer = null }
+  if (mallCloseTimer) {
+    clearTimeout(mallCloseTimer)
+    mallCloseTimer = null
+  }
   mallMenuOpen.value = true
-  if (!activeMallIndustry.value && mallIndustries.value.length) activeMallIndustry.value = mallIndustries.value[0]
 }
 
 function scheduleCloseMallMenu() {
   if (mallCloseTimer) clearTimeout(mallCloseTimer)
-  mallCloseTimer = window.setTimeout(() => { mallMenuOpen.value = false }, 90)
+  mallCloseTimer = window.setTimeout(() => {
+    mallMenuOpen.value = false
+  }, 90)
 }
 
 function openMallAll() {
@@ -205,25 +153,27 @@ function openMallAll() {
   router.push({ name: 'mall' })
 }
 
-function openMallIndustry(ind) {
-  activeMallIndustry.value = ind
-  router.push({ name: 'mall', query: { indId: ind.indId } })
+function openMallIndustry(industry) {
   mallMenuOpen.value = false
+  router.push({ name: 'mall', query: { indId: industry.indId } })
 }
 
-function openMallCategory(cat) {
+function openMallCategory(category) {
   mallMenuOpen.value = false
-  router.push({ name: 'mall', query: { indId: cat.indId, catId: cat.catId } })
+  router.push({
+    name: 'mall',
+    query: {
+      indId: category.industryId || category.indId,
+      catId: category.catId
+    }
+  })
 }
 
-function openMallSales() {
+function handleMallQuick(action) {
   mallMenuOpen.value = false
-  router.push({ name: 'mall', query: { sort: 'sales' } })
-}
-
-function openPromotions() {
-  mallMenuOpen.value = false
-  router.push({ name: 'promotions' })
+  if (action === 'sales') router.push({ name: 'mall', query: { sort: 'sales' } })
+  else if (action === 'promotions') router.push({ name: 'promotions' })
+  else router.push({ name: 'mall' })
 }
 
 // 自定义滑动位置指示条：JS 定位到选中项下方，随路由/窗口尺寸平滑移动
@@ -240,18 +190,9 @@ function updateIndicator() {
 }
 watch(selectedKeys, () => nextTick(updateIndicator))
 
-onMounted(async () => {
-  if (!user.user) await user.fetchMe()
+onMounted(() => {
+  if (!user.user) user.fetchMe()
   if (user.logged) cart.load()
-  try {
-    const [inds, cats] = await Promise.all([homeApi.industries(), homeApi.categories()])
-    mallIndustries.value = inds || []
-    mallCategories.value = cats || []
-    const activeId = Number(route.query.indId || 0)
-    activeMallIndustry.value = mallIndustries.value.find((ind) => Number(ind.indId) === activeId) || mallIndustries.value[0] || null
-  } catch (e) {
-    // 导航菜单为增强交互，接口失败不影响主站其它功能。
-  }
   nextTick(updateIndicator)
   window.addEventListener('resize', updateIndicator)
 })
@@ -313,47 +254,6 @@ function secretTap() {
 .header :deep(.ant-menu-horizontal .ant-menu-item:hover) { color: #fff; }
 .header :deep(.ant-menu-horizontal .ant-menu-item-selected) { color: var(--ll-cyan, #22D3EE); font-weight: 600; }
 /* 自定义滑动位置指示条：JS 定位到选中项下方，0.28s 平滑移动 */
-.mall-mega {
-  position: absolute;
-  left: 0;
-  top: 58px;
-  width: min(860px, calc(100vw - 48px));
-  display: grid;
-  grid-template-columns: 190px minmax(250px, 1fr) 250px;
-  background: rgba(255,255,255,.97);
-  border: 1px solid rgba(148,163,184,.22);
-  border-radius: 0 0 18px 18px;
-  box-shadow: 0 18px 46px rgba(15,23,42,.20);
-  backdrop-filter: blur(18px);
-  overflow: hidden;
-  z-index: 120;
-  animation: mallMegaIn .16s ease-out;
-}
-.mega-column { padding: 18px 16px; min-height: 250px; }
-.mega-industries { background: linear-gradient(180deg, rgba(19,35,58,.045), rgba(19,35,58,.015)); border-right: 1px solid rgba(148,163,184,.18); }
-.mega-categories { border-right: 1px solid rgba(148,163,184,.18); }
-.mega-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:12px; }
-.mega-heading span { color: var(--ll-navy,#13233A); font-weight: 800; font-size: 14px; }
-.mega-heading small { color:#94a3b8; font-size:9px; letter-spacing:.12em; }
-.mega-all,.mega-item,.mega-category,.shortcut-card {
-  width:100%; border:0; cursor:pointer; text-align:left; font:inherit; background:transparent;
-}
-.mega-all,.mega-item { display:flex; align-items:center; justify-content:space-between; padding:10px 11px; border-radius:10px; color:#526070; margin-bottom:4px; transition:background .18s ease,color .18s ease,transform .18s ease; }
-.mega-all:hover,.mega-item:hover,.mega-item.active { background:rgba(14,165,233,.10); color:var(--ll-navy,#13233A); transform:translateX(2px); }
-.mega-arrow { color:#a0aec0; font-size:18px; line-height:1; }
-.mega-category { display:flex; align-items:center; gap:9px; padding:12px 10px; border-bottom:1px solid rgba(148,163,184,.12); color:#334155; transition:.18s ease; }
-.mega-category:hover { color:var(--ll-navy,#13233A); background:rgba(200,164,92,.09); padding-left:14px; }
-.mega-category em { margin-left:auto; color:#a0aec0; font-style:normal; font-size:11px; }
-.category-dot { width:6px; height:6px; border-radius:50%; background:var(--ll-amber,#C8A45C); flex:0 0 auto; }
-.mega-empty { min-height:180px; display:flex; flex-direction:column; justify-content:center; gap:5px; color:#64748b; }
-.mega-empty strong { color:var(--ll-navy,#13233A); font-size:15px; }
-.mega-empty span { font-size:12px; }
-.shortcut-card { position:relative; display:block; padding:13px 34px 13px 12px; margin-bottom:8px; border:1px solid rgba(148,163,184,.18); border-radius:12px; background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(248,250,252,.75)); transition:.18s ease; }
-.shortcut-card:hover { transform:translateY(-1px); border-color:rgba(14,165,233,.25); box-shadow:0 8px 18px rgba(15,23,42,.08); }
-.shortcut-card b { display:block; color:var(--ll-navy,#13233A); font-size:13px; margin-bottom:3px; }
-.shortcut-card span { display:block; color:#94a3b8; font-size:11px; }
-.shortcut-card i { position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--ll-amber-strong,#a97f2f); font-style:normal; }
-@keyframes mallMegaIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
 .nav-indicator {
   position: absolute;
   bottom: 0;
@@ -383,7 +283,6 @@ function secretTap() {
   .header-inner { gap: 8px; }
 }
 @media (max-width: 767px) {
-  .mall-mega { display: none !important; }
   /* 移动端：头部两行布局——品牌+操作区在上，导航独占一行可横向滑动（防 flex 压缩塌缩为 0） */
   .header { height: auto; }
   .header-inner { flex-wrap: wrap; height: auto; padding: 6px 12px; }

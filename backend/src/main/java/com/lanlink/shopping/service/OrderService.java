@@ -35,12 +35,14 @@ public class OrderService {
     private final PricingFacade pricingFacade;
     private final ApplicationEventPublisher eventPublisher;
     private final com.lanlink.shopping.module.membership.service.MembershipService membershipService;
+    private final CreditTermService creditTermService;
 
     public OrderService(CartMapper cartMapper, ProductMapper productMapper, OrderMapper orderMapper,
                         OrderItemMapper orderItemMapper, UserMapper userMapper, MessageService messageService,
                         IdentityService identityService, AuditService auditService,
                         PricingFacade pricingFacade, ApplicationEventPublisher eventPublisher,
-                        com.lanlink.shopping.module.membership.service.MembershipService membershipService) {
+                        com.lanlink.shopping.module.membership.service.MembershipService membershipService,
+                        CreditTermService creditTermService) {
         this.cartMapper = cartMapper;
         this.productMapper = productMapper;
         this.orderMapper = orderMapper;
@@ -72,7 +74,7 @@ public class OrderService {
         order.setUserId(userId);
         order.setEntId(user == null ? null : user.getEntId());
         order.setPayType(dto.getPayType());
-        order.setPayStatus(0);
+        order.setPayStatus("term".equals(dto.getPayType()) ? 1 : 0);
         order.setOrderStatus(0);
         order.setReceiver(dto.getReceiver());
         order.setPhone(dto.getPhone());
@@ -80,6 +82,7 @@ public class OrderService {
         order.setRemark(dto.getRemark());
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
+        if ("term".equals(dto.getPayType())) order.setPayTime(LocalDateTime.now());
 
         // 先校验库存（并确认商品可售：仅审核通过的商品可下单），累计原价与行业
         BigDecimal total = BigDecimal.ZERO;
@@ -230,12 +233,12 @@ public class OrderService {
     public void cancel(Long userId, String orderNo) {
         Order o = orderMapper.selectById(orderNo);
         if (o == null || !o.getUserId().equals(userId)) throw new BusinessException("订单不存在");
-        if (o.getPayStatus() != null && o.getPayStatus() == 1) throw new BusinessException("已支付订单不可取消，请前往订单列表申请退款");
+        if (o.getPayStatus() != null && o.getPayStatus() == 1 && !"term".equals(o.getPayType())) throw new BusinessException("已支付订单不可取消，请前往订单列表申请退款");
         // 幂等：已取消订单直接返回，防止重复恢复库存/重复返还积分
         if (o.getOrderStatus() != null && o.getOrderStatus() == 3) return;
         // 恢复库存
         restoreStock(orderNo);
-        o.setOrderStatus(3);
+        o.setOrderStatus(3);\n        if ("term".equals(o.getPayType())) o.setPayStatus(2);
         o.setUpdateTime(LocalDateTime.now());
         orderMapper.updateById(o);
         // 积分抵现返还（幂等：按流水判定，无抵现记录返回 0）

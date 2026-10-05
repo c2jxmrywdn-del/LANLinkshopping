@@ -402,3 +402,54 @@ CREATE TABLE IF NOT EXISTS t_traffic_event (
   KEY idx_traffic_session_time (session_id,event_time),
   KEY idx_traffic_source_time (merchant_id,source_type,event_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='商户流量行为事件';
+
+-- ==================== 企业账期管理 ====================
+CREATE TABLE IF NOT EXISTS t_credit_account (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL UNIQUE COMMENT '采购方用户ID',
+  ent_id BIGINT COMMENT '企业ID',
+  status VARCHAR(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING待审 ACTIVE生效 REJECTED驳回',
+  requested_limit DECIMAL(14,2) NOT NULL DEFAULT 0,
+  credit_limit DECIMAL(14,2) NOT NULL DEFAULT 0,
+  available_limit DECIMAL(14,2) NOT NULL DEFAULT 0,
+  used_limit DECIMAL(14,2) NOT NULL DEFAULT 0,
+  term_days INT NOT NULL DEFAULT 30,
+  purpose VARCHAR(255),
+  risk_level VARCHAR(32) COMMENT '风险等级',
+  review_remark VARCHAR(255),
+  apply_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  approved_time DATETIME,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_credit_account_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='企业账期授信账户';
+
+CREATE TABLE IF NOT EXISTS t_credit_bill (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  account_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  order_no VARCHAR(40) NOT NULL,
+  amount DECIMAL(14,2) NOT NULL,
+  paid_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  outstanding_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
+  due_date DATE NOT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'UNPAID' COMMENT 'UNPAID未结清 OVERDUE逾期 PAID已结清 CANCELLED已取消',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  settled_time DATETIME,
+  UNIQUE KEY uk_credit_order (order_no),
+  KEY idx_credit_bill_user_due (user_id,due_date,status),
+  KEY idx_credit_bill_account (account_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='企业账期账单';
+
+CREATE TABLE IF NOT EXISTS t_credit_repayment (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  bill_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  amount DECIMAL(14,2) NOT NULL,
+  method VARCHAR(16) DEFAULT 'wallet' COMMENT 'wallet企业钱包 transfer对公转账',
+  reference_no VARCHAR(64),
+  remark VARCHAR(255),
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_credit_repayment_bill (bill_id),
+  KEY idx_credit_repayment_user (user_id,create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='企业账期还款记录';

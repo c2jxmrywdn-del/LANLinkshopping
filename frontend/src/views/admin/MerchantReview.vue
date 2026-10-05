@@ -33,7 +33,7 @@
         </template>
         <template v-else-if="column.key === 'op'">
           <a-space>
-            <a-button size="small" @click="openDetail(record)">详情</a-button>
+            <a-button size="small" @click="openDetail(record)">快速查看</a-button><a-button size="small" type="link" @click="router.push('/admin/merchants/' + record.merId)">档案</a-button>
             <a-button v-if="record.reviewStatus !== 1" size="small" type="primary" @click="approve(record)">通过</a-button>
             <a-button v-if="record.reviewStatus !== 2" size="small" danger @click="openReject(record)">驳回</a-button>
           </a-space>
@@ -135,10 +135,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import { CheckCircleFilled, CloseCircleFilled, FilePdfOutlined, FileImageOutlined } from '@ant-design/icons-vue'
 import { merchantApi } from '../../api'
 
+const router = useRouter()
 const list = ref([])
 const loading = ref(false)
 const filter = ref(null)

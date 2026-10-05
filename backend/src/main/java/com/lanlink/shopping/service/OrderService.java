@@ -137,7 +137,10 @@ public class OrderService {
             cartMapper.deleteById(c.getCartId());
         }
         messageService.send(userId, "order", "下单成功",
-                "订单 " + order.getOrderNo() + " 已提交，待支付。", order.getOrderNo());
+                "term".equals(order.getPayType())
+                        ? "订单 " + order.getOrderNo() + " 已使用企业账期，账单已进入账期中心。"
+                        : "订单 " + order.getOrderNo() + " 已提交，待支付。",
+                order.getOrderNo());
         return order;
     }
 
@@ -278,6 +281,7 @@ public class OrderService {
      */
     @Transactional
     public void fullRefundSettle(Order o) {
+        if ("term".equals(o.getPayType())) creditTermService.cancelOrderBill(o.getUserId(), o.getOrderNo());
         restoreStock(o.getOrderNo());
         o.setOrderStatus(4);
         o.setPayStatus(2);

@@ -13,7 +13,6 @@
       </div>
 
       <div class="ss-content">
-        <BrandSymbol class="ss-mark" size="360px" />
         <BrandWordmark class="ss-wordmark" size="clamp(38px, 5vw, 58px)" />
         <div class="ss-tagline">聚合 · 连接 · 一体多元解决方案</div>
         <div class="ss-progress" aria-hidden="true"><span class="ss-progress-bar"></span></div>
@@ -27,7 +26,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import BrandWordmark from './BrandWordmark.vue'
-import BrandSymbol from './BrandSymbol.vue'
 
 const emit = defineEmits(['done'])
 const visible = ref(true)
@@ -164,12 +162,6 @@ onBeforeUnmount(() => clearTimeout(timer))
 }
 
 .ss-content { position: relative; z-index: 2; text-align: center; }
-.ss-mark {
-  display: block;
-  margin: 0 auto;
-  overflow: visible;
-  animation: ssMarkIn .9s var(--ll-logo-ease) .2s both;
-}
 .ss-wordmark {
   margin-top: 18px;
   opacity: 0;
@@ -221,10 +213,6 @@ onBeforeUnmount(() => clearTimeout(timer))
   100% { transform: rotate(12deg) translateX(72%); opacity: 0; }
 }
 @keyframes ssNoiseDrift { from { transform: translate3d(0,0,0); } to { transform: translate3d(12px,8px,0); } }
-@keyframes ssMarkIn {
-  from { opacity: 0; transform: translateY(10px) scale(.92); filter: blur(2px); }
-  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-}
 @keyframes ssFadeUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes ssFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ssSweep { from { width: 0; } to { width: 100%; } }
@@ -233,8 +221,8 @@ onBeforeUnmount(() => clearTimeout(timer))
   .ss-leave-leave-active { transition: opacity .15s linear; }
   .ss-leave-leave-to { transform: none; }
   .ss-bg::after, .ss-gradient-orb, .ss-liquid-ribbon, .ss-liquid-surface, .ss-liquid-sheen, .ss-gradient-noise,
-  .ss-mark, .ss-wordmark, .ss-tagline, .ss-progress, .ss-skip { animation: none !important; }
-  .ss-mark, .ss-wordmark, .ss-tagline, .ss-progress, .ss-skip { opacity: 1; }
+  .ss-wordmark, .ss-tagline, .ss-progress, .ss-skip { animation: none !important; }
+  .ss-wordmark, .ss-tagline, .ss-progress, .ss-skip { opacity: 1; }
   .ss-progress-bar { width: 100%; }
 }
 </style>

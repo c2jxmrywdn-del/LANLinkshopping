@@ -3,7 +3,7 @@ import { message } from 'ant-design-vue'
 import router from '../router'
 import { showBusyLoading, hideBusyLoading } from '../utils/busy'
 
-// Production Vercel builds use VITE_API_BASE_URL to reach the Railway backend.
+// Production Vercel builds use VITE_API_BASE_URL to reach the Railway backend (/api context path).
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 15000,

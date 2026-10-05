@@ -44,7 +44,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { homeApi } from '../api'
-import BannerCarousel from '../components/BannerCarousel.vue'\nimport BrandWordmark from '../components/BrandWordmark.vue'\nimport BrandSymbol from '../components/BrandSymbol.vue'
+import BannerCarousel from '../components/BannerCarousel.vue'
+import BrandWordmark from '../components/BrandWordmark.vue'
+import BrandSymbol from '../components/BrandSymbol.vue'
 const industries = ref([])
 const hot = ref([])
 onMounted(async () => {

@@ -126,6 +126,14 @@ public class CreditTermService {
         return b;
     }
 
+    public List<CreditRepayment> repayments(Long userId, Long billId) {
+        detail(userId, billId);
+        return repaymentMapper.selectList(Wrappers.<CreditRepayment>lambdaQuery()
+                .eq(CreditRepayment::getUserId, userId)
+                .eq(CreditRepayment::getBillId, billId)
+                .orderByDesc(CreditRepayment::getCreateTime));
+    }
+
     @Transactional
     public CreditBill repay(Long userId, Long id, BigDecimal amount, String method) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) throw new BusinessException("还款金额必须大于 0");

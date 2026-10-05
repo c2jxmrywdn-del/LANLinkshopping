@@ -23,7 +23,7 @@
         </div>
         <div class="right">
           <a-badge v-if="user.logged" :count="user.unread" :overflow-count="99">
-            <a-button type="text" class="ll-tap" style="color:#fff" @pointerdown="onTap" @click="$router.push({ path: '/me', query: { tab: 'messages' } })">🔔 消息</a-button>
+            <a-button type="text" class="ll-tap" style="color:#fff" @pointerdown="onTap" @click="$router.push('/me/messages')">🔔 消息</a-button>
           </a-badge>
           <a-badge :count="cart.count" :overflow-count="99">
             <a-button type="text" class="ll-tap" style="color:#fff" @pointerdown="onTap" @click="$router.push('/cart')">🛒 购物车</a-button>
@@ -45,7 +45,7 @@
                   <a-menu-item @click="$router.push('/wallet')">💰 我的钱包</a-menu-item>
                   <a-menu-item @click="$router.push('/activity')">🎯 活动中心</a-menu-item>
                   <a-menu-item @click="$router.push('/membership')">💎 会员中心</a-menu-item>
-                  <a-menu-item @click="$router.push('/me')">个人中心</a-menu-item>
+                  <a-menu-item @click="$router.push('/me')">个人资料</a-menu-item><a-menu-item @click="$router.push('/me/messages')">消息中心</a-menu-item><a-menu-item @click="$router.push('/me/address')">收货地址</a-menu-item><a-menu-item @click="$router.push('/me/login-log')">登录安全</a-menu-item><a-menu-item @click="$router.push('/me/settings')">账户设置</a-menu-item>
                   <a-menu-item @click="doLogout">退出登录</a-menu-item>
                 </a-menu>
               </template>

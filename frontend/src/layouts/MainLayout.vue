@@ -10,7 +10,7 @@
           <a-menu v-model:selectedKeys="selectedKeys" mode="horizontal" class="nav" theme="dark"
                :ellipsis="false" @click="onNav">
           <a-menu-item key="home">首页</a-menu-item>
-          <a-menu-item key="mall">商城</a-menu-item><a-menu-item key="promotions">优惠</a-menu-item>
+          <a-menu-item key="mall">商城</a-menu-item><a-menu-item key="promotions">优惠</a-menu-item><a-menu-item v-if="user.hasPerm('credit:view')" key="credit-term">账期</a-menu-item>
           <a-menu-item v-if="user.hasPerm('order:view')" key="orders">我的订单</a-menu-item>
           <!-- 商户模块：管理员直达后台「商户管理」；未入驻用户显示「商户入驻」；已入驻商户原位替换为流量管理 -->
           <a-menu-item v-if="user.isAdmin" key="admin/merchants">商户管理</a-menu-item>
@@ -42,7 +42,7 @@
                     <div class="id-scope">当前身份：<b>{{ user.identityName }}</b><br/>{{ user.identityScope }}</div>
                   </a-menu-item>
                   <a-menu-divider />
-                  <a-menu-item @click="$router.push('/wallet')">💰 我的钱包</a-menu-item>
+                  <a-menu-item @click="$router.push('/wallet')">💰 我的钱包</a-menu-item><a-menu-item v-if="user.hasPerm('credit:view')" @click="$router.push('/credit-term')">企业账期</a-menu-item>
                   <a-menu-item @click="$router.push('/activity')">🎯 活动中心</a-menu-item>
                   <a-menu-item @click="$router.push('/membership')">💎 会员中心</a-menu-item>
                   <a-menu-item @click="$router.push('/me')">个人资料</a-menu-item><a-menu-item @click="$router.push('/me/messages')">消息中心</a-menu-item><a-menu-item @click="$router.push('/me/address')">收货地址</a-menu-item><a-menu-item @click="$router.push('/me/login-log')">登录安全</a-menu-item><a-menu-item @click="$router.push('/me/settings')">账户设置</a-menu-item>
@@ -97,6 +97,7 @@ const NAV_PATHS = [
   { key: 'home', match: (p) => p === '/' },
   { key: 'mall', match: (p) => p === '/mall' || p.startsWith('/product') },
   { key: 'promotions', match: (p) => p.startsWith('/promotions') },
+  { key: 'credit-term', match: (p) => p.startsWith('/credit-term') },
   { key: 'orders', match: (p) => p.startsWith('/orders') },
   { key: 'merchant/products', match: (p) => p.startsWith('/merchant/products') },
   { key: 'merchant/traffic', match: (p) => p.startsWith('/merchant/traffic') },

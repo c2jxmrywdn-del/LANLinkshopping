@@ -54,6 +54,7 @@ public class OrderService {
         this.pricingFacade = pricingFacade;
         this.eventPublisher = eventPublisher;
         this.membershipService = membershipService;
+        this.creditTermService = creditTermService;
     }
 
     @Transactional
@@ -108,8 +109,11 @@ public class OrderService {
             if (payable.compareTo(BigDecimal.ZERO) < 0) payable = BigDecimal.ZERO;
         }
         order.setTotalAmount(payable);
-        // 生成订单主表
+        // 账期订单在结算时直接形成授信应付账单，不再进入普通支付弹窗
         orderMapper.insert(order);
+        if ("term".equals(dto.getPayType())) {
+            creditTermService.createBillForOrder(userId, order.getOrderNo(), payable);
+        }
 
         // 明细 + 扣库存
         for (Cart c : carts) {
@@ -236,9 +240,12 @@ public class OrderService {
         if (o.getPayStatus() != null && o.getPayStatus() == 1 && !"term".equals(o.getPayType())) throw new BusinessException("已支付订单不可取消，请前往订单列表申请退款");
         // 幂等：已取消订单直接返回，防止重复恢复库存/重复返还积分
         if (o.getOrderStatus() != null && o.getOrderStatus() == 3) return;
+        // 账期订单先释放未结清授信
+        if ("term".equals(o.getPayType())) creditTermService.cancelOrderBill(userId, orderNo);
         // 恢复库存
         restoreStock(orderNo);
-        o.setOrderStatus(3);\n        if ("term".equals(o.getPayType())) o.setPayStatus(2);
+        o.setOrderStatus(3);
+        if ("term".equals(o.getPayType())) o.setPayStatus(2);
         o.setUpdateTime(LocalDateTime.now());
         orderMapper.updateById(o);
         // 积分抵现返还（幂等：按流水判定，无抵现记录返回 0）

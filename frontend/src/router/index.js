@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 function readUser(){try{return JSON.parse(localStorage.getItem('ll_user')||'null')}catch(e){return null}}
-function hasPerms(user,perms){if(!perms||!perms.length)return true;const owned=(user&&user.identity&&user.identity.permissions)||[];return perms.every(p=>owned.includes(p))}
+function hasPerms(user,perms){if(!perms||!perms.length)return true;const owned=(user&&user.identity&&user.identity.permissions)||[];if(owned.includes('admin:all'))return true;return perms.every(p=>owned.includes(p))}
 const routes=[{path:'/',component:MainLayout,children:[
 {path:'',name:'home',component:()=>import('../views/Home.vue')},{path:'mall',name:'mall',component:()=>import('../views/Mall.vue')},{path:'promotions',name:'promotions',component:()=>import('../views/PromotionCenter.vue')},{path:'promotions/:id',name:'promotion-detail',component:()=>import('../views/PromotionDetail.vue')},{path:'product/:id',name:'product',component:()=>import('../views/ProductDetail.vue')},
 {path:'cart',name:'cart',component:()=>import('../views/Cart.vue'),meta:{auth:true,perms:['cart:manage']}},{path:'checkout',name:'checkout',component:()=>import('../views/Checkout.vue'),meta:{auth:true,perms:['order:create']}},{path:'orders',name:'orders',component:()=>import('../views/MyOrders.vue'),meta:{auth:true,perms:['order:view']}},{path:'orders/:orderNo',name:'order-detail',component:()=>import('../views/OrderDetail.vue'),meta:{auth:true,perms:['order:view']}},

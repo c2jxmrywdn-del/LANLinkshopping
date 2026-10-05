@@ -594,3 +594,4 @@ onBeforeUnmount(() => {
 @media (max-width: 767px) {
   .industry-mega { display: none; }
 }
+</style>

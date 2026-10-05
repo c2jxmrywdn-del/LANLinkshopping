@@ -4,7 +4,7 @@ import router from '../router'
 import { showBusyLoading, hideBusyLoading } from '../utils/busy'
 
 const request = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 15000,
   withCredentials: true
 })

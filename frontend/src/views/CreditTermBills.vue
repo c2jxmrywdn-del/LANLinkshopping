@@ -27,3 +27,4 @@ onMounted(async()=>{try{bills.value=await creditTermApi.bills()||[]}finally{load
 </script>
 <style scoped>
 .sys{max-width:1100px;margin:0 auto}.hero{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.eyebrow{font-size:11px;letter-spacing:.18em;color:var(--ll-primary)}h1{margin:5px 0}.hero p{margin:0;color:var(--ll-muted)}.card{border-radius:20px}
+</style>

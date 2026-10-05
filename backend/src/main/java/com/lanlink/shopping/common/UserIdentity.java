@@ -23,7 +23,7 @@ public enum UserIdentity {
                     "address:manage", "profile:manage", "credit:view", "credit:apply", "credit:repay")),
     VIP("vip", "VIP用户", "普通用户全部服务 + VIP 折扣价、专属服务",
             List.of("product:view", "product:search", "cart:manage", "order:create", "order:view",
-                    "address:manage", "profile:manage", "vip:discount", "vip:service")),
+                    "address:manage", "profile:manage", "vip:discount", "vip:service", "credit:view", "credit:apply", "credit:repay")),
     MERCHANT("merchant", "商户", "商品发布与管理、商户中心、订单履约",
             List.of("product:view", "product:search", "cart:manage", "order:create", "order:view",
                     "address:manage", "profile:manage", "merchant:manage", "product:publish")),

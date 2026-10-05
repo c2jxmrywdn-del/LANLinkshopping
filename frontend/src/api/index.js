@@ -68,6 +68,18 @@ export const walletApi = {
   recharge: (amount, remark) => request.post('/wallet/recharge', { amount, remark })
 }
 
+// ===== 企业账期 =====
+export const creditTermApi = {
+  overview: () => request.get('/credit-term/overview'),
+  apply: (d) => request.post('/credit-term/apply', d),
+  bills: () => request.get('/credit-term/bills'),
+  detail: (id) => request.get(`/credit-term/bills/${id}`),
+  repayments: (id) => request.get(`/credit-term/bills/${id}/repayments`),
+  repay: (id, amount, method = 'wallet') => request.post(`/credit-term/bills/${id}/repay`, { amount, method }),
+  adminAccounts: (status) => request.get('/credit-term/admin/accounts', { params: { status } }),
+  review: (id, d) => request.post(`/credit-term/admin/accounts/${id}/review`, d)
+}
+
 // ===== 账号中心（/user/**，非 GET 请求自动携带 CSRF 令牌，见 request.js） =====
 export const userApi = {
   // 个人资料

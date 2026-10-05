@@ -31,6 +31,7 @@
         </template>
         <template v-else-if="column.key === 'time'">{{ (record.payTime || record.createTime || '').replace('T', ' ') }}</template>
         <template v-else-if="column.key === 'op'">
+          <a-button size="small" @click="$router.push('/admin/payments/' + record.orderNo)">详情</a-button>
           <a-button v-if="record.payStatus === 1 && record.refundStatus !== 'success'"
                     size="small" danger @click="openRefund(record)">退款</a-button>
           <span v-else style="color:#999">—</span>

@@ -90,7 +90,7 @@ const slides = [
     title: '企业账期管理 · 采购先享后付',
     sub: '授信额度 · 账期申请 · 到期提醒，让采购与回款节奏更清晰',
     cta: '查看账期服务',
-    route: 'wallet'
+    route: 'credit-term'
   },
   {
     key: 'f',

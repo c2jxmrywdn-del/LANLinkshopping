@@ -39,13 +39,59 @@ const router = useRouter()
 const modules = [Autoplay, Pagination, Navigation, Keyboard]
 
 const slides = [
-  { key: 'c', img: '/banners/01-construction.jpg', tag: '建筑行业', title: '源头钢材 · 水泥 · 管材直供', sub: '资质厂商入驻，规格与检测报告可查', cta: '进入建筑专区', indId: 1 },
-  { key: 't', img: '/banners/02-textile.jpg', tag: '纺织行业', title: '面料 · 纱线 · 辅料一站采购', sub: '按克重、色牢度严选源头货盘', cta: '进入纺织专区', indId: 2 },
-  { key: 'p', img: '/banners/03-petrochemical.jpg', tag: '石化行业', title: '化工原料 · 油品合规供应', sub: '危化经营许可核验，运输条件透明', cta: '进入石化专区', indId: 3 },
-  { key: 'e', img: '/banners/04-electronics.jpg', tag: '电子行业', title: '元器件 · 连接器 · 显示面板', sub: '3C / RoHS 认证，批次可追溯', cta: '进入电子专区', indId: 4 },
-  { key: 'g', img: '/banners/05-gift.jpg', tag: '礼品定制', title: '企业定制 · 打样到批量交付', sub: '发布需求，源头厂商报价打样', cta: '了解礼品定制' },
-  { key: 'f', img: '/banners/06-supplychain.jpg', tag: '供应链金融', title: '账期 · 尾款 · 缓解回款压力', sub: '凭信用与订单申请账期结算', cta: '了解账期服务' },
-]
+  {
+    key: 'c',
+    img: 'https://images.unsplash.com/photo-1780362507569-7c6e50287566?auto=format&fit=crop&w=1800&q=86',
+    tag: '建筑行业',
+    title: '建筑材料源头直供',
+    sub: '钢材 · 管材 · 工程材料，规格与供应能力一站核验',
+    cta: '进入建筑专区',
+    indId: 1
+  },
+  {
+    key: 't',
+    img: 'https://images.unsplash.com/photo-1610891015188-5369212db097?auto=format&fit=crop&w=1800&q=86',
+    tag: '纺织行业',
+    title: '纺织制造与面料采购',
+    sub: '面料 · 纱线 · 辅料，连接制造端与企业采购端',
+    cta: '进入纺织专区',
+    indId: 2
+  },
+  {
+    key: 'p',
+    img: 'https://images.unsplash.com/photo-1784914179675-0e6d7260dfd0?auto=format&fit=crop&w=1800&q=86',
+    tag: '石化行业',
+    title: '化工原料与产业供应',
+    sub: '石化装置、工业管线与原料供应场景，突出合规采购',
+    cta: '进入石化专区',
+    indId: 3
+  },
+  {
+    key: 'e',
+    img: 'https://images.unsplash.com/photo-1780034766228-3fd70d9463c3?auto=format&fit=crop&w=1800&q=86',
+    tag: '电子行业',
+    title: '电子元器件与智能制造',
+    sub: '工业控制 · 电子模块 · 核心器件，面向企业批量采购',
+    cta: '进入电子专区',
+    indId: 4
+  },
+  {
+    key: 'g',
+    img: 'https://images.unsplash.com/photo-1769355104335-acef3aa4c9b6?auto=format&fit=crop&w=1800&q=86',
+    tag: '企业定制',
+    title: '包装定制 · 批量交付',
+    sub: '从包装物料到批量生产，适合企业礼赠与品牌定制采购',
+    cta: '了解企业定制'
+  },
+  {
+    key: 'f',
+    img: 'https://images.unsplash.com/photo-1769144256227-5185141c3aca?auto=format&fit=crop&w=1800&q=86',
+    tag: '全球供应链',
+    title: '港口物流 · 采购协同',
+    sub: '连接工厂、仓储、港口与采购需求，强化跨区域履约能力',
+    cta: '了解供应链服务'
+  },
+
 
 function go(s) {
   if (s.indId) router.push({ name: 'mall', query: { indId: s.indId } })

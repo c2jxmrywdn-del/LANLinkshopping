@@ -25,3 +25,4 @@ onMounted(load)
 </script>
 <style scoped>
 .page{max-width:1180px;margin:0 auto}.head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:18px}.eyebrow{font-size:11px;letter-spacing:.18em;color:#1677ff}h1{margin:5px 0}.head p{margin:0;color:#64748b}.card{border-radius:20px}.head :deep(.ant-btn-dangerous){margin-left:6px}
+</style>

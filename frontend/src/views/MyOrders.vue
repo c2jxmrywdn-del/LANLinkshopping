@@ -83,6 +83,7 @@ const filter = ref('all')
 const filteredOrders = computed(() => orders.value.filter(o => filter.value === 'all' ? true : filter.value === 'unpaid' ? Number(o.payStatus) !== 1 && Number(o.payStatus) !== 2 && Number(o.orderStatus) !== 3 : filter.value === 'paid' ? Number(o.payStatus) === 1 && Number(o.orderStatus) !== 2 && Number(o.orderStatus) !== 3 && Number(o.orderStatus) !== 4 : filter.value === 'done' ? Number(o.orderStatus) === 2 : Number(o.orderStatus) === 3 || Number(o.orderStatus) === 4))
 const statusMap = { 0: '待发货', 1: '已发货', 2: '已完成', 3: '已取消', 4: '已退款' }
 const channelText = { wallet: '钱包', mock: '模拟', wechat: '微信', alipay: '支付宝' }
+const payTypeText = { corporate: '对公转账', balance: '企业钱包', term: '企业账期' }
 const cols = [
   { title: '订单号', dataIndex: 'orderNo', key: 'orderNo' },
   { title: '金额', key: 'total', width: 120 },

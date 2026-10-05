@@ -1,6 +1,6 @@
 # LANLinkshopping · 聚合型一体多元化解决方案电商平台
 
-> 软件技术 2401 · Spring Boot 毕业设计（Web 网站端 · 全栈核心 MVP）
+> 软件技术 2404 · Spring Boot 毕业设计（Web 网站端 · 全栈核心 MVP）
 > 技术栈：Spring Boot 3.5.3 + MyBatis-Plus 3.5.9 + MySQL 8 + Vue 3 + Vite + Ant Design Vue 4 + Pinia
 
 本项目依据《LANLinkshopping 项目方案》与《Web 网站搭建方案》落地，实现五大核心业务模块：

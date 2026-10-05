@@ -90,8 +90,8 @@ const slides = [
     title: '港口物流 · 采购协同',
     sub: '连接工厂、仓储、港口与采购需求，强化跨区域履约能力',
     cta: '了解供应链服务'
-  },
-
+  }
+]
 
 function go(s) {
   if (s.indId) router.push({ name: 'mall', query: { indId: s.indId } })

@@ -66,23 +66,20 @@
               <i v-if="child.children?.length">{{ child.children.length }}</i>
             </button>
 
-            <div
-              v-for="child in root.children"
-              v-if="child.children?.length"
-              :key="`leaf-${child.catId}`"
-              class="leaf-wrap"
-            >
-              <span class="leaf-label">{{ child.name }}</span>
-              <button
-                v-for="leaf in child.children"
-                :key="leaf.catId"
-                type="button"
-                class="leaf-cat"
-                @click.stop="selectCategory(leaf)"
-              >
-                {{ leaf.name }}
-              </button>
-            </div>
+            <template v-for="child in root.children" :key="`leaf-${child.catId}`">
+              <div v-if="child.children?.length" class="leaf-wrap">
+                <span class="leaf-label">{{ child.name }}</span>
+                <button
+                  v-for="leaf in child.children"
+                  :key="leaf.catId"
+                  type="button"
+                  class="leaf-cat"
+                  @click.stop="selectCategory(leaf)"
+                >
+                  {{ leaf.name }}
+                </button>
+              </div>
+            </template>
           </div>
         </article>
       </div>

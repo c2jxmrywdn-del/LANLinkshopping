@@ -76,7 +76,7 @@
 import { reactive, ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
-import { orderApi, userApi, membershipApi, walletApi } from '../api'
+import { orderApi, paymentApi, userApi, membershipApi, walletApi } from '../api'
 import { useCartStore } from '../store/cart'
 import { useUserStore } from '../store/user'
 
@@ -200,7 +200,7 @@ async function submit() {
       title: '下单成功',
       content: `订单号 ${order.orderNo}，应付 ¥${order.totalAmount}。是否立即支付？`,
       okText: '立即支付', cancelText: '稍后支付',
-      onOk: async () => { await orderApi.pay(order.orderNo); message.success('支付成功'); router.push('/orders') },
+      onOk: async () => { try { if (form.payType === 'balance') { const vo = await paymentApi.create(order.orderNo, 'wallet'); if (!vo?.payInfo?.paid) throw new Error('钱包支付未确认') } else { const vo = await paymentApi.create(order.orderNo, 'mock'); if (vo?.mock) await paymentApi.mockConfirm(order.orderNo) } message.success('支付成功'); router.push('/orders') } catch (e) {} },
       onCancel: () => router.push('/orders')
     })
   } finally { loading.value = false }

@@ -4,6 +4,7 @@
     <a-table :data-source="filteredOrders" :columns="cols" row-key="orderNo" :loading="loading">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'total'">¥{{ record.totalAmount }}</template>
+        <template v-else-if="column.key === 'payType'">{{ payTypeText[record.payType] || record.payType || '—' }}</template>
         <template v-else-if="column.key === 'pay'">
           <a-tag :color="record.payStatus === 1 ? 'green' : (record.payStatus === 2 ? 'purple' : 'orange')">
             {{ record.payStatus === 1 ? '已支付' : (record.payStatus === 2 ? '已退款' : '未支付') }}

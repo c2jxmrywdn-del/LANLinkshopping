@@ -104,7 +104,7 @@ function go(s) {
 .banner-swiper { width: 100%; }
 .slide { position: relative; height: 320px; cursor: pointer; }
 .slide img { width: 100%; height: 100%; object-fit: cover; object-position: center center; display: block; }
-.slide-p img { object-position: center 96%; }
+.slide-p img { object-position: center 100%; }
 .mask { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(15,23,42,.78) 0%, rgba(15,23,42,.35) 45%, rgba(15,23,42,0) 75%); }
 .content { position: absolute; left: 0; bottom: 0; top: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 48px; color: #fff; max-width: 62%; }
 .content h2 { font-size: 30px; margin: 0 0 8px; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,.35); }

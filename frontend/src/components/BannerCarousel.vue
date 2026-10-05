@@ -84,6 +84,15 @@ const slides = [
     cta: '了解企业定制'
   },
   {
+    key: 'q',
+    img: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1800&q=86',
+    tag: '企业账期',
+    title: '企业账期管理 · 采购先享后付',
+    sub: '授信额度 · 账期申请 · 到期提醒，让采购与回款节奏更清晰',
+    cta: '查看账期服务',
+    route: 'wallet'
+  },
+  {
     key: 'f',
     img: 'https://images.unsplash.com/photo-1769144256227-5185141c3aca?auto=format&fit=crop&w=1800&q=86',
     tag: '全球供应链',
@@ -94,7 +103,8 @@ const slides = [
 ]
 
 function go(s) {
-  if (s.indId) router.push({ name: 'mall', query: { indId: s.indId } })
+  if (s.route) router.push({ name: s.route })
+  else if (s.indId) router.push({ name: 'mall', query: { indId: s.indId } })
   else router.push({ name: 'mall' })
 }
 </script>

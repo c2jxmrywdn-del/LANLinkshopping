@@ -11,7 +11,7 @@
               <p>{{statusHint(detail.order)}}</p>
             </div>
             <div class="status-actions">
-              <a-button v-if="canPay" type="primary" size="large" :loading="payLoading" @click="pay">立即支付</a-button>
+              <a-button v-if="canPay" type="primary" size="large" @click="openPay">立即支付</a-button>
               <a-button v-if="canCancel" size="large" @click="cancel">取消订单</a-button>
             </div>
           </div>
@@ -68,6 +68,14 @@
         <template #extra><a-button type="primary" @click="$router.push('/orders')">返回订单</a-button></template>
       </a-result>
     </a-spin>
+    <a-modal v-model:open="payOpen" title="选择支付方式" :footer="null">
+      <div class="pay-summary">应付 <b>¥{{ money(detail?.order?.totalAmount) }}</b></div>
+      <a-space direction="vertical" style="width:100%" size="middle">
+        <a-button block size="large" :loading="payLoading" :disabled="walletBalance < Number(detail?.order?.totalAmount || 0)" @click="payWith('wallet')">钱包余额　¥{{ walletBalance.toFixed(2) }}<span v-if="walletBalance < Number(detail?.order?.totalAmount || 0)">（余额不足）</span></a-button>
+        <a-button block size="large" :loading="payLoading" @click="payWith('mock')">模拟网关　演示环境即时到账</a-button>
+      </a-space>
+      <div class="pay-tip">真实微信/支付宝渠道需完成服务端商户凭证配置后启用。</div>
+    </a-modal>
   </div>
 </template>
 
@@ -76,7 +84,7 @@ import {ref,computed,onMounted} from 'vue'
 import {message} from 'ant-design-vue'
 import {useRoute,useRouter} from 'vue-router'
 import {orderApi,paymentApi,walletApi} from '../api'
-const route=useRoute(),router=useRouter(),detail=ref(null),loading=ref(false),payLoading=ref(false),walletBalance=ref(0)
+const route=useRoute(),router=useRouter(),detail=ref(null),loading=ref(false),payLoading=ref(false),walletBalance=ref(0),payOpen=ref(false)
 const statusMap={0:'待发货',1:'已发货',2:'已完成',3:'已取消',4:'已退款'}
 const payType={corporate:'对公转账',balance:'企业钱包',term:'账期/尾款'}
 const channelText={wallet:'钱包',mock:'模拟网关',wechat:'微信支付',alipay:'支付宝'}
@@ -90,11 +98,11 @@ const refundText=o=>o.refundStatus==='success'?'已退款':o.refundStatus==='pro
 const statusText=o=>o.orderStatus===3?'订单已取消':o.orderStatus===4?'订单已退款':o.payStatus===1?'订单已支付':'待支付'
 const statusHint=o=>o.orderStatus===3?'订单已取消，无法继续操作':o.orderStatus===4?'该订单已完成退款':o.payStatus===1?'订单已进入履约流程':'完成支付后商户才会开始履约'
 async function load(){loading.value=true;try{detail.value=await orderApi.detail(route.params.orderNo)}catch(e){detail.value=null}finally{loading.value=false}}
-async function pay(){if(payLoading.value)return;payLoading.value=true;try{const w=await walletApi.my();walletBalance.value=Number(w?.balance||0);if(walletBalance.value<Number(detail.value?.order?.totalAmount||0)){message.warning('钱包余额不足，请先充值');router.push('/wallet/recharge');return}const vo=await paymentApi.create(route.params.orderNo,'wallet');if(!vo?.payInfo?.paid)throw new Error('支付未确认');message.success('支付成功');await load()}catch(e){}finally{payLoading.value=false}}
+async function openPay(){try{const w=await walletApi.my();walletBalance.value=Number(w?.balance||0);payOpen.value=true}catch(e){payOpen.value=true}} async function payWith(channel){if(payLoading.value)return;if(channel==='wallet'&&walletBalance.value<Number(detail.value?.order?.totalAmount||0)){router.push('/wallet/recharge');payOpen.value=false;return}payLoading.value=true;try{const vo=await paymentApi.create(route.params.orderNo,channel);if(channel==='mock'&&vo?.mock)await paymentApi.mockConfirm(route.params.orderNo);if(channel==='wallet'&&!vo?.payInfo?.paid)throw new Error('支付未确认');message.success('支付成功');payOpen.value=false;await load()}catch(e){}finally{payLoading.value=false}}
 async function cancel(){try{await orderApi.cancel(route.params.orderNo);message.success('订单已取消');await load()}catch(e){}}
 onMounted(load)
 </script>
 
 <style scoped>
-.detail-page{max-width:1100px;margin:0 auto}.status-card,.card{border-radius:18px}.status-card{margin-bottom:16px;background:var(--ll-brand-hero-gradient);color:#fff}.eyebrow{font-size:11px;letter-spacing:.16em;opacity:.7}.status-main{display:flex;justify-content:space-between;gap:20px;align-items:center}.status-card h1{color:#fff;margin:6px 0;font-size:28px}.status-card p{color:rgba(255,255,255,.72);margin:0}.status-actions{display:flex;gap:8px}.steps{margin-top:26px}.status-card :deep(.ant-steps-item-title),.status-card :deep(.ant-steps-item-description){color:rgba(255,255,255,.8)}.grid{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}.item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #eee}.thumb{width:58px;height:58px;border-radius:10px;background:#f5f0e8;display:grid;place-items:center;overflow:hidden;flex:none}.thumb img{width:100%;height:100%;object-fit:cover}.item-main{flex:1}.item-main a{display:block;color:var(--ll-ink);font-weight:600}.item-main small{display:block;color:var(--ll-muted);margin-top:4px}.sum{display:flex;justify-content:space-between}.sum strong{font-size:22px;color:#9b2d20}@media(max-width:700px){.status-main{flex-direction:column;align-items:flex-start}.grid{grid-template-columns:1fr}.status-actions{width:100%}.status-actions .ant-btn{flex:1}}
+.detail-page{max-width:1100px;margin:0 auto}.status-card,.card{border-radius:18px}.status-card{margin-bottom:16px;background:var(--ll-brand-hero-gradient);color:#fff}.eyebrow{font-size:11px;letter-spacing:.16em;opacity:.7}.status-main{display:flex;justify-content:space-between;gap:20px;align-items:center}.status-card h1{color:#fff;margin:6px 0;font-size:28px}.status-card p{color:rgba(255,255,255,.72);margin:0}.pay-summary{font-size:15px;margin-bottom:18px}.pay-summary b{font-size:24px;color:#9b2d20;margin-left:6px}.pay-tip{margin-top:14px;color:var(--ll-muted);font-size:12px}.status-actions{display:flex;gap:8px}.steps{margin-top:26px}.status-card :deep(.ant-steps-item-title),.status-card :deep(.ant-steps-item-description){color:rgba(255,255,255,.8)}.grid{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}.item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #eee}.thumb{width:58px;height:58px;border-radius:10px;background:#f5f0e8;display:grid;place-items:center;overflow:hidden;flex:none}.thumb img{width:100%;height:100%;object-fit:cover}.item-main{flex:1}.item-main a{display:block;color:var(--ll-ink);font-weight:600}.item-main small{display:block;color:var(--ll-muted);margin-top:4px}.sum{display:flex;justify-content:space-between}.sum strong{font-size:22px;color:#9b2d20}@media(max-width:700px){.status-main{flex-direction:column;align-items:flex-start}.grid{grid-template-columns:1fr}.status-actions{width:100%}.status-actions .ant-btn{flex:1}}
 </style>

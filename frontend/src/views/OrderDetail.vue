@@ -45,6 +45,7 @@
           </a-card>
 
           <a-card :bordered="false" class="card" title="支付与退款">
+            <a-button v-if="detail.order.payType === 'term'" type="link" size="small" @click="$router.push('/credit-term/bills')">进入账期账单 →</a-button>
             <a-descriptions :column="1" size="small">
               <a-descriptions-item label="支付方式">{{payType[detail.order.payType] || detail.order.payType || '—'}}</a-descriptions-item>
               <a-descriptions-item label="支付渠道">{{channelText[detail.order.payChannel] || detail.order.payChannel || '—'}}</a-descriptions-item>

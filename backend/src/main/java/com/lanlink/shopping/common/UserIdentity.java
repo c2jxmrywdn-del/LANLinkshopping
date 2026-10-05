@@ -20,7 +20,7 @@ public enum UserIdentity {
     GUEST("guest", "访客", "浏览商品、搜索", List.of("product:view", "product:search")),
     BUYER("buyer", "普通用户", "购物车、下单、订单管理、收货地址、个人资料",
             List.of("product:view", "product:search", "cart:manage", "order:create", "order:view",
-                    "address:manage", "profile:manage")),
+                    "address:manage", "profile:manage", "credit:view", "credit:apply", "credit:repay")),
     VIP("vip", "VIP用户", "普通用户全部服务 + VIP 折扣价、专属服务",
             List.of("product:view", "product:search", "cart:manage", "order:create", "order:view",
                     "address:manage", "profile:manage", "vip:discount", "vip:service")),

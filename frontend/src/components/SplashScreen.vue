@@ -13,7 +13,7 @@
       </div>
 
       <div class="ss-content">
-        <BrandWordmark class="ss-wordmark" size="clamp(38px, 5vw, 58px)" />
+        <BrandDecodeReveal class="ss-wordmark" size="clamp(38px, 5vw, 58px)" mode="soft" delay="1.55s" />
         <div class="ss-tagline">聚合 · 连接 · 一体多元解决方案</div>
         <div class="ss-progress" aria-hidden="true"><span class="ss-progress-bar"></span></div>
       </div>
@@ -25,7 +25,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import BrandWordmark from './BrandWordmark.vue'
+import BrandDecodeReveal from './BrandDecodeReveal.vue'
 
 const emit = defineEmits(['done'])
 const visible = ref(true)
@@ -165,7 +165,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 .ss-wordmark {
   margin-top: 18px;
   opacity: 0;
-  animation: ssFadeUp var(--ll-logo-reveal-duration) var(--ll-logo-reveal-delay) var(--ll-logo-ease) forwards;
+  animation: ssFadeUp .45s .95s var(--ll-logo-ease) forwards;
 }
 .ss-tagline {
   margin-top: 8px; font-size: 14px; letter-spacing: 4px; color: #AEB7C4;
@@ -222,6 +222,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   .ss-leave-leave-to { transform: none; }
   .ss-bg::after, .ss-gradient-orb, .ss-liquid-ribbon, .ss-liquid-surface, .ss-liquid-sheen, .ss-gradient-noise,
   .ss-wordmark, .ss-tagline, .ss-progress, .ss-skip { animation: none !important; }
+  .ss-wordmark { opacity: 1; }
   .ss-wordmark, .ss-tagline, .ss-progress, .ss-skip { opacity: 1; }
   .ss-progress-bar { width: 100%; }
 }

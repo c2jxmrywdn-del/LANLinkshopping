@@ -7,7 +7,7 @@
     <div class="toolbar">
       <a-input-search v-model:value="keyword" placeholder="搜索商品名称" style="width:320px"
                       allow-clear @search="reload" />
-      <a-select v-model:value="indId" style="width:160px" placeholder="全部行业" allow-clear @change="reload">
+      <a-select v-model:value="indId" style="width:160px" placeholder="全部行业" allow-clear @change="onIndustryChange">
         <a-select-option v-for="i in industries" :key="i.indId" :value="i.indId">{{ i.name }}</a-select-option>
       </a-select>
       <a-select v-model:value="sort" style="width:160px" @change="reload">
@@ -64,7 +64,8 @@ const list = ref([])
 const loading = ref(false)
 const keyword = ref('')
 const indId = ref(route.query.indId ? Number(route.query.indId) : undefined)
-const sort = ref('')
+const catId = ref(route.query.catId ? Number(route.query.catId) : undefined)
+const sort = ref(route.query.sort || '')
 const current = ref(1)
 const size = 12
 const total = ref(0)
@@ -72,7 +73,7 @@ const total = ref(0)
 async function reload() {
   loading.value = true
   try {
-    const page = await productApi.page({ current: current.value, size, keyword: keyword.value, indId: indId.value, sort: sort.value })
+    const page = await productApi.page({ current: current.value, size, keyword: keyword.value, catId: catId.value, indId: indId.value, sort: sort.value })
     list.value = page.records
     total.value = page.total
   } finally { loading.value = false }
@@ -81,6 +82,11 @@ async function addCart(p) {
   if (!user.logged) { message.warning('请先登录'); return }
   await cart.add(p.prodId, 1)
   message.success('已加入购物车')
+}
+function onIndustryChange() {
+  catId.value = undefined
+  current.value = 1
+  reload()
 }
 onMounted(async () => {
   industries.value = await homeApi.industries()

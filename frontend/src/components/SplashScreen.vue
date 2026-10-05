@@ -13,33 +13,8 @@
       </div>
 
       <div class="ss-content">
-        <svg class="ss-mark" viewBox="0 0 200 130" width="200" height="130" aria-hidden="true">
-          <g class="ss-dots-l">
-            <circle class="ss-dot ss-cv" style="animation-delay:.55s" cx="30" cy="42" r="5"/>
-            <circle class="ss-dot ss-cv" style="animation-delay:.68s" cx="24" cy="65" r="6"/>
-            <circle class="ss-dot ss-cv" style="animation-delay:.81s" cx="30" cy="88" r="5"/>
-          </g>
-          <g class="ss-flows">
-            <path class="ss-flow" style="animation-delay:.5s" d="M30 42 C40 46 40 57 46 60"/>
-            <path class="ss-flow" style="animation-delay:.63s" d="M24 65 C36 65 40 65 46 65"/>
-            <path class="ss-flow" style="animation-delay:.76s" d="M30 88 C40 84 40 73 46 70"/>
-          </g>
-          <circle class="ss-ring ss-ringA" pathLength="1" cx="70" cy="65" r="24"/>
-          <circle class="ss-ring ss-ringB" pathLength="1" cx="98" cy="65" r="24"/>
-          <circle class="ss-core" cx="84" cy="65" r="6.5"/>
-          <g class="ss-flows">
-            <path class="ss-flow ss-flowR" style="animation-delay:1.3s" d="M122 59 C128 55 132 53 138 49"/>
-            <path class="ss-flow ss-flowR" style="animation-delay:1.43s" d="M124 65 C132 65 138 65 144 65"/>
-            <path class="ss-flow ss-flowR" style="animation-delay:1.56s" d="M122 71 C128 75 132 77 138 81"/>
-          </g>
-          <g class="ss-dots-r">
-            <circle class="ss-dot ss-sp" style="animation-delay:1.35s" cx="140" cy="49" r="5"/>
-            <circle class="ss-dot ss-sp" style="animation-delay:1.48s" cx="146" cy="65" r="6"/>
-            <circle class="ss-dot ss-sp" style="animation-delay:1.61s" cx="140" cy="81" r="5"/>
-          </g>
-        </svg>
-
-        <div class="ss-wordmark ll-wordmark"><span class="ll-lan">LAN</span><span class="ll-link">Link</span><span class="ll-shopping">shopping</span></div>
+        <BrandSymbol class="ss-mark" size="360px" />
+        <BrandWordmark class="ss-wordmark" size="clamp(38px, 5vw, 58px)" />
         <div class="ss-tagline">聚合 · 连接 · 一体多元解决方案</div>
         <div class="ss-progress" aria-hidden="true"><span class="ss-progress-bar"></span></div>
       </div>
@@ -51,6 +26,8 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import BrandWordmark from './BrandWordmark.vue'
+import BrandSymbol from './BrandSymbol.vue'
 
 const emit = defineEmits(['done'])
 const visible = ref(true)
@@ -187,45 +164,17 @@ onBeforeUnmount(() => clearTimeout(timer))
 }
 
 .ss-content { position: relative; z-index: 2; text-align: center; }
-.ss-mark { display: block; margin: 0 auto; overflow: visible; }
-.ss-ring {
-  fill: none; stroke-width: 12; stroke-linecap: round;
-  stroke-dasharray: 1; stroke-dashoffset: 1;
-  transform-box: fill-box; transform-origin: center;
+.ss-mark {
+  display: block;
+  margin: 0 auto;
+  overflow: visible;
+  animation: ssMarkIn .9s var(--ll-logo-ease) .2s both;
 }
-.ss-ringA { stroke: var(--ll-brand-red); animation: ssDraw var(--ll-logo-ring-duration) .35s ease forwards; }
-.ss-ringB { stroke: var(--ll-brand-blue); animation: ssDraw var(--ll-logo-ring-duration) .55s ease forwards; }
-.ss-core {
-  fill: var(--ll-brand-gold); transform-box: fill-box; transform-origin: center; opacity: 0;
-  animation: ssPop .5s var(--ll-logo-core-delay) ease forwards, ssGlow 2s 1.7s ease-in-out infinite;
-}
-.ss-dot { transform-box: fill-box; transform-origin: center; opacity: 0; }
-.ss-cv { fill: var(--ll-brand-blue); animation: ssSlideL .6s ease forwards; }
-.ss-sp { fill: var(--ll-brand-gold); animation: ssPopR .5s ease forwards; }
-.ss-flow {
-  fill: none; stroke: var(--ll-brand-blue); stroke-width: 4; stroke-linecap: round;
-  stroke-dasharray: 1; stroke-dashoffset: 1; opacity: .9; animation: ssDraw .5s ease forwards;
-}
-.ss-flowR { stroke: var(--ll-brand-gold); }
-
-/* 与首页 MainLayout.logo-text 完全复用同一品牌字标规范：
-   font-family / font-weight / letter-spacing / LAN-Link-shopping 分色与首页 .home-wordmark 保持一致。
-   启动画面只放大字号，不改变字形关系，保证“进入前后”品牌识别一致。 */
 .ss-wordmark {
   margin-top: 18px;
-  font-family: inherit;
-  font-size: clamp(38px, 5vw, 58px);
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: -0.35px;
-  white-space: nowrap;
   opacity: 0;
-  animation: ssFadeUp var(--ll-logo-reveal-duration) var(--ll-logo-reveal-delay) ease forwards;
+  animation: ssFadeUp var(--ll-logo-reveal-duration) var(--ll-logo-reveal-delay) var(--ll-logo-ease) forwards;
 }
-/* 与首页 .home-wordmark 保持同一字标比例、字重、字距和分色。 */
-.ss-wordmark .ll-lan { color: #fff; }
-.ss-wordmark .ll-link { color: var(--ll-amber); font-weight: 700; }
-.ss-wordmark .ll-shopping { color: rgba(255,255,255,.92); font-weight: 700; }
 .ss-tagline {
   margin-top: 8px; font-size: 14px; letter-spacing: 4px; color: #AEB7C4;
   opacity: 0; animation: ssFadeUp .7s 1.72s ease forwards;
@@ -272,26 +221,20 @@ onBeforeUnmount(() => clearTimeout(timer))
   100% { transform: rotate(12deg) translateX(72%); opacity: 0; }
 }
 @keyframes ssNoiseDrift { from { transform: translate3d(0,0,0); } to { transform: translate3d(12px,8px,0); } }
-@keyframes ssDraw { to { stroke-dashoffset: 0; } }
-@keyframes ssPop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.35); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-@keyframes ssSlideL { from { transform: translateX(-16px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-@keyframes ssPopR { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes ssMarkIn {
+  from { opacity: 0; transform: translateY(10px) scale(.92); filter: blur(2px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
 @keyframes ssFadeUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes ssFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ssSweep { from { width: 0; } to { width: 100%; } }
-@keyframes ssGlow {
-  0%,100% { filter: drop-shadow(0 0 4px rgba(200,164,92,.42)); }
-  50% { filter: drop-shadow(0 0 14px rgba(200,164,92,.82)); }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .ss-leave-leave-active { transition: opacity .15s linear; }
   .ss-leave-leave-to { transform: none; }
   .ss-bg::after, .ss-gradient-orb, .ss-liquid-ribbon, .ss-liquid-surface, .ss-liquid-sheen, .ss-gradient-noise,
-  .ss-ringA, .ss-ringB, .ss-core, .ss-dot, .ss-flow,
-  .ss-wordmark, .ss-tagline, .ss-progress, .ss-skip { animation: none !important; }
-  .ss-ring { stroke-dashoffset: 0; }
-  .ss-core, .ss-dot, .ss-wordmark, .ss-tagline, .ss-progress, .ss-skip { opacity: 1; }
+  .ss-mark, .ss-wordmark, .ss-tagline, .ss-progress, .ss-skip { animation: none !important; }
+  .ss-mark, .ss-wordmark, .ss-tagline, .ss-progress, .ss-skip { opacity: 1; }
   .ss-progress-bar { width: 100%; }
 }
 </style>

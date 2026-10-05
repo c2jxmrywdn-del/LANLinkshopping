@@ -255,6 +255,14 @@ public class MembershipService {
     @Transactional
     public int awardPoints(Long userId, int points, String refNo, String remark) {
         if (points <= 0) return 0;
+        // 幂等：同一业务引用号只允许产生一次活动奖励，避免重复事件/重复提交造成积分膨胀。
+        if (refNo != null && !refNo.isBlank()) {
+            Long exists = pointLogMapper.selectCount(Wrappers.<MemberPointLog>lambdaQuery()
+                    .eq(MemberPointLog::getUserId, userId)
+                    .eq(MemberPointLog::getChangeType, "activity_reward")
+                    .eq(MemberPointLog::getRefOrderNo, refNo));
+            if (exists != null && exists > 0) return 0;
+        }
         MemberCard card = getOrCreateCard(userId);
         int before = card.getPoints() == null ? 0 : card.getPoints();
         card.setPoints(before + points);

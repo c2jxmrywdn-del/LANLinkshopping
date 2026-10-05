@@ -29,8 +29,16 @@
           <a-radio-group v-model:value="form.payType">
             <a-radio value="corporate">对公转账</a-radio>
             <a-radio value="balance">企业钱包<span v-if="walletLoaded" class="wallet-tip">（余额 ¥{{ walletBalance.toFixed(2) }}<template v-if="walletInsufficient">，不足</template>）</span></a-radio>
-            <a-radio value="term">账期/尾款</a-radio>
+            <a-radio value="term" :disabled="termUnavailable">账期/尾款
+              <span v-if="creditLoaded" class="wallet-tip">（可用授信 ¥{{ creditAvailable.toFixed(2) }}<template v-if="creditStatus !== 'ACTIVE'">，未开通</template><template v-else-if="termUnavailable">，额度不足</template>）</span>
+            </a-radio>
           </a-radio-group>
+          <div v-if="form.payType === 'term' && creditStatus !== 'ACTIVE'" class="wallet-warn">
+            当前没有生效的企业账期，可前往 <a @click="$router.push('/credit-term')">账期管理</a> 申请授信。
+          </div>
+          <div v-else-if="form.payType === 'term' && termUnavailable" class="wallet-warn">
+            当前账期可用额度不足，本单需 ¥{{ payableTotal }}，可前往 <a @click="$router.push('/credit-term')">账期管理</a> 查看额度。
+          </div>
           <div v-if="form.payType === 'balance' && walletInsufficient" class="wallet-warn">
             钱包余额不足，可在支付前前往 <a @click="$router.push('/wallet')">我的钱包</a> 充值。
           </div>
@@ -76,7 +84,7 @@
 import { reactive, ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
-import { orderApi, paymentApi, userApi, membershipApi, walletApi } from '../api'
+import { orderApi, paymentApi, userApi, membershipApi, walletApi, creditTermApi } from '../api'
 import { useCartStore } from '../store/cart'
 import { useUserStore } from '../store/user'
 
@@ -143,6 +151,10 @@ async function runQuote() {
 const walletLoaded = ref(false)
 const walletBalance = ref(0)
 const walletInsufficient = computed(() => walletBalance.value < (cart.total - redeemAmount.value))
+const creditLoaded = ref(false)
+const creditStatus = ref('NOT_APPLIED')
+const creditAvailable = ref(0)
+const termUnavailable = computed(() => creditStatus.value !== 'ACTIVE' || creditAvailable.value < (cart.total - redeemAmount.value))
 
 onMounted(async () => {
   try {
@@ -167,6 +179,13 @@ onMounted(async () => {
     walletBalance.value = Number(w?.balance || 0)
   } catch (e) { walletBalance.value = 0 }
   finally { walletLoaded.value = true }
+  // 加载账期额度（账期支付方式实时校验）
+  try {
+    const c = await creditTermApi.overview()
+    creditStatus.value = c?.status || 'NOT_APPLIED'
+    creditAvailable.value = Number(c?.account?.availableLimit || 0)
+  } catch (e) { creditStatus.value = 'NOT_APPLIED'; creditAvailable.value = 0 }
+  finally { creditLoaded.value = true }
 })
 
 function applyAddr(a) {
@@ -196,13 +215,22 @@ async function submit() {
       usePoints: usePoints.value && pointsInput.value > 0 ? pointsInput.value : null
     })
     await cart.load()
-    Modal.confirm({
-      title: '下单成功',
-      content: `订单号 ${order.orderNo}，应付 ¥${order.totalAmount}。是否立即支付？`,
-      okText: '立即支付', cancelText: '稍后支付',
-      onOk: async () => { try { if (form.payType === 'balance') { const vo = await paymentApi.create(order.orderNo, 'wallet'); if (!vo?.payInfo?.paid) throw new Error('钱包支付未确认') } else { const vo = await paymentApi.create(order.orderNo, 'mock'); if (vo?.mock) await paymentApi.mockConfirm(order.orderNo) } message.success('支付成功'); router.push('/orders') } catch (e) {} },
-      onCancel: () => router.push('/orders')
-    })
+    if (form.payType === 'term') {
+      Modal.info({
+        title: '账期订单已创建',
+        content: `订单号 ${order.orderNo}，本次占用授信 ¥${order.totalAmount}。账单已进入账期中心，请按到期日完成还款。`,
+        okText: '查看账期账单',
+        onOk: () => router.push('/credit-term/bills')
+      })
+    } else {
+      Modal.confirm({
+        title: '下单成功',
+        content: `订单号 ${order.orderNo}，应付 ¥${order.totalAmount}。是否立即支付？`,
+        okText: '立即支付', cancelText: '稍后支付',
+        onOk: async () => { try { if (form.payType === 'balance') { const vo = await paymentApi.create(order.orderNo, 'wallet'); if (!vo?.payInfo?.paid) throw new Error('钱包支付未确认') } else { const vo = await paymentApi.create(order.orderNo, 'mock'); if (vo?.mock) await paymentApi.mockConfirm(order.orderNo) } message.success('支付成功'); router.push('/orders') } catch (e) {} },
+        onCancel: () => router.push('/orders')
+      })
+    }
   } finally { loading.value = false }
 }
 </script>

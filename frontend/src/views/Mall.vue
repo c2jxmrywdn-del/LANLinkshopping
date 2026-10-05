@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { productApi, homeApi, promotionApi } from '../api'
@@ -93,6 +93,23 @@ onMounted(async () => {
   promotionApi.list().then(d => { promos.value = d || [] }).catch(() => {})
   reload()
 })
+
+watch(
+  () => route.query,
+  query => {
+    const nextIndId = query.indId ? Number(query.indId) : undefined
+    const nextCatId = query.catId ? Number(query.catId) : undefined
+    const nextSort = query.sort || ''
+    if (indId.value !== nextIndId || catId.value !== nextCatId || sort.value !== nextSort) {
+      indId.value = nextIndId
+      catId.value = nextCatId
+      sort.value = nextSort
+      current.value = 1
+      reload()
+    }
+  },
+  { deep: true }
+)
 </script>
 
 <style scoped>

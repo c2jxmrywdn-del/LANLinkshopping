@@ -29,16 +29,19 @@ public class CreditTermService {
     private final UserMapper userMapper;
     private final MessageService messageService;
     private final ApplicationEventPublisher eventPublisher;
+    private final com.lanlink.shopping.payment.wallet.service.WalletService walletService;
 
     public CreditTermService(CreditAccountMapper accountMapper, CreditBillMapper billMapper,
                              CreditRepaymentMapper repaymentMapper, UserMapper userMapper,
-                             MessageService messageService, ApplicationEventPublisher eventPublisher) {
+                             MessageService messageService, ApplicationEventPublisher eventPublisher,
+                             com.lanlink.shopping.payment.wallet.service.WalletService walletService) {
         this.accountMapper = accountMapper;
         this.billMapper = billMapper;
         this.repaymentMapper = repaymentMapper;
         this.userMapper = userMapper;
         this.messageService = messageService;
         this.eventPublisher = eventPublisher;
+        this.walletService = walletService;
     }
 
     public Map<String, Object> overview(Long userId) {
@@ -141,6 +144,9 @@ public class CreditTermService {
         if (b == null) throw new BusinessException("账单不存在");
         if ("PAID".equals(b.getStatus()) || "CANCELLED".equals(b.getStatus())) throw new BusinessException("账单已结清或已取消");
         if (amount.compareTo(b.getOutstandingAmount()) > 0) amount = b.getOutstandingAmount();
+        if ("wallet".equalsIgnoreCase(method == null ? "wallet" : method)) {
+            walletService.payFromWallet(userId, amount, "CREDIT-" + id);
+        }
         CreditRepayment r = new CreditRepayment();
         r.setBillId(id); r.setUserId(userId); r.setAmount(amount);
         r.setMethod(method == null || method.isBlank() ? "wallet" : method);
@@ -194,10 +200,12 @@ public class CreditTermService {
         if (a == null) throw new BusinessException("授信申请不存在");
         if (!"ACTIVE".equals(status) && !"REJECTED".equals(status)) throw new BusinessException("审核状态无效");
         if ("ACTIVE".equals(status)) {
-            BigDecimal limit = approvedLimit == null ? a.getRequestedLimit() : approvedLimit;
-            if (limit.compareTo(BigDecimal.ZERO) <= 0 || limit.compareTo(MAX_REQUEST) > 0) throw new BusinessException("批准额度不合法");
+            BigDecimal used = a.getUsedLimit() == null ? BigDecimal.ZERO : a.getUsedLimit();
+            BigDecimal limit = approvedLimit == null ? (a.getCreditLimit().compareTo(BigDecimal.ZERO) > 0 ? a.getCreditLimit() : a.getRequestedLimit()) : approvedLimit;
+            if (limit.compareTo(BigDecimal.ZERO) <= 0 || limit.compareTo(MAX_REQUEST) > 0 || limit.compareTo(used) < 0)
+                throw new BusinessException("批准额度不合法，不能低于已占用额度");
             if (termDays == null || !Set.of(30,60,90).contains(termDays)) termDays = a.getTermDays();
-            a.setCreditLimit(limit); a.setAvailableLimit(limit); a.setUsedLimit(BigDecimal.ZERO);
+            a.setCreditLimit(limit); a.setAvailableLimit(limit.subtract(used)); a.setUsedLimit(used);
             a.setTermDays(termDays); a.setRiskLevel("标准"); a.setApprovedTime(LocalDateTime.now());
         } else {
             a.setCreditLimit(BigDecimal.ZERO); a.setAvailableLimit(BigDecimal.ZERO); a.setUsedLimit(BigDecimal.ZERO);

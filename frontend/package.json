@@ -11,6 +11,7 @@
     "lighthouse": "node scripts/lighthouse-check.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.7.7",
     "pinia": "^2.2.4",

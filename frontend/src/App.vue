@@ -3,12 +3,14 @@
     <router-view />
     <BusinessBusyLoading />
     <SplashScreen v-if="showSplash" @done="showSplash = false" />
+    <Analytics />
   </a-config-provider>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { theme } from 'ant-design-vue'
+import { Analytics } from '@vercel/analytics/vue'
 import SplashScreen from './components/SplashScreen.vue'
 import BusinessBusyLoading from './components/BusinessBusyLoading.vue'
 import { useUserStore } from './store/user'

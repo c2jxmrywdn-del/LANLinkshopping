@@ -11,7 +11,7 @@
               <p>{{statusHint(detail.order)}}</p>
             </div>
             <div class="status-actions">
-              <a-button v-if="canPay" type="primary" size="large" @click="pay">立即支付</a-button>
+              <a-button v-if="canPay" type="primary" size="large" :loading="payLoading" @click="pay">立即支付</a-button>
               <a-button v-if="canCancel" size="large" @click="cancel">取消订单</a-button>
             </div>
           </div>
@@ -75,8 +75,8 @@
 import {ref,computed,onMounted} from 'vue'
 import {message} from 'ant-design-vue'
 import {useRoute,useRouter} from 'vue-router'
-import {orderApi} from '../api'
-const route=useRoute(),router=useRouter(),detail=ref(null),loading=ref(false)
+import {orderApi,paymentApi,walletApi} from '../api'
+const route=useRoute(),router=useRouter(),detail=ref(null),loading=ref(false),payLoading=ref(false),walletBalance=ref(0)
 const statusMap={0:'待发货',1:'已发货',2:'已完成',3:'已取消',4:'已退款'}
 const payType={corporate:'对公转账',balance:'企业钱包',term:'账期/尾款'}
 const channelText={wallet:'钱包',mock:'模拟网关',wechat:'微信支付',alipay:'支付宝'}
@@ -90,7 +90,7 @@ const refundText=o=>o.refundStatus==='success'?'已退款':o.refundStatus==='pro
 const statusText=o=>o.orderStatus===3?'订单已取消':o.orderStatus===4?'订单已退款':o.payStatus===1?'订单已支付':'待支付'
 const statusHint=o=>o.orderStatus===3?'订单已取消，无法继续操作':o.orderStatus===4?'该订单已完成退款':o.payStatus===1?'订单已进入履约流程':'完成支付后商户才会开始履约'
 async function load(){loading.value=true;try{detail.value=await orderApi.detail(route.params.orderNo)}catch(e){detail.value=null}finally{loading.value=false}}
-async function pay(){try{await orderApi.pay(route.params.orderNo);message.success('支付成功');await load()}catch(e){}}
+async function pay(){if(payLoading.value)return;payLoading.value=true;try{const w=await walletApi.my();walletBalance.value=Number(w?.balance||0);if(walletBalance.value<Number(detail.value?.order?.totalAmount||0)){message.warning('钱包余额不足，请先充值');router.push('/wallet/recharge');return}const vo=await paymentApi.create(route.params.orderNo,'wallet');if(!vo?.payInfo?.paid)throw new Error('支付未确认');message.success('支付成功');await load()}catch(e){}finally{payLoading.value=false}}
 async function cancel(){try{await orderApi.cancel(route.params.orderNo);message.success('订单已取消');await load()}catch(e){}}
 onMounted(load)
 </script>

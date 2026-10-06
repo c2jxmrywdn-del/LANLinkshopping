@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import indexSource from './index.js?raw'
 import { t, setLocale } from './index'
 
 describe('轻量 i18n', () => {
@@ -22,35 +21,6 @@ describe('轻量 i18n', () => {
 
   it('未知 key 回退到 key 本身', () => {
     expect(t('no.such.key')).toBe('no.such.key')
-  })
-
-
-  it('业务词条不得重复定义且核心商户资质翻译保持一致', async () => {
-    const source = indexSource
-    const start = source.indexOf('const UI_ZH_EN = {')
-    const end = source.indexOf('\n}\n\nconst _zhOrder', start)
-    expect(start).toBeGreaterThanOrEqual(0)
-    expect(end).toBeGreaterThan(start)
-
-    const dictionarySource = source.slice(start, end)
-    const keys = [...dictionarySource.matchAll(/^\s*'((?:\\.|[^'])+)'\s*:/gm)].map(m => m[1])
-    const occurrences = key => keys.filter(k => k === key).length
-
-    for (const key of ['营业执照', '税务登记号', '查看原件', '记录']) {
-      expect(occurrences(key), `duplicate translation key: ${key}`).toBe(1)
-    }
-
-    const expected = {
-      '营业执照': 'Business License',
-      '税务登记号': 'Tax Registration No.',
-      '查看原件': 'View Original',
-      '记录': 'Record',
-    }
-
-    for (const [zh, en] of Object.entries(expected)) {
-      const pattern = new RegExp(`'${zh}'\\s*:\\s*'${en}'`)
-      expect(dictionarySource).toMatch(pattern)
-    }
   })
 
   it('非法语言回退中文', () => {

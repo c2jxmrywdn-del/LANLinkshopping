@@ -86,7 +86,6 @@ const AUTHOR = {
     { name: 'Facebook', handle: 'Jason Ouyang', url: 'https://www.facebook.com/profile.php?id=61590596057471', icon: 'f' },
     { name: 'Instagram', handle: '@yr54976', url: 'https://www.instagram.com/yr54976?stkn=MTE2a3AwcDZlZ3o5aA==', icon: '◎' },
     { name: 'Threads', handle: '@yr54976', url: 'https://www.threads.com/@yr54976', icon: '@' },
-    { name: 'Discord', handle: 'LANLinkshopping 交流群', url: 'https://discord.gg/M3JpQGtbz', icon: '◈' },
   ],
   developerChannels: [
     { name: 'GitHub Discussions', handle: 'LANLinkshopping · 项目讨论区', url: 'https://github.com/c2jxmrywdn-del/LANLinkshopping/discussions/1', icon: '◇' },

@@ -31,6 +31,7 @@
         class="author-card__social"
       >
         <span class="author-card__social-icon"><img v-if="item.icon.startsWith('http')" :src="item.icon" :alt="`${item.name} 图标`" /><span v-else>{{ item.icon }}</span></span>
+        <img v-if="item.qr" class="author-card__qr" :src="item.qr" alt="WhatsApp 联系二维码" />
         <span>
           <b>{{ item.name }}</b>
           <small>{{ item.handle }}</small>
@@ -88,7 +89,7 @@ const AUTHOR = {
     { name: 'Threads', handle: '@yr54976', url: 'https://www.threads.com/@yr54976', icon: 'https://cdn.simpleicons.org/threads/13233A' },
     { name: 'GitHub', handle: 'c2jxmrywdn-del', url: 'https://github.com/c2jxmrywdn-del', icon: 'https://cdn.simpleicons.org/github/13233A' },
     { name: 'WeChat', handle: 'O19111295446', url: 'https://weixin.qq.com/', icon: 'https://cdn.simpleicons.org/wechat/13233A', copy: 'O19111295446' },
-    { name: 'WhatsApp', handle: 'OuyangJason', url: 'https://wa.me/OuyangJason?s=t', icon: 'https://cdn.simpleicons.org/whatsapp/13233A' },
+    { name: 'WhatsApp', handle: 'OuyangJason', url: 'https://wa.me/OuyangJason?s=t', icon: 'https://cdn.simpleicons.org/whatsapp/13233A', qr: '/assets/contact/whatsapp-qr.png' },
   ],
   developerChannels: [
     { name: 'GitHub Discussions', handle: 'LANLinkshopping · 项目讨论区', url: 'https://github.com/c2jxmrywdn-del/LANLinkshopping/discussions/1', icon: 'https://cdn.simpleicons.org/github/13233A' },
@@ -181,6 +182,7 @@ const year = computed(() => new Date().getFullYear())
 .author-card__social > span:nth-child(2) { min-width: 0; display: grid; gap: 1px; }
 .author-card__social b { font-size: 11px; color: var(--ll-ink, #0F172A); }
 .author-card__social small { font-size: 9px; color: #7B8492; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.author-card__qr { width: 46px; height: 46px; flex: 0 0 46px; object-fit: contain; border-radius: 8px; border: 1px solid #E6E0D6; background: #fff; padding: 2px; }
 .author-card__arrow { margin-left: auto; color: var(--ll-brand-gold, #C8A45C); }
 @media (max-width: 767px) {
   .author-card--compact { align-items: flex-start; flex-wrap: wrap; }

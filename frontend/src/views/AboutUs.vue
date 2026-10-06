@@ -136,24 +136,25 @@
 
         <div class="contact-grid">
           <article class="contact-card">
-            <span class="contact-icon">✉</span>
-            <span class="contact-label">主要邮箱</span>
+            <span class="contact-icon"><img class="contact-icon-image" src="https://cdn.simpleicons.org/qq/13233A" alt="QQ邮箱图标" /></span>
+            <span class="contact-label">QQ邮箱</span>
             <a href="mailto:3514485358@qq.com" class="contact-link">3514485358@qq.com</a>
             <small>项目联系 / 日常沟通</small>
             <a-button block @click="copyText('3514485358@qq.com', '主要邮箱')">复制邮箱</a-button>
           </article>
           <article class="contact-card">
-            <span class="contact-icon">✉</span>
-            <span class="contact-label">备用邮箱</span>
-            <a href="mailto:andouyangjason001@gmail.com" class="contact-link">andouyangjason001@gmail.com</a>
+            <span class="contact-icon"><img class="contact-icon-image" src="https://cdn.simpleicons.org/gmail/13233A" alt="Google Gmail 图标" /></span>
+            <span class="contact-label">Google Gmail</span>
+            <a href="mailto:ouyangjason001@gmail.com" class="contact-link">ouyangjason001@gmail.com</a>
             <small>备用联系邮箱</small>
             <a-button block @click="copyText('andouyangjason001@gmail.com', '备用邮箱')">复制邮箱</a-button>
           </article>
           <article class="contact-card">
-            <span class="contact-icon">◉</span>
-            <span class="contact-label">即时交流</span>
+            <span class="contact-icon"><img class="contact-icon-image" src="https://cdn.simpleicons.org/whatsapp/13233A" alt="WhatsApp 图标" /></span>
+            <span class="contact-label">WhatsApp</span>
             <a href="https://wa.me/OuyangJason?s=t" target="_blank" rel="noopener noreferrer" class="contact-link">WhatsApp · OuyangJason</a>
-            <small>适合快速沟通</small>
+            <small>适合快速沟通 · 扫码或点击打开</small>
+            <img class="contact-qr" src="/assets/contact/whatsapp-qr.png" alt="WhatsApp OuyangJason 联系二维码" />
             <a-button block href="https://wa.me/OuyangJason?s=t" target="_blank" rel="noopener noreferrer">打开 WhatsApp</a-button>
           </article>
         </div>
@@ -197,8 +198,7 @@
             <div class="legal-title">
               <span>TERMS OF SERVICE</span>
               <h2>服务条款</h2>
-              <p>用于演示平台交易、账号与商户经营的基本规则。</p>
-            </div>
+              <p>用于演示平台交易、账号与商户经营的基本规则。</p>            </div>
             <ol class="legal-list">
               <li><b>账号与实名</b><span>用户应使用真实企业信息注册并完成身份认证，妥善保管账号、密码及两步验证凭证。</span></li>
               <li><b>交易规范</b><span>商品由入驻商户发布并经平台审核；下单前请核对规格、价格与库存。</span></li>
@@ -397,8 +397,7 @@ async function copyText(text, label) {
 .module-number { position: absolute; top: 14px; right: 16px; color: rgba(19,35,58,.15); font-size: 28px; font-weight: 800; }
 .module-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; background: var(--ab-navy); color: var(--ll-brand-gold-soft); }
 .module-card h3 { margin: 16px 0 5px; color: var(--ab-navy); font-size: 17px; }
-.module-card p { margin: 0; color: var(--ab-muted); font-size: 12px; line-height: 1.65; }
-.module-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 16px; }
+.module-card p { margin: 0; color: var(--ab-muted); font-size: 12px; line-height: 1.65; }.module-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 16px; }
 .module-tags span { padding: 4px 7px; border-radius: 6px; background: var(--ab-paper); color: #667085; font-size: 10px; }
 
 .contact-section { display: grid; grid-template-columns: .78fr 1.22fr; gap: 26px; align-items: start; }
@@ -410,6 +409,8 @@ async function copyText(text, label) {
 .contact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .contact-card { min-height: 220px; display: flex; flex-direction: column; padding: 20px; border: 1px solid var(--ab-line); border-radius: 17px; background: #fff; }
 .contact-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; background: var(--ab-navy); color: var(--ll-brand-gold-soft); }
+.contact-icon-image { width: 20px; height: 20px; display: block; filter: brightness(0) invert(1); }
+.contact-qr { width: 76px; height: 76px; margin: 8px 0 10px; object-fit: contain; border: 1px solid var(--ab-line); border-radius: 10px; background: #fff; padding: 3px; }
 .contact-label { margin-top: 18px; color: var(--ab-muted); font-size: 11px; }
 .contact-card strong { margin: 5px 0; color: var(--ab-navy); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
 .contact-card small { color: #98A2B3; line-height: 1.5; min-height: 36px; }

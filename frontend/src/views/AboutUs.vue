@@ -157,6 +157,23 @@
         </div>
       </section>
 
+      <!-- 知识产权声明：毕业设计作品及原创成果保护提示 -->
+      <section class="about-section ip-notice" aria-label="知识产权声明">
+        <div class="ip-notice-copy">
+          <span class="section-kicker">INTELLECTUAL PROPERTY · GRADUATION PROJECT</span>
+          <h2>毕业设计原创性及知识产权声明</h2>
+          <p>
+            本项目为个人毕业设计作品。项目名称、产品定位、平台架构、功能设计、交互流程、页面视觉方案、代码实现、
+            文档资料及相关原创内容均属于本毕业设计成果的一部分。未经本人书面授权，任何个人、组织或机构不得擅自复制、
+            抄袭、改编、转载、传播、发布、署名冒用、包装成自有项目，或将本项目及其原创成果冒用、仿冒为商业项目。
+          </p>
+        </div>
+        <div class="ip-notice-badge">
+          <strong>请尊重知识产权</strong>
+          <span>未经许可请勿使用、冒用或商业化。</span>
+        </div>
+      </section>
+
       <!-- 法务信息：折叠而非长文本堆叠 -->
       <section id="terms" class="about-section legal-section">
         <div class="legal-tabs" role="tablist">
@@ -165,6 +182,9 @@
           </button>
           <button :class="{ active: legalTab === 'privacy' }" type="button" @click="legalTab = 'privacy'">
             隐私政策 <span>02</span>
+          </button>
+          <button :class="{ active: legalTab === 'ip' }" type="button" @click="legalTab = 'ip'">
+            知识产权声明 <span>03</span>
           </button>
         </div>
 
@@ -184,7 +204,7 @@
             </ol>
           </template>
 
-          <template v-else>
+          <template v-else-if="legalTab === 'privacy'">
             <div class="legal-title">
               <span>PRIVACY POLICY</span>
               <h2>隐私政策</h2>
@@ -196,6 +216,21 @@
               <li><b>信息保护</b><span>平台采用 HTTPS、密码散列、支付流水脱敏与权限拦截等安全措施。</span></li>
               <li><b>用户权利</b><span>用户可在个人中心查看、更正资料并管理收货地址与第三方授权。</span></li>
               <li><b>Cookie</b><span>仅使用维持登录态所需的会话机制，不用于跨站广告追踪。</span></li>
+            </ol>
+          </template>
+
+          <template v-else>
+            <div class="legal-title">
+              <span>INTELLECTUAL PROPERTY</span>
+              <h2>知识产权声明</h2>
+              <p>本页面用于明确本毕业设计作品的原创成果归属及未经许可使用的禁止范围。</p>
+            </div>
+            <ol class="legal-list">
+              <li><b>作品属性</b><span>本平台属于毕业设计演示作品。项目中的软件程序及相关文档、界面设计、页面文案、图片编排、交互流程等具体表达，按适用法律享有相应的知识产权保护。</span></li>
+              <li><b>原创成果</b><span>项目名称、整体产品构思、功能组合、信息架构、业务流程、系统组件设计及相关创作成果均为本人毕业设计过程中的独立研究与设计成果；涉及第三方素材的，以其相应权利人的权利声明为准。</span></li>
+              <li><b>禁止行为</b><span>未经书面许可，不得复制、抄袭、改编、转载、镜像部署、删除或篡改权利标识，不得冒用本人或本项目名义对外发布，不得将本项目或其具体原创成果包装、转化或冒用为他人的商业项目或商业方案。</span></li>
+              <li><b>商业使用</b><span>任何拟用于商业宣传、商业产品、商业服务、融资材料、投标材料或其他营利性场景的使用，均应事先取得本人书面授权；未经授权的使用，本人保留依法追究相关责任的权利。</span></li>
+              <li><b>维权方式</b><span>如发现未经许可的盗用、抄袭、冒名使用或其他涉嫌侵权行为，本人将依法采取包括但不限于固定证据、发送侵权通知、投诉举报、申请平台处置以及提起民事诉讼等维权措施。</span></li>
             </ol>
           </template>
         </article>
@@ -216,7 +251,8 @@ const legalTab = ref('terms')
 const sections = [
   { key: 'company', index: '01', title: '平台定位' },
   { key: 'contact', index: '04', title: '联系我们' },
-  { key: 'terms', index: '05', title: '服务条款' }
+  { key: 'terms', index: '05', title: '服务条款' },
+  { key: 'ip', index: '06', title: '知识产权' }
 ]
 
 const capabilities = [
@@ -363,6 +399,30 @@ async function copyText(text, label) {
 .contact-card small { color: #98A2B3; line-height: 1.5; min-height: 36px; }
 .contact-card .ant-btn { margin-top: auto; }
 
+.ip-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 26px;
+  border: 1px solid rgba(155,45,32,.22);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(155,45,32,.055), rgba(200,164,92,.10));
+}
+.ip-notice-copy { min-width: 0; }
+.ip-notice-copy h2 { margin: 6px 0 7px; color: var(--ab-navy); font-size: 22px; }
+.ip-notice-copy p { margin: 0; color: var(--ab-muted); font-size: 13px; line-height: 1.8; max-width: 820px; }
+.ip-notice-badge {
+  flex: 0 0 230px;
+  padding: 15px 17px;
+  border-radius: 14px;
+  background: var(--ab-navy);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(19,35,58,.12);
+}
+.ip-notice-badge strong { display:block; color: var(--ll-brand-gold-soft); font-size: 14px; }
+.ip-notice-badge span { display:block; margin-top: 5px; color: rgba(255,255,255,.68); font-size: 11px; line-height:1.6; }
+
 .legal-section { padding-bottom: 10px; }
 .legal-tabs { display: flex; gap: 4px; padding: 5px; width: fit-content; border: 1px solid var(--ab-line); border-radius: 12px; background: var(--ab-paper2); margin-bottom: 14px; }
 .legal-tabs button { border: 0; background: transparent; border-radius: 8px; padding: 9px 13px; color: var(--ab-muted); cursor: pointer; font: inherit; font-size: 12px; }
@@ -402,6 +462,8 @@ async function copyText(text, label) {
   .identity-row { grid-template-columns: 38px 1fr; }
   .identity-status { grid-column: 2; justify-self: start; margin-top: -5px; }
   .matrix-card, .legal-panel { padding: 20px; }
+  .ip-notice { flex-direction: column; align-items: stretch; }
+  .ip-notice-badge { flex-basis: auto; }
   .matrix-head { display: block; } .matrix-badge { display: inline-flex; margin-top: 12px; }
   .legal-list li { grid-template-columns: 1fr; gap: 4px; }
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { fileURLToPath } from 'node:url'
+import indexSource from './index.js?raw'
 import { t, setLocale } from './index'
 
 describe('轻量 i18n', () => {
@@ -26,8 +26,7 @@ describe('轻量 i18n', () => {
 
 
   it('业务词条不得重复定义且核心商户资质翻译保持一致', async () => {
-    const fs = await import('node:fs')
-    const source = fs.readFileSync(fileURLToPath(new URL('./index.js', import.meta.url)), 'utf8')
+    const source = indexSource
     const start = source.indexOf('const UI_ZH_EN = {')
     const end = source.indexOf('\n}\n\nconst _zhOrder', start)
     expect(start).toBeGreaterThanOrEqual(0)

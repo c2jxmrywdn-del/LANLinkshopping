@@ -39,6 +39,15 @@ export function saveCookieConsent(categories) {
   if (typeof document !== 'undefined') {
     document.cookie = COOKIE_KEY + '=' + encodeURIComponent(JSON.stringify(consent)) +
       '; Max-Age=31536000; Path=/; SameSite=Lax'
+    const optional = ['preferences', 'analytics', 'marketing']
+    for (const category of optional) {
+      const name = 'll_' + category
+      if (consent.categories[category]) {
+        document.cookie = name + '=1; Max-Age=31536000; Path=/; SameSite=Lax'
+      } else {
+        document.cookie = name + '=; Max-Age=0; Path=/; SameSite=Lax'
+      }
+    }
   }
   window.dispatchEvent(new CustomEvent('ll-cookie-consent-changed', { detail: consent }))
   return consent

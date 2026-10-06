@@ -240,13 +240,14 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 const activeSection = ref('company')
-const legalTab = ref('terms')
+const legalTab = ref(route.query.legal === 'ip' ? 'ip' : 'terms')
 
 const sections = [
   { key: 'company', index: '01', title: '平台定位' },
@@ -277,6 +278,13 @@ const modules = [
 ]
 
 let observer
+watch(() => route.query.legal, value => {
+  if (value === 'ip') {
+    legalTab.value = 'ip'
+    requestAnimationFrame(() => document.getElementById('terms')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
+})
+
 onMounted(() => {
   const targets = ['company', 'contact', 'terms'].map(id => document.getElementById(id)).filter(Boolean)
   observer = new IntersectionObserver(entries => {

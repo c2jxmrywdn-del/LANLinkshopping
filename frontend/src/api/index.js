@@ -1,4 +1,5 @@
 import request, { fetchCsrfToken } from './request'
+import { hasCookieConsent } from '../utils/cookieConsent'
 
 export const authApi = {
   register: (d) => request.post('/auth/register', d),
@@ -168,7 +169,22 @@ export const trafficApi = {
   conversion: (days = 30) => request.get('/merchant/traffic/conversion', { params: { days } }),
   diagnosis: (days = 30) => request.get('/merchant/traffic/diagnosis', { params: { days } }),
   track: (event) => request.post('/merchant/traffic/events', event),
-  trackPage: (event) => { const key='ll_traffic_session'; let sid=sessionStorage.getItem(key); if(!sid){sid=crypto.randomUUID?.() || ('ll-' + Date.now() + '-' + Math.random().toString(36).slice(2));sessionStorage.setItem(key,sid)} return request.post('/merchant/traffic/events',{...event,sessionId:sid,deviceType:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'pc',pageUrl:location.pathname}) }
+  trackPage: (event) => {
+    // 页面行为分析属于可选 Cookie 范畴；用户未同意时不创建分析会话或上报行为。
+    if (!hasCookieConsent('analytics')) return Promise.resolve({ skipped: true })
+    const key='ll_traffic_session'
+    let sid=sessionStorage.getItem(key)
+    if(!sid){
+      sid=crypto.randomUUID?.() || ('ll-' + Date.now() + '-' + Math.random().toString(36).slice(2))
+      sessionStorage.setItem(key,sid)
+    }
+    return request.post('/merchant/traffic/events',{
+      ...event,
+      sessionId:sid,
+      deviceType:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'pc',
+      pageUrl:location.pathname
+    })
+  }
 }
 
 // ===== 管理后台审计（/admin/**，AuthInterceptor 已限定 admin 角色） =====

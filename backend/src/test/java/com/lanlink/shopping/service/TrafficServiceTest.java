@@ -139,8 +139,8 @@ class TrafficServiceTest {
         Map<String, Object> row = new HashMap<>();
         row.put("prodId", 1L);
         row.put("amount", new java.math.BigDecimal("66.00"));
-        when(trafficMapper.productRanking(7L)).thenReturn(List.of(row));
-        List<Map<String, Object>> rows = service.productRanking(2L);
+        when(trafficMapper.productRanking(7L, 30)).thenReturn(List.of(row));
+        List<Map<String, Object>> rows = service.productRanking(2L, 30);
         assertEquals(1, rows.size());
         assertEquals(1L, rows.get(0).get("prodId"));
     }

@@ -22,6 +22,7 @@ class ActivityServiceTest {
 
     private ActivityMapper activityMapper;
     private ActivityParticipantMapper participantMapper;
+    private com.lanlink.shopping.module.membership.service.MembershipService membershipService;
     private ActivityService service;
 
     private final LocalDateTime now = LocalDateTime.now();
@@ -30,7 +31,8 @@ class ActivityServiceTest {
     void setUp() {
         activityMapper = mock(ActivityMapper.class);
         participantMapper = mock(ActivityParticipantMapper.class);
-        service = new ActivityService(activityMapper, participantMapper);
+        membershipService = mock(com.lanlink.shopping.module.membership.service.MembershipService.class);
+        service = new ActivityService(activityMapper, participantMapper, membershipService);
     }
 
     private Activity activity(Long id, String type, Integer status) {

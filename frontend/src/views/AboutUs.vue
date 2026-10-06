@@ -147,15 +147,21 @@
             <span class="contact-label">Google Gmail</span>
             <a href="mailto:ouyangjason001@gmail.com" class="contact-link">ouyangjason001@gmail.com</a>
             <small>备用联系邮箱</small>
-            <a-button block @click="copyText('andouyangjason001@gmail.com', '备用邮箱')">复制邮箱</a-button>
+            <a-button block @click="copyText('ouyangjason001@gmail.com', '备用邮箱')">复制邮箱</a-button>
           </article>
           <article class="contact-card">
             <span class="contact-icon"><img class="contact-icon-image" src="https://cdn.simpleicons.org/whatsapp/13233A" alt="WhatsApp 图标" /></span>
             <span class="contact-label">WhatsApp</span>
-            <a href="https://wa.me/OuyangJason?s=t" target="_blank" rel="noopener noreferrer" class="contact-link">WhatsApp · OuyangJason</a>
-            <small>适合快速沟通 · 扫码或点击打开</small>
-            <img class="contact-qr" src="/assets/contact/whatsapp-qr.png" alt="WhatsApp OuyangJason 联系二维码" />
-            <a-button block href="https://wa.me/OuyangJason?s=t" target="_blank" rel="noopener noreferrer">打开 WhatsApp</a-button>
+            <a class="contact-link" href="https://wa.me/OuyangJason?s=t" target="_blank" rel="noopener noreferrer">WhatsApp · OuyangJason</a>
+            <small>点击“显示二维码”查看扫码方式，也可直接打开 WhatsApp。</small>
+            <div v-if="whatsappQrVisible" class="whatsapp-qr-panel">
+              <img class="contact-qr" src="/assets/contact/whatsapp-qr.png" alt="WhatsApp OuyangJason 联系二维码" />
+              <span>扫码添加 / 联系 OuyangJason</span>
+            </div>
+            <div class="whatsapp-actions">
+              <a-button size="small" @click="whatsappQrVisible = !whatsappQrVisible">{{ whatsappQrVisible ? '收起二维码' : '显示二维码' }}</a-button>
+              <a-button size="small" type="primary" href="https://wa.me/OuyangJason?s=t" target="_blank" rel="noopener noreferrer">直接打开 WhatsApp</a-button>
+            </div>
           </article>
         </div>
       </section>
@@ -252,6 +258,7 @@ import { useRouter, useRoute } from 'vue-router'
 const router = useRouter()
 const route = useRoute()
 const activeSection = ref('company')
+const whatsappQrVisible = ref(false)
 const legalTab = ref(route.query.legal === 'ip' ? 'ip' : 'terms')
 
 const sections = [
@@ -410,7 +417,11 @@ async function copyText(text, label) {
 .contact-card { min-height: 220px; display: flex; flex-direction: column; padding: 20px; border: 1px solid var(--ab-line); border-radius: 17px; background: #fff; }
 .contact-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; background: var(--ab-navy); color: var(--ll-brand-gold-soft); }
 .contact-icon-image { width: 20px; height: 20px; display: block; filter: brightness(0) invert(1); }
-.contact-qr { width: 76px; height: 76px; margin: 8px 0 10px; object-fit: contain; border: 1px solid var(--ab-line); border-radius: 10px; background: #fff; padding: 3px; }
+.whatsapp-qr-panel { display: flex; align-items: center; gap: 10px; margin: 8px 0 10px; padding: 8px; border: 1px solid var(--ab-line); border-radius: 10px; background: var(--ab-paper); }
+.contact-qr { width: 76px; height: 76px; object-fit: contain; border: 1px solid var(--ab-line); border-radius: 8px; background: #fff; padding: 3px; }
+.whatsapp-qr-panel span { color: var(--ab-muted); font-size: 10px; line-height: 1.5; }
+.whatsapp-actions { display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; margin-top: auto; }
+.whatsapp-actions .ant-btn { margin-top: 0; }
 .contact-label { margin-top: 18px; color: var(--ab-muted); font-size: 11px; }
 .contact-card strong { margin: 5px 0; color: var(--ab-navy); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
 .contact-card small { color: #98A2B3; line-height: 1.5; min-height: 36px; }

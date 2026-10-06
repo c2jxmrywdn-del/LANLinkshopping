@@ -82,15 +82,16 @@ const AUTHOR = {
   role: 'B2B 聚合型电商平台毕业设计',
   emails: ['3514485358@qq.com', 'ouyangjason001@gmail.com'],
   socials: [
-    { name: 'X / Twitter', handle: '@Orion_Yves_Jude', url: 'https://x.com/Orion_Yves_Jude', icon: '𝕏' },
-    { name: 'Facebook', handle: 'Jason Ouyang', url: 'https://www.facebook.com/profile.php?id=61590596057471', icon: 'f' },
-    { name: 'Instagram', handle: '@yr54976', url: 'https://www.instagram.com/yr54976?stkn=MTE2a3AwcDZlZ3o5aA==', icon: '◎' },
+    { name: 'X / Twitter', handle: '@Orion_Yves_Jude', url: 'https://x.com/Orion_Yves_Jude', icon: 'https://cdn.simpleicons.org/x/13233A' },
+    { name: 'Facebook', handle: 'Jason Ouyang', url: 'https://www.facebook.com/profile.php?id=61590596057471', icon: 'https://cdn.simpleicons.org/facebook/13233A' },
+    { name: 'Instagram', handle: '@yr54976', url: 'https://www.instagram.com/yr54976?stkn=MTE2a3AwcDZlZ3o5aA==', icon: 'https://cdn.simpleicons.org/instagram/13233A' },
     { name: 'Threads', handle: '@yr54976', url: 'https://www.threads.com/@yr54976', icon: 'https://cdn.simpleicons.org/threads/13233A' },
     { name: 'GitHub', handle: 'c2jxmrywdn-del', url: 'https://github.com/c2jxmrywdn-del', icon: 'https://cdn.simpleicons.org/github/13233A' },
     { name: 'WeChat', handle: 'O19111295446', url: 'https://weixin.qq.com/', icon: 'https://cdn.simpleicons.org/wechat/13233A', copy: 'O19111295446' },
+    { name: 'WhatsApp', handle: 'OuyangJason', url: 'https://wa.me/OuyangJason?s=t', icon: 'https://cdn.simpleicons.org/whatsapp/13233A' },
   ],
   developerChannels: [
-    { name: 'GitHub Discussions', handle: 'LANLinkshopping · 项目讨论区', url: 'https://github.com/c2jxmrywdn-del/LANLinkshopping/discussions/1', icon: '◇' },
+    { name: 'GitHub Discussions', handle: 'LANLinkshopping · 项目讨论区', url: 'https://github.com/c2jxmrywdn-del/LANLinkshopping/discussions/1', icon: 'https://cdn.simpleicons.org/github/13233A' },
     { name: 'Discord', handle: 'LANLinkshopping · 开发者社区', url: 'https://discord.gg/M3JpQGtbz', icon: 'https://cdn.simpleicons.org/discord/13233A' }
   ]
 }

@@ -322,6 +322,8 @@ const socials = [
   { name: 'Instagram', handle: '@yr54976', url: 'https://www.instagram.com/yr54976?stkn=MTE2a3AwcDZlZ3o5aA==', icon: '◎' },
   { name: 'Threads', handle: '@yr54976', url: 'https://www.threads.com/@yr54976', icon: '@' },
   { name: 'Discord', handle: 'LANLinkshopping 交流群', url: 'https://discord.gg/M3JpQGtbz', icon: '◈' },
+  { name: 'GitHub', handle: 'c2jxmrywdn-del · 个人主页', url: 'https://github.com/c2jxmrywdn-del', icon: '◉' },
+  { name: 'GitHub Discussions', handle: 'LANLinkshopping · 项目讨论区', url: 'https://github.com/c2jxmrywdn-del/LANLinkshopping/discussions/1', icon: '◇' },
   { name: 'GitHub', handle: 'Jason Ouyang · 开源交流', url: 'https://github.com/c2jxmrywdn-del', icon: '⌘' },
   { name: 'GitHub Discussions', handle: '项目讨论区 · LANLinkshopping', url: 'https://github.com/c2jxmrywdn-del/LANLinkshopping/discussions/1', icon: 'D' }
 ]

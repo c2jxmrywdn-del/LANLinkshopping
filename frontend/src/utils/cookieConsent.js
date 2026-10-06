@@ -13,6 +13,14 @@ function safeParse(raw) {
   try { return raw ? JSON.parse(raw) : null } catch (e) { return null }
 }
 
+function safeStorageGet(key) {
+  try { return localStorage.getItem(key) } catch (e) { return null }
+}
+
+function safeStorageSet(key, value) {
+  try { localStorage.setItem(key, value) } catch (e) {}
+}
+
 export function readCookie(name) {
   if (typeof document === 'undefined') return ''
   const item = document.cookie.split('; ').find(row => row.startsWith(name + '='))
@@ -21,7 +29,7 @@ export function readCookie(name) {
 
 export function readCookieConsent() {
   if (typeof window === 'undefined') return null
-  const stored = safeParse(localStorage.getItem(STORAGE_KEY))
+  const stored = safeParse(safeStorageGet(STORAGE_KEY))
   if (stored && stored.version === CONSENT_VERSION && stored.categories) {
     return { version: CONSENT_VERSION, updatedAt: stored.updatedAt || null, categories: { ...DEFAULTS, ...stored.categories } }
   }
@@ -40,7 +48,7 @@ export function saveCookieConsent(categories) {
   }
 
   if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(consent))
+    safeStorageSet(STORAGE_KEY, JSON.stringify(consent))
     // 分析授权撤回后立即废弃本地分析会话，防止后续页面继续沿用旧 session。
     if (!consent.categories.analytics) {
       try { sessionStorage.removeItem('ll_traffic_session') } catch (e) {}

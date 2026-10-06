@@ -22,10 +22,10 @@
       </div>
       <div class="status-grid">
         <div v-for="item in categories" :key="item.key" class="status-item">
-          <span class="status-dot" :class="{ on: consent?.categories?.[item.key] !== false }"></span>
+          <span class="status-dot" :class="{ on: item.required || !!consent?.categories?.[item.key] }"></span>
           <div>
             <b>{{ item.title }}</b>
-            <p>{{ item.enabled ? enabledText(item.key) : '已关闭' }}</p>
+            <p>{{ enabledText(item.key) }}</p>
           </div>
         </div>
       </div>
@@ -69,6 +69,7 @@ const categories = [
 
 function enabledText(key) {
   if (key === 'necessary') return '核心功能依赖'
+  if (!consent.value) return '尚未选择'
   return consent.value?.categories?.[key] ? '已授权' : '未授权'
 }
 

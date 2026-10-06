@@ -1,7 +1,7 @@
 <template>
   <section class="author-card" :class="[`author-card--${variant}`, { 'author-card--socials': showSocials }]" aria-label="项目作者信息">
     <div class="author-card__identity">
-      <div class="author-card__mark" aria-hidden="true">JO</div>
+      <a class="author-card__avatar" href="https://x.com/Orion_Yves_Jude" target="_blank" rel="noopener noreferrer" aria-label="在 X 查看 Jason Ouyang"><img src="https://unavatar.io/x/Orion_Yves_Jude" alt="Jason Ouyang X 头像" /></a>
       <div class="author-card__copy">
         <span class="author-card__eyebrow">PROJECT AUTHOR · LANLINKSHOPPING</span>
         <strong>{{ AUTHOR.name }}</strong>
@@ -30,7 +30,7 @@
         rel="noopener noreferrer"
         class="author-card__social"
       >
-        <span class="author-card__social-icon">{{ item.icon }}</span>
+        <span class="author-card__social-icon"><img v-if="item.icon.startsWith('http')" :src="item.icon" :alt="`${item.name} 图标`" /><span v-else>{{ item.icon }}</span></span>
         <span>
           <b>{{ item.name }}</b>
           <small>{{ item.handle }}</small>
@@ -55,7 +55,7 @@
             rel="noopener noreferrer"
             class="author-card__social"
           >
-            <span class="author-card__social-icon">{{ item.icon }}</span>
+            <span class="author-card__social-icon"><img v-if="item.icon.startsWith('http')" :src="item.icon" :alt="`${item.name} 图标`" /><span v-else>{{ item.icon }}</span></span>
             <span>
               <b>{{ item.name }}</b>
               <small>{{ item.handle }}</small>
@@ -80,16 +80,18 @@ const AUTHOR = {
   name: 'Jason Ouyang',
   project: 'LANLinkshopping',
   role: 'B2B 聚合型电商平台毕业设计',
-  emails: ['3514485358@qq.com', 'andouyangjason001@gmail.com'],
+  emails: ['3514485358@qq.com', 'ouyangjason001@gmail.com'],
   socials: [
     { name: 'X / Twitter', handle: '@Orion_Yves_Jude', url: 'https://x.com/Orion_Yves_Jude', icon: '𝕏' },
     { name: 'Facebook', handle: 'Jason Ouyang', url: 'https://www.facebook.com/profile.php?id=61590596057471', icon: 'f' },
     { name: 'Instagram', handle: '@yr54976', url: 'https://www.instagram.com/yr54976?stkn=MTE2a3AwcDZlZ3o5aA==', icon: '◎' },
-    { name: 'Threads', handle: '@yr54976', url: 'https://www.threads.com/@yr54976', icon: '@' },
+    { name: 'Threads', handle: '@yr54976', url: 'https://www.threads.com/@yr54976', icon: 'https://cdn.simpleicons.org/threads/13233A' },
+    { name: 'GitHub', handle: 'c2jxmrywdn-del', url: 'https://github.com/c2jxmrywdn-del', icon: 'https://cdn.simpleicons.org/github/13233A' },
+    { name: 'WeChat', handle: 'O19111295446', url: 'https://weixin.qq.com/', icon: 'https://cdn.simpleicons.org/wechat/13233A', copy: 'O19111295446' },
   ],
   developerChannels: [
     { name: 'GitHub Discussions', handle: 'LANLinkshopping · 项目讨论区', url: 'https://github.com/c2jxmrywdn-del/LANLinkshopping/discussions/1', icon: '◇' },
-    { name: 'Discord', handle: 'LANLinkshopping · 开发者社区', url: 'https://discord.gg/M3JpQGtbz', icon: '◈' }
+    { name: 'Discord', handle: 'LANLinkshopping · 开发者社区', url: 'https://discord.gg/M3JpQGtbz', icon: 'https://cdn.simpleicons.org/discord/13233A' }
   ]
 }
 const year = computed(() => new Date().getFullYear())
@@ -118,6 +120,11 @@ const year = computed(() => new Date().getFullYear())
   border-radius: 18px;
 }
 .author-card__identity { min-width: 0; display: flex; align-items: center; gap: 13px; }
+.author-card__avatar {
+  flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; overflow: hidden;
+  display: block; background: #F5F0E8; border: 2px solid rgba(200,164,92,.35); box-shadow: 0 6px 18px rgba(15,23,42,.08);
+}
+.author-card__avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .author-card__mark {
   flex: 0 0 auto;
   width: 46px; height: 46px; border-radius: 13px;
@@ -125,7 +132,7 @@ const year = computed(() => new Date().getFullYear())
   background: var(--ll-brand-base, #13233A);
   color: #fff; font-weight: 850; letter-spacing: .04em;
 }
-.author-card--compact .author-card__mark { width: 38px; height: 38px; border-radius: 11px; font-size: 12px; }
+.author-card--compact .author-card__avatar { width: 38px; height: 38px; }
 .author-card__copy { min-width: 0; display: grid; gap: 3px; }
 .author-card__eyebrow {
   color: var(--ll-brand-gold, #C8A45C);
@@ -155,7 +162,8 @@ const year = computed(() => new Date().getFullYear())
 .author-card__group-heading strong { color: var(--ll-ink, #0F172A); font-size: 12px; }
 .author-card__group-heading small { color: #9A8B70; font-size: 8px; font-weight: 800; letter-spacing: .12em; }
 .author-card__group-description { margin: -2px 0 10px; color: #7B8492; font-size: 10px; line-height: 1.6; }
-.author-card__socials { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.author-card__socials { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.author-card--detailed .author-card__socials { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .author-card__developer { padding: 13px; border: 1px solid rgba(200,164,92,.28); border-radius: 14px; background: rgba(245,240,232,.58); }
 .author-card__developer .author-card__socials { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .author-card__social {
@@ -168,6 +176,7 @@ const year = computed(() => new Date().getFullYear())
   width: 29px; height: 29px; flex: 0 0 auto; display: grid; place-items: center;
   border-radius: 9px; background: #F5F0E8; color: var(--ll-brand-base, #13233A); font-weight: 800;
 }
+.author-card__social-icon img { width: 17px; height: 17px; display: block; }
 .author-card__social > span:nth-child(2) { min-width: 0; display: grid; gap: 1px; }
 .author-card__social b { font-size: 11px; color: var(--ll-ink, #0F172A); }
 .author-card__social small { font-size: 9px; color: #7B8492; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -178,6 +187,7 @@ const year = computed(() => new Date().getFullYear())
   .author-card--detailed { grid-column: auto; }
   .author-card__badge { margin-left: 0; }
   .author-card__socials, .author-card__developer .author-card__socials { grid-template-columns: 1fr; }
+  .author-card--detailed .author-card__socials { grid-template-columns: 1fr; }
   .author-card__meta { flex-direction: column; gap: 2px; }
 }
 </style>

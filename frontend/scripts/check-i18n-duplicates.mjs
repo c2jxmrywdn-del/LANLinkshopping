@@ -66,7 +66,6 @@ if (start < 0 || end < 0) {
   failures.push('UI_ZH_EN dictionary block could not be located')
 } else {
   const block = source.slice(start, end)
-  const definitionPattern = /['"]([^'"]+)['"]\s*:/
   const keyPattern = /['"]([^'"]+)['"]\s*:/g
   const keys = [...block.matchAll(keyPattern)].map(match => match[1])
   const counts = new Map()

@@ -2,6 +2,7 @@
   <a-config-provider :theme="{ algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm, token: { colorPrimary: '#1E6EB8', colorLink: '#1E6EB8' } }">
     <router-view />
     <BusinessBusyLoading />
+    <CookieConsent />
     <SplashScreen v-if="showSplash" @done="showSplash = false" />
   </a-config-provider>
 </template>
@@ -11,6 +12,7 @@ import { ref, watch, onMounted } from 'vue'
 import { theme } from 'ant-design-vue'
 import SplashScreen from './components/SplashScreen.vue'
 import BusinessBusyLoading from './components/BusinessBusyLoading.vue'
+import CookieConsent from './components/CookieConsent.vue'
 import { useUserStore } from './store/user'
 import { useSettingsStore } from './store/settings'
 import { fetchCsrfToken } from './api/request'

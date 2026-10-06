@@ -92,6 +92,7 @@
           <button type="button" @click.stop="$router.push('/mall')">商城</button>
           <button type="button" @click.stop="$router.push('/about')">关于我们</button>
           <button type="button" @click.stop="$router.push({ path: '/about', hash: '#contact' })">联系我们</button>
+          <button type="button" @click.stop="openCookiePreferences">隐私与 Cookie</button>
         </div>
         <div class="footer-meta">LANLinkshopping · 一种聚合型一体多元化解决方案电商平台<br/><span>B2B 毕业设计演示 · © {{ new Date().getFullYear() }}</span></div>
       </div>
@@ -107,6 +108,7 @@ import { useCartStore } from '../store/cart'
 import { useSettingsStore } from '../store/settings'
 import { tapFeedback } from '../utils/feedback'
 import IndustryCategoryMenu from '../components/IndustryCategoryMenu.vue'
+import { openCookiePreferences } from '../utils/cookieConsent'
 
 const router = useRouter()
 const route = useRoute()

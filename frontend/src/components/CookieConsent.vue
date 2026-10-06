@@ -61,7 +61,6 @@
 import { computed, onMounted, onBeforeUnmount, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { readCookieConsent, saveCookieConsent, clearOptionalCookies } from '../utils/cookieConsent'
-import { userApi } from '../api'
 
 const consent = ref(readCookieConsent())
 const preferencesOpen = ref(false)
@@ -106,6 +105,18 @@ function rejectOptional() {
 
 function saveDraft() {
   save({ ...draft })
+}
+
+function formatUpdatedAt(value) {
+  if (!value) return '—'
+  try {
+    return new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    }).format(new Date(value))
+  } catch (e) {
+    return value
+  }
 }
 
 function openPreferences() {
@@ -161,7 +172,8 @@ onBeforeUnmount(() => {
 .cookie-actions { display: flex; gap: 9px; flex: 0 0 auto; }
 .preferences-intro { color: #667085; font-size: 12px; line-height: 1.7; }
 .preferences-intro p { margin: 0 0 6px; }
-.preferences-intro span { color: #98a2b3; }
+.privacy-meta { display: flex; flex-wrap: wrap; gap: 10px 18px; color: #98a2b3; font-size: 11px; }
+.privacy-meta span::before { content: '•'; margin-right: 6px; color: #C8A45C; }
 .cookie-list { margin-top: 14px; border-top: 1px solid #edf0f3; }
 .cookie-item { display: flex; align-items: center; gap: 20px; padding: 16px 0; border-bottom: 1px solid #edf0f3; }
 .cookie-item-main { flex: 1; min-width: 0; }

@@ -15,7 +15,13 @@
       <span v-if="variant === 'detailed'">版权所有 · 未经授权请勿擅自复制、冒用或商业化</span>
     </div>
 
-    <div v-if="showSocials" class="author-card__socials">
+    <div v-if="showSocials" class="author-card__link-groups">
+      <section class="author-card__link-group" aria-label="社交平台">
+        <div class="author-card__group-heading">
+          <strong>社交平台</strong>
+          <small>FOLLOW · CONNECT</small>
+        </div>
+        <div class="author-card__socials">
       <a
         v-for="item in AUTHOR.socials"
         :key="item.name + item.url"
@@ -31,6 +37,33 @@
         </span>
         <span class="author-card__arrow">↗</span>
       </a>
+        </div>
+      </section>
+
+      <section class="author-card__link-group author-card__developer" aria-label="开发者交流区">
+        <div class="author-card__group-heading">
+          <strong>开发者交流区</strong>
+          <small>DEVELOPER COMMUNITY</small>
+        </div>
+        <p class="author-card__group-description">用于项目讨论、开发协作、问题反馈与社区交流。</p>
+        <div class="author-card__socials">
+          <a
+            v-for="item in AUTHOR.developerChannels"
+            :key="item.name + item.url"
+            :href="item.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="author-card__social"
+          >
+            <span class="author-card__social-icon">{{ item.icon }}</span>
+            <span>
+              <b>{{ item.name }}</b>
+              <small>{{ item.handle }}</small>
+            </span>
+            <span class="author-card__arrow">↗</span>
+          </a>
+        </div>
+      </section>
     </div>
   </section>
 </template>
@@ -54,8 +87,10 @@ const AUTHOR = {
     { name: 'Instagram', handle: '@yr54976', url: 'https://www.instagram.com/yr54976?stkn=MTE2a3AwcDZlZ3o5aA==', icon: '◎' },
     { name: 'Threads', handle: '@yr54976', url: 'https://www.threads.com/@yr54976', icon: '@' },
     { name: 'Discord', handle: 'LANLinkshopping 交流群', url: 'https://discord.gg/M3JpQGtbz', icon: '◈' },
-    { name: 'GitHub', handle: 'c2jxmrywdn-del · 个人主页', url: 'https://github.com/c2jxmrywdn-del', icon: '◉' },
-    { name: 'GitHub Discussions', handle: 'LANLinkshopping · 项目讨论区', url: 'https://github.com/c2jxmrywdn-del/LANLinkshopping/discussions/1', icon: '◇' }
+  ],
+  developerChannels: [
+    { name: 'GitHub Discussions', handle: 'LANLinkshopping · 项目讨论区', url: 'https://github.com/c2jxmrywdn-del/LANLinkshopping/discussions/1', icon: '◇' },
+    { name: 'Discord', handle: 'LANLinkshopping · 开发者社区', url: 'https://discord.gg/M3JpQGtbz', icon: '◈' }
   ]
 }
 const year = computed(() => new Date().getFullYear())
@@ -115,7 +150,15 @@ const year = computed(() => new Date().getFullYear())
   color: #7B8492; font-size: 10px; line-height: 1.55;
 }
 .author-card--compact .author-card__meta { margin: 0 0 0 auto; padding: 0; border-top: 0; text-align: right; white-space: nowrap; }
-.author-card__socials { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 14px; }
+.author-card__link-groups { display: grid; gap: 18px; margin-top: 18px; }
+.author-card__link-group { min-width: 0; }
+.author-card__group-heading { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.author-card__group-heading strong { color: var(--ll-ink, #0F172A); font-size: 12px; }
+.author-card__group-heading small { color: #9A8B70; font-size: 8px; font-weight: 800; letter-spacing: .12em; }
+.author-card__group-description { margin: -2px 0 10px; color: #7B8492; font-size: 10px; line-height: 1.6; }
+.author-card__socials { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.author-card__developer { padding: 13px; border: 1px solid rgba(200,164,92,.28); border-radius: 14px; background: rgba(245,240,232,.58); }
+.author-card__developer .author-card__socials { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .author-card__social {
   min-width: 0; display: flex; align-items: center; gap: 9px;
   padding: 10px 11px; border: 1px solid #E6E0D6; border-radius: 12px;
@@ -135,7 +178,7 @@ const year = computed(() => new Date().getFullYear())
   .author-card--compact .author-card__meta { width: 100%; margin-left: 51px; text-align: left; }
   .author-card--detailed { grid-column: auto; }
   .author-card__badge { margin-left: 0; }
-  .author-card__socials { grid-template-columns: 1fr; }
+  .author-card__socials, .author-card__developer .author-card__socials { grid-template-columns: 1fr; }
   .author-card__meta { flex-direction: column; gap: 2px; }
 }
 </style>

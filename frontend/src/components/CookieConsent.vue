@@ -27,7 +27,11 @@
     >
       <div class="preferences-intro">
         <p>你可以随时修改可选 Cookie。必要 Cookie 用于身份认证、会话保持、CSRF 防护和核心交易流程，无法关闭。</p>
-        <span>当前状态：{{ consent ? '已保存偏好' : '尚未选择' }}</span>
+        <div class="privacy-meta">
+          <span>策略版本 v1.0</span>
+          <span v-if="consent">最近更新：{{ formatUpdatedAt(consent.updatedAt) }}</span>
+          <span v-else>当前状态：尚未选择</span>
+        </div>
       </div>
 
       <div class="cookie-list">
@@ -60,7 +64,7 @@
 <script setup>
 import { computed, onMounted, onBeforeUnmount, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { readCookieConsent, saveCookieConsent, clearOptionalCookies } from '../utils/cookieConsent'
+import { readCookieConsent, saveCookieConsent } from '../utils/cookieConsent'
 
 const consent = ref(readCookieConsent())
 const preferencesOpen = ref(false)
@@ -90,7 +94,7 @@ function syncDraft() {
 
 function save(categoriesValue, notify = true) {
   consent.value = saveCookieConsent(categoriesValue)
-  clearOptionalCookies()
+  syncDraft()
   if (notify) message.success('Cookie 偏好已保存')
   preferencesOpen.value = false
 }

@@ -155,7 +155,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import TotpSetup from './TotpSetup.vue'
 import { useSettingsStore } from '../../store/settings'
@@ -178,7 +178,10 @@ const cookieSummary = computed(() => {
 })
 function openCookieSettings() {
   openCookiePreferences()
-  cookieConsent.value = readCookieConsent()
+}
+
+function handleCookieConsentChanged(event) {
+  cookieConsent.value = event.detail || readCookieConsent()
 }
 
 // ===== 设置保存（乐观更新 + 回滚提示） =====
@@ -312,6 +315,11 @@ function confirmReset() {
 onMounted(() => {
   refreshSecurity()
   loadThirdAuths()
+  window.addEventListener('ll-cookie-consent-changed', handleCookieConsentChanged)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('ll-cookie-consent-changed', handleCookieConsentChanged)
 })
 </script>
 

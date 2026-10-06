@@ -22,12 +22,14 @@ function walk(dir) {
 walk(root)
 
 const definitionPattern = /['"]([^'"]+)['"]\s*:/g
+const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\const definitionPattern = /['"]([^'"]+)['"]\s*:/g
+')
 const targetDefinitions = new Map()
 
 for (const file of sourceFiles) {
   const content = fs.readFileSync(file, 'utf8')
   for (const [zh] of expected) {
-    const re = new RegExp(`['"]${zh.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}['"]\\s*:`, 'g')
+    const re = new RegExp(`['"]${escapeRegExp(zh)}['"]\\s*:`, 'g')
     const matches = content.match(re) || []
     if (matches.length) {
       const key = path.relative(process.cwd(), file).replaceAll(path.sep, '/')
@@ -48,7 +50,7 @@ for (const [zh, en] of expected) {
 const i18nFile = path.resolve(process.cwd(), 'src/i18n/index.js')
 const source = fs.readFileSync(i18nFile, 'utf8')
 const start = source.indexOf('const UI_ZH_EN = {')
-const end = source.indexOf('\\n}\\n\\nconst _zhOrder', start)
+const end = source.indexOf('\n}\n\nconst _zhOrder', start)
 if (start < 0 || end < 0) {
   failures.push('UI_ZH_EN dictionary block could not be located')
 } else {
@@ -62,7 +64,7 @@ if (start < 0 || end < 0) {
   }
 
   for (const [zh, en] of expected) {
-    const translation = new RegExp(`['"]${zh.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}['"]\\s*:\\s*['"]${en.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}['"]`)
+    const translation = new RegExp(`['"]${escapeRegExp(zh)}['"]\\s*:\\s*['"]${escapeRegExp(en)}['"]`)
     if (!translation.test(block)) failures.push(`${zh}: expected translation ${en}`)
   }
 }

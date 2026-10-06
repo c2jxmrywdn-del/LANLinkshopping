@@ -3,6 +3,7 @@
     <router-view />
     <BusinessBusyLoading />
     <CookieConsent />
+    <LanguageSwitcher />
     <SplashScreen v-if="showSplash" @done="showSplash = false" />
   </a-config-provider>
 </template>
@@ -13,6 +14,7 @@ import { theme } from 'ant-design-vue'
 import SplashScreen from './components/SplashScreen.vue'
 import BusinessBusyLoading from './components/BusinessBusyLoading.vue'
 import CookieConsent from './components/CookieConsent.vue'
+import LanguageSwitcher from './components/LanguageSwitcher.vue'
 import { useUserStore } from './store/user'
 import { useSettingsStore } from './store/settings'
 import { fetchCsrfToken } from './api/request'

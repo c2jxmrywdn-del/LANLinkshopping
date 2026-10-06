@@ -18,8 +18,8 @@
         <template v-else-if="column.key === 'op'">
           <a-space>
             <a @click="$router.push('/orders/' + record.orderNo)">详情</a>
-            <a v-if="record.payStatus !== 1 && record.payStatus !== 2" @click="openPay(record)">支付</a>
-            <a v-if="record.payStatus !== 1 && record.payStatus !== 2" @click="cancel(record)" style="color:#999">取消</a>
+            <a v-if="record.payStatus === 0 && record.orderStatus === 0 && record.payType !== 'term'" @click="openPay(record)">支付</a>
+            <a v-if="record.orderStatus === 0 && (record.payStatus === 0 || record.payType === 'term')" @click="cancel(record)" style="color:#999">取消</a>
           </a-space>
         </template>
       </template>

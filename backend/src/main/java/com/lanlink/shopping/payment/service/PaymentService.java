@@ -182,7 +182,12 @@ public class PaymentService {
     // ===== 查单对账 =====
 
     public PayStatusVO query(String orderNo, Long userId) {
-        Order o = mustOwn(orderNo, userId);
+        return query(orderNo, userId, false);
+    }
+
+    public PayStatusVO query(String orderNo, Long userId, boolean isAdmin) {
+        Order o = orderMapper.selectById(orderNo);
+        if (o == null || (!isAdmin && !o.getUserId().equals(userId))) throw new BusinessException("订单不存在");
         if (!isPaid(o) && !props.isMock() && notBlank(o.getPayChannel())) {
             try {
                 if ("wechat".equals(o.getPayChannel())) {

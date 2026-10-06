@@ -4,12 +4,14 @@ import com.lanlink.shopping.common.UserIdentity;
 import com.lanlink.shopping.config.UserContext;
 import com.lanlink.shopping.entity.User;
 import com.lanlink.shopping.mapper.OrderMapper;
+import com.lanlink.shopping.mapper.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 用户身份识别服务（实时计算）。
@@ -32,9 +34,15 @@ public class IdentityService {
     private static final long ROLE_ADMIN = 3L;
 
     private final OrderMapper orderMapper;
+    private final UserMapper userMapper;
+
+    public IdentityService(OrderMapper orderMapper, UserMapper userMapper) {
+        this.orderMapper = orderMapper;
+        this.userMapper = userMapper;
+    }
 
     public IdentityService(OrderMapper orderMapper) {
-        this.orderMapper = orderMapper;
+        this(orderMapper, null);
     }
 
     /**
@@ -43,6 +51,21 @@ public class IdentityService {
     public UserIdentity identify(HttpServletRequest request) {
         User u = UserContext.current(request);
         if (u == null) return UserIdentity.GUEST;
+        if (u.getUserId() != null && userMapper != null) {
+            User freshUser = userMapper.selectById(u.getUserId());
+            if (freshUser != null) {
+                // 若数据库中角色或企业发生变更，同步刷新 session 中的用户对象，使后续流程/拦截器生效
+                if (!Objects.equals(u.getRoleId(), freshUser.getRoleId())
+                        || !Objects.equals(u.getEntId(), freshUser.getEntId())) {
+                    u.setRoleId(freshUser.getRoleId());
+                    u.setEntId(freshUser.getEntId());
+                    if (request.getSession(false) != null) {
+                        request.getSession().setAttribute(UserContext.SESSION_KEY, u);
+                    }
+                }
+                return identify(freshUser.getUserId(), freshUser.getRoleId());
+            }
+        }
         return identify(u.getUserId(), u.getRoleId());
     }
 

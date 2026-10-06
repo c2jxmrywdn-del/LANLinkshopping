@@ -56,7 +56,18 @@ const orderText={0:'待发货',1:'已发货',2:'已完成',3:'已取消',4:'已�
 const channelText={wallet:'钱包',mock:'模拟网关',wechat:'微信支付',alipay:'支付宝'}
 const money=v=>Number(v||0).toFixed(2),fmt=v=>v?String(v).replace('T',' ').slice(0,19):'—'
 const refundText=computed(()=>order.value?.refundStatus==='success'?'已退款':order.value?.refundStatus==='processing'?'退款处理中':'无退款')
-async function load(){loading.value=true;try{order.value=await orderApi.detail(route.params.orderNo);try{payment.value=await paymentApi.query(route.params.orderNo)}catch(e){payment.value=null}}catch(e){order.value=null}finally{loading.value=false}}
+async function load(){
+  loading.value=true;
+  try{
+    const res=await orderApi.detail(route.params.orderNo);
+    if(res?.order){
+      order.value={ ...res.order, items: res.items || [] };
+    } else {
+      order.value=res;
+    }
+    try{payment.value=await paymentApi.query(route.params.orderNo)}catch(e){payment.value=null}
+  }catch(e){order.value=null}finally{loading.value=false}
+}
 onMounted(load)
 </script>
 <style scoped>

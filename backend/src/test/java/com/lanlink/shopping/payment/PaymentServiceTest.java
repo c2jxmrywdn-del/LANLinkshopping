@@ -101,4 +101,19 @@ class PaymentServiceTest {
         when(orderMapper.selectById("20261004123456")).thenReturn(paid);
         assertThrows(RuntimeException.class, () -> svc.create("20261004123456", 1L, "mock"));
     }
+
+    @Test
+    void queryRejectsNonOwnerWhenNotAdmin() {
+        when(orderMapper.selectById("20261004123456")).thenReturn(unpaidOrder());
+        assertThrows(com.lanlink.shopping.common.BusinessException.class,
+                () -> svc.query("20261004123456", 999L, false));
+    }
+
+    @Test
+    void queryAllowsAdminAccess() {
+        when(orderMapper.selectById("20261004123456")).thenReturn(unpaidOrder());
+        var vo = svc.query("20261004123456", 999L, true);
+        assertNotNull(vo);
+        assertEquals("20261004123456", vo.getOrderNo());
+    }
 }

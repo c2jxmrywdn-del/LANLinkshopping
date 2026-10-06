@@ -87,20 +87,24 @@ public class ProductController {
         if (file.getSize() > MAX_IMG_SIZE) throw new IllegalArgumentException("图片大小不能超过 5MB");
         String kind;
         try (InputStream in = file.getInputStream()) {
-            byte[] h = in.readNBytes(8);
+            byte[] h = in.readNBytes(12);
             if (h.length >= 3 && (h[0] & 0xFF) == 0xFF && (h[1] & 0xFF) == 0xD8 && (h[2] & 0xFF) == 0xFF) kind = "jpg";
-            else if (h.length >= 4 && (h[0] & 0xFF) == 0x89 && h[1] == 0x50 && h[2] == 0x4E && h[3] == 0x47) kind = "png";
-            else if (h.length >= 4 && h[0] == 'R' && h[1] == 'I' && h[2] == 'F' && h[3] == 'F') kind = "webp";
+            else if (h.length >= 8 && (h[0] & 0xFF) == 0x89 && h[1] == 0x50 && h[2] == 0x4E && h[3] == 0x47) kind = "png";
+            else if (h.length >= 12 && h[0] == 'R' && h[1] == 'I' && h[2] == 'F' && h[3] == 'F' && h[8] == 'W' && h[9] == 'E' && h[10] == 'B' && h[11] == 'P') kind = "webp";
             else throw new IllegalArgumentException("仅支持 JPG/PNG/WebP 图片");
         }
-        BufferedImage img;
+        BufferedImage img = null;
         try {
             img = ImageIO.read(file.getInputStream());
         } catch (IOException e) {
             throw new IllegalArgumentException("图片解析失败，请重新上传");
         }
-        if (img == null || img.getWidth() < 100 || img.getHeight() < 100) {
-            throw new IllegalArgumentException("图片尺寸过小（需≥100×100）");
+        if (img != null) {
+            if (img.getWidth() < 100 || img.getHeight() < 100) {
+                throw new IllegalArgumentException("图片尺寸过小（需≥100×100）");
+            }
+        } else if (!"webp".equals(kind)) {
+            throw new IllegalArgumentException("图片解析失败，请重新上传");
         }
         File dir = new File(PRODUCT_IMG_DIR);
         if (!dir.exists() && !dir.mkdirs()) throw new RuntimeException("上传目录创建失败");

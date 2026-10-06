@@ -48,7 +48,9 @@ public class OrderController {
 
     @GetMapping("/detail/{orderNo}")
     public R<OrderDetailVO> detail(@PathVariable String orderNo, HttpServletRequest request) {
-        return R.ok(orderService.detail(UserContext.currentUserId(request), orderNo));
+        var u = UserContext.current(request);
+        boolean isAdmin = u != null && Long.valueOf(3L).equals(u.getRoleId());
+        return R.ok(orderService.detail(UserContext.currentUserId(request), orderNo, isAdmin));
     }
 
     @PostMapping("/pay/{orderNo}")

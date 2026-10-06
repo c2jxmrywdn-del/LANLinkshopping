@@ -89,8 +89,8 @@ const route=useRoute(),router=useRouter(),detail=ref(null),loading=ref(false),pa
 const statusMap={0:'待发货',1:'已发货',2:'已完成',3:'已取消',4:'已退款'}
 const payType={corporate:'对公转账',balance:'企业钱包',term:'账期/尾款'}
 const channelText={wallet:'钱包',mock:'模拟网关',wechat:'微信支付',alipay:'支付宝'}
-const canPay=computed(()=>detail.value?.order?.payStatus!==1&&detail.value?.order?.payStatus!==2&&detail.value?.order?.orderStatus!==3)
-const canCancel=computed(()=>detail.value?.order?.payStatus!==1&&detail.value?.order?.payStatus!==2&&detail.value?.order?.orderStatus!==3)
+const canPay=computed(()=>{const o=detail.value?.order;return o&&o.payStatus===0&&o.orderStatus===0&&o.payType!=='term'})
+const canCancel=computed(()=>{const o=detail.value?.order;return o&&o.orderStatus===0&&(o.payStatus===0||o.payType==='term')})
 const stepIndex=computed(()=>{const o=detail.value?.order;if(!o)return 0;if(o.orderStatus===3||o.orderStatus===4)return 0;if(o.orderStatus===2)return 3;if(o.orderStatus===1)return 2;return o.payStatus===1?2:0})
 const fmt=v=>v?String(v).replace('T',' '):'—'
 const money=v=>Number(v||0).toFixed(2)

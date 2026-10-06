@@ -150,8 +150,12 @@ public class OrderService {
     }
 
     public OrderDetailVO detail(Long userId, String orderNo) {
+        return detail(userId, orderNo, false);
+    }
+
+    public OrderDetailVO detail(Long userId, String orderNo, boolean isAdmin) {
         Order o = orderMapper.selectById(orderNo);
-        if (o == null || !o.getUserId().equals(userId)) throw new BusinessException("订单不存在");
+        if (o == null || (!isAdmin && !o.getUserId().equals(userId))) throw new BusinessException("订单不存在");
         OrderDetailVO vo = new OrderDetailVO();
         vo.setOrder(o);
         vo.setItems(orderItemMapper.selectList(Wrappers.<OrderItem>lambdaQuery()

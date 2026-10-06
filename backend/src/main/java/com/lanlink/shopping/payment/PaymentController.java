@@ -45,7 +45,9 @@ public class PaymentController {
 
     @GetMapping("/query/{orderNo}")
     public R<PayStatusVO> query(@PathVariable String orderNo, HttpServletRequest request) {
-        return R.ok(paymentService.query(orderNo, UserContext.currentUserId(request)));
+        var u = UserContext.current(request);
+        boolean isAdmin = u != null && Long.valueOf(3L).equals(u.getRoleId());
+        return R.ok(paymentService.query(orderNo, UserContext.currentUserId(request), isAdmin));
     }
 
     /** 我的交易记录（支付状态/渠道/交易号/退款进度） */

@@ -6,9 +6,11 @@ import com.lanlink.shopping.dto.MerchantApplyDTO;
 import com.lanlink.shopping.entity.Enterprise;
 import com.lanlink.shopping.entity.Merchant;
 import com.lanlink.shopping.entity.Qualification;
+import com.lanlink.shopping.entity.User;
 import com.lanlink.shopping.mapper.EnterpriseMapper;
 import com.lanlink.shopping.mapper.MerchantMapper;
 import com.lanlink.shopping.mapper.QualificationMapper;
+import com.lanlink.shopping.mapper.UserMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -32,13 +34,21 @@ public class MerchantService {
     private final EnterpriseMapper enterpriseMapper;
     private final QualificationMapper qualificationMapper;
     private final AuditService auditService;
+    private final UserMapper userMapper;
 
     public MerchantService(MerchantMapper merchantMapper, EnterpriseMapper enterpriseMapper,
-                           QualificationMapper qualificationMapper, AuditService auditService) {
+                           QualificationMapper qualificationMapper, AuditService auditService,
+                           UserMapper userMapper) {
         this.merchantMapper = merchantMapper;
         this.enterpriseMapper = enterpriseMapper;
         this.qualificationMapper = qualificationMapper;
         this.auditService = auditService;
+        this.userMapper = userMapper;
+    }
+
+    public MerchantService(MerchantMapper merchantMapper, EnterpriseMapper enterpriseMapper,
+                           QualificationMapper qualificationMapper, AuditService auditService) {
+        this(merchantMapper, enterpriseMapper, qualificationMapper, auditService, null);
     }
 
     @Transactional
@@ -93,6 +103,18 @@ public class MerchantService {
                 qe.setCreateTime(LocalDateTime.now());
                 qualificationMapper.insert(qe);
             }
+        }
+
+        // 若初筛直接通过，同步更新用户角色为商户(2)并关联企业
+        if (m.getReviewStatus() != null && m.getReviewStatus() == 1 && userId != null && userMapper != null) {
+            User u = userMapper.selectById(userId);
+            if (u != null) {
+                u.setRoleId(2L);
+                u.setEntId(ent.getEntId());
+                u.setUpdateTime(LocalDateTime.now());
+                userMapper.updateById(u);
+            }
+            auditService.record(userId, "IDENTITY_CHANGE", "身份升级: buyer -> merchant（商户初筛通过）", null);
         }
         return m;
     }
@@ -245,9 +267,31 @@ public class MerchantService {
         m.setRejectReason(reviewStatus == 2 ? reason.trim() : null);
         m.setUpdateTime(LocalDateTime.now());
         merchantMapper.updateById(m);
-        // 审核通过 → 商户身份生效（身份实时计算，下次请求自动切换为 merchant）
+        // 审核通过 → 商户身份生效（角色置为 2L，关联企业）
         if (reviewStatus == 1 && m.getUserId() != null) {
+            if (userMapper != null) {
+                User u = userMapper.selectById(m.getUserId());
+                if (u != null) {
+                    u.setRoleId(2L);
+                    if (m.getEntId() != null) {
+                        u.setEntId(m.getEntId());
+                    }
+                    u.setUpdateTime(LocalDateTime.now());
+                    userMapper.updateById(u);
+                }
+            }
             auditService.record(m.getUserId(), "IDENTITY_CHANGE", "身份升级: buyer -> merchant（商户审核通过）", null);
+        } else if (reviewStatus == 2 && m.getUserId() != null) {
+            // 审核驳回 → 若之前为商户角色则重置为普通买家(1L)
+            if (userMapper != null) {
+                User u = userMapper.selectById(m.getUserId());
+                if (u != null && Long.valueOf(2L).equals(u.getRoleId())) {
+                    u.setRoleId(1L);
+                    u.setUpdateTime(LocalDateTime.now());
+                    userMapper.updateById(u);
+                    auditService.record(m.getUserId(), "IDENTITY_CHANGE", "身份降级: merchant -> buyer（商户审核驳回）", null);
+                }
+            }
         }
         return m;
     }

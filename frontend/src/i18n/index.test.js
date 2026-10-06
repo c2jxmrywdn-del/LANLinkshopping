@@ -23,6 +23,21 @@ describe('轻量 i18n', () => {
     expect(t('no.such.key')).toBe('no.such.key')
   })
 
+  it('核心商户资质词条可在英文界面正常显示', () => {
+    document.body.innerHTML = '<div>营业执照 · 税务登记号 · 查看原件 · 记录</div>'
+    setLocale('en-US')
+    expect(document.body.textContent).toContain('Business License')
+    expect(document.body.textContent).toContain('Tax Registration No.')
+    expect(document.body.textContent).toContain('View Original')
+    expect(document.body.textContent).toContain('Record')
+
+    setLocale('zh-CN')
+    expect(document.body.textContent).toContain('营业执照')
+    expect(document.body.textContent).toContain('税务登记号')
+    expect(document.body.textContent).toContain('查看原件')
+    expect(document.body.textContent).toContain('记录')
+  })
+
   it('非法语言回退中文', () => {
     setLocale('fr-FR')
     expect(t('acct.nav.profile')).toBe('个人信息')

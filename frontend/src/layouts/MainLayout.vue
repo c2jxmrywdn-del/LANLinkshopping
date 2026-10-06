@@ -95,7 +95,7 @@
           <button type="button" @click.stop="$router.push({ name: 'privacy-cookies' })">隐私与 Cookie</button>
           <button type="button" @click.stop="$router.push({ name: 'about', query: { legal: 'ip' }, hash: '#terms' })">知识产权声明</button>
         </div>
-        <div class="footer-meta">LANLinkshopping · 一种聚合型一体多元化解决方案电商平台<br/><span>B2B 毕业设计演示 · © {{ new Date().getFullYear() }}</span></div>
+        <div class="footer-meta">LANLinkshopping · 一种聚合型一体多元化解决方案电商平台<br/><span>项目作者 Jason Ouyang · B2B 毕业设计演示 · © {{ new Date().getFullYear() }}</span></div>
       </div>
     </a-layout-footer>
   </a-layout>

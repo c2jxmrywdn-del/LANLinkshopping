@@ -103,6 +103,15 @@
       </div>
 
       <a-divider style="margin: 12px 0" />
+      <div class="cookie-setting-row">
+        <div class="row-main">
+          <div class="row-title">Cookie 与隐私偏好</div>
+          <div class="row-desc">管理必要、偏好、分析和营销 Cookie。必要 Cookie 始终启用。</div>
+          <div v-if="cookieSummary" class="row-desc">当前：{{ cookieSummary }}</div>
+        </div>
+        <a-button class="touch-sm" @click="openCookieSettings">管理 Cookie</a-button>
+      </div>
+      <a-divider style="margin: 12px 0" />
       <a-button danger class="touch-sm" @click="confirmReset">{{ t('acct.settings.reset') }}</a-button>
     </a-card>
 
@@ -153,11 +162,24 @@ import { useSettingsStore } from '../../store/settings'
 import { userApi } from '../../api'
 import { t } from '../../i18n'
 import { passwordStrength } from '../../utils/validators'
+import { openCookiePreferences, readCookieConsent } from '../../utils/cookieConsent'
 
 const settings = useSettingsStore()
 const ap = computed(() => settings.settings?.appearance || { theme: 'system', language: 'zh-CN', fontSize: 'standard' })
 const n = computed(() => settings.settings?.notify || { email: true, push: true, sms: false, groups: { order: true, promotion: false, system: true } })
 const pr = computed(() => settings.settings?.privacy || { recommend: true, ads: false })
+const cookieConsent = ref(readCookieConsent())
+const cookieSummary = computed(() => {
+  const c = cookieConsent.value?.categories
+  if (!c) return '尚未设置'
+  return ['preferences','analytics','marketing'].filter(k => c[k]).length
+    ? ['preferences','analytics','marketing'].filter(k => c[k]).map(k => ({ preferences:'偏好', analytics:'分析', marketing:'营销' }[k])).join('、')
+    : '仅必要'
+})
+function openCookieSettings() {
+  openCookiePreferences()
+  cookieConsent.value = readCookieConsent()
+}
 
 // ===== 设置保存（乐观更新 + 回滚提示） =====
 let toastTimer = null
@@ -318,6 +340,7 @@ onMounted(() => {
 .strength .bar.on.s4 { background: #10b981; }
 .strength em { font-style: normal; font-size: 12px; color: var(--ll-gray2); }
 .desc { color: var(--ll-muted); margin-top: 0; }
+.cookie-setting-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
 .touch { min-height: 44px; }
 .touch-sm { min-height: 40px; min-width: 96px; }
 .touch-xs { min-height: 36px; }

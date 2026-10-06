@@ -157,6 +157,7 @@
             <a-button block href="https://wa.me/OuyangJason?s=t" target="_blank" rel="noopener noreferrer">打开 WhatsApp</a-button>
           </article>
         </div>
+      </section>
 
       <!-- 知识产权声明：毕业设计作品及原创成果保护提示 -->
       <section class="about-section ip-notice" aria-label="知识产权声明">

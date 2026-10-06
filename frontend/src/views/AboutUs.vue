@@ -123,37 +123,74 @@
         </div>
       </section>
 
-      <!-- 联系方式 -->
+      <!-- 项目作者与联系矩阵 -->
       <section id="contact" class="about-section contact-section">
         <div class="contact-intro">
           <span class="section-kicker">04 · CONTACT</span>
-          <h2>需要合作或技术支持？</h2>
-          <p>演示环境中的联系方式均为示例信息。你可以直接复制邮箱，或通过电话 / 邮件客户端发起联系。</p>
-          <a-alert type="info" show-icon message="本站为毕业设计演示环境，以下联系方式为示例内容。" />
+          <h2>项目作者：Jason Ouyang</h2>
+          <p>LANLinkshopping 为个人毕业设计项目。这里集中提供作者邮箱、社交平台与交流社区入口，便于项目展示、沟通与学术交流。</p>
+          <a-alert type="info" show-icon message="本页面公开的联系方式由项目作者本人提供，仅用于项目展示、交流与联系。" />
+        </div>
+
+        <div class="author-profile">
+          <div class="author-mark">JO</div>
+          <div class="author-copy">
+            <span>PROJECT AUTHOR</span>
+            <strong>Jason Ouyang</strong>
+            <small>LANLinkshopping · B2B 聚合型电商平台毕业设计</small>
+          </div>
+          <div class="author-badge">GRADUATION PROJECT</div>
         </div>
 
         <div class="contact-grid">
           <article class="contact-card">
-            <span class="contact-icon">☎</span>
-            <span class="contact-label">客服热线</span>
-            <strong>400-000-0000</strong>
-            <small>工作日 09:00 – 18:00</small>
-            <a-button block @click="copyText('400-000-0000', '客服电话')">复制号码</a-button>
+            <span class="contact-icon">✉</span>
+            <span class="contact-label">主要邮箱</span>
+            <a href="mailto:3514485358@qq.com" class="contact-link">3514485358@qq.com</a>
+            <small>项目联系 / 日常沟通</small>
+            <a-button block @click="copyText('3514485358@qq.com', '主要邮箱')">复制邮箱</a-button>
           </article>
           <article class="contact-card">
             <span class="contact-icon">✉</span>
-            <span class="contact-label">商务合作</span>
-            <strong>business@lanlinkshopping.example.com</strong>
-            <small>合作、入驻与商务咨询</small>
-            <a-button block @click="copyText('business@lanlinkshopping.example.com', '商务邮箱')">复制邮箱</a-button>
+            <span class="contact-label">备用邮箱</span>
+            <a href="mailto:andouyangjason001@gmail.com" class="contact-link">andouyangjason001@gmail.com</a>
+            <small>备用联系邮箱</small>
+            <a-button block @click="copyText('andouyangjason001@gmail.com', '备用邮箱')">复制邮箱</a-button>
           </article>
           <article class="contact-card">
-            <span class="contact-icon">⌘</span>
-            <span class="contact-label">技术支持</span>
-            <strong>support@lanlinkshopping.example.com</strong>
-            <small>产品、接口与演示环境支持</small>
-            <a-button block @click="copyText('support@lanlinkshopping.example.com', '技术邮箱')">复制邮箱</a-button>
+            <span class="contact-icon">◉</span>
+            <span class="contact-label">即时交流</span>
+            <a href="https://wa.me/OuyangJason?s=t" target="_blank" rel="noopener noreferrer" class="contact-link">WhatsApp · OuyangJason</a>
+            <small>适合快速沟通</small>
+            <a-button block href="https://wa.me/OuyangJason?s=t" target="_blank" rel="noopener noreferrer">打开 WhatsApp</a-button>
           </article>
+        </div>
+
+        <div class="social-panel">
+          <div class="social-panel-head">
+            <div>
+              <span class="section-kicker">SOCIAL PRESENCE</span>
+              <h3>社交平台与交流社区</h3>
+            </div>
+            <span>多渠道连接 · 统一对外身份</span>
+          </div>
+          <div class="social-grid">
+            <a
+              v-for="item in socials"
+              :key="item.name"
+              :href="item.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="social-card"
+            >
+              <span class="social-icon">{{ item.icon }}</span>
+              <span class="social-copy">
+                <strong>{{ item.name }}</strong>
+                <small>{{ item.handle }}</small>
+              </span>
+              <span class="social-arrow">↗</span>
+            </a>
+          </div>
         </div>
       </section>
 
@@ -231,8 +268,7 @@
               <li><b>作品属性</b><span>本平台属于毕业设计演示作品。项目中的软件程序及相关文档、界面设计、页面文案、图片编排、交互流程等具体表达，按适用法律享有相应的知识产权保护。</span></li>
               <li><b>原创成果</b><span>项目名称、整体创意与构思、产品定位、功能组合、信息架构、业务流程、系统组件设计以及相关具体创作成果，均属于本人毕业设计过程中的研究、设计与开发成果；涉及第三方素材的，以其相应权利人的权利声明为准。</span></li>
               <li><b>禁止盗用</b><span>未经书面许可，不得盗用、复制、抄袭、改编、转载、镜像部署、删除或篡改权利标识，不得冒用本人或本项目名义对外发布，不得将本项目或其具体原创成果包装、转化、仿冒或冒用为他人的项目或商业方案。</span></li>
-              <li><b>商业使用</b><span>任何用于商业宣传、商业产品、商业服务、融资材料、投标材料或其他营利性场景的使用，均应事先取得本人书面授权；本人将依法采取必要措施维护自身合法权益。</span></li>
-              <li><b>商业使用</b><span>任何拟用于商业宣传、商业产品、商业服务、融资材料、投标材料或其他营利性场景的使用，均应事先取得本人书面授权；未经授权的使用，本人保留依法追究相关责任的权利。</span></li>
+              <li><b>商业使用</b><span>任何用于商业宣传、商业产品、商业服务、融资材料、投标材料或其他营利性场景的使用，均应事先取得本人书面授权；未经授权的使用，本人保留依法追究相关责任的权利。</span></li>
               <li><b>维权方式</b><span>如发现未经许可的盗用、抄袭、冒名使用或其他涉嫌侵权行为，本人将依法采取包括但不限于固定证据、发送侵权通知、投诉举报、申请平台处置以及提起民事诉讼等维权措施。</span></li>
             </ol>
           </template>
@@ -278,6 +314,14 @@ const modules = [
   { number: '01', icon: '◌', title: '交易', desc: '商品 → 购物车 → 结算 → 支付 → 订单', tags: ['订单', '钱包', '支付'] },
   { number: '02', icon: '✦', title: '营销', desc: '活动、促销与会员权益协同工作', tags: ['活动', '促销', '会员'] },
   { number: '03', icon: '⌁', title: '增长', desc: '商户流量、来源、转化与诊断形成经营反馈', tags: ['流量', '转化', '诊断'] }
+]
+
+const socials = [
+  { name: 'X / Twitter', handle: '@Orion_Yves_Jude', url: 'https://x.com/Orion_Yves_Jude', icon: '𝕏' },
+  { name: 'Facebook', handle: 'Jason Ouyang', url: 'https://www.facebook.com/profile.php?id=61590596057471', icon: 'f' },
+  { name: 'Instagram', handle: '@yr54976', url: 'https://www.instagram.com/yr54976?stkn=MTE2a3AwcDZlZ3o5aA==', icon: '◎' },
+  { name: 'Threads', handle: '@yr54976', url: 'https://www.threads.com/@yr54976', icon: '@' },
+  { name: 'Discord', handle: 'LANLinkshopping 交流群', url: 'https://discord.gg/M3JpQGtbz', icon: '◈' }
 ]
 
 let observer
@@ -402,6 +446,28 @@ async function copyText(text, label) {
 .contact-section { display: grid; grid-template-columns: .78fr 1.22fr; gap: 26px; align-items: start; }
 .contact-intro { padding-top: 8px; }
 .contact-intro .ant-alert { margin-top: 18px; }
+.author-profile { margin: 18px 0 22px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; border: 1px solid var(--ab-line); border-radius: 18px; background: linear-gradient(120deg, rgba(255,255,255,.92), rgba(245,240,232,.88)); box-shadow: 0 12px 34px rgba(15,23,42,.06); }
+.author-mark { width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center; background: var(--ab-navy); color: #fff; font-weight: 800; letter-spacing: .04em; }
+.author-copy { display: grid; gap: 3px; min-width: 0; }
+.author-copy span { font-size: 10px; letter-spacing: .14em; color: var(--ab-gold); font-weight: 800; }
+.author-copy strong { font-size: 20px; color: var(--ab-ink); }
+.author-copy small { color: var(--ab-muted); line-height: 1.5; }
+.author-badge { margin-left: auto; font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--ab-red); border: 1px solid rgba(155,45,32,.2); background: rgba(155,45,32,.05); padding: 7px 10px; border-radius: 999px; }
+.contact-link { display: block; max-width: 100%; margin: 5px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ab-navy); font-weight: 750; text-decoration: none; }
+.contact-link:hover { text-decoration: underline; }
+.social-panel { margin-top: 22px; border: 1px solid var(--ab-line); border-radius: 22px; padding: 20px; background: rgba(255,255,255,.62); backdrop-filter: blur(10px); }
+.social-panel-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.social-panel-head h3 { margin: 6px 0 0; color: var(--ab-ink); font-size: 20px; }
+.social-panel-head > span { font-size: 11px; color: #98A2B3; }
+.social-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.social-card { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border: 1px solid #E6E0D6; border-radius: 14px; background: rgba(255,255,255,.78); text-decoration: none; color: inherit; transition: .2s ease; }
+.social-card:hover { transform: translateY(-2px); border-color: rgba(200,164,92,.65); box-shadow: 0 10px 22px rgba(15,23,42,.07); }
+.social-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: var(--ab-paper2); color: var(--ab-navy); font-weight: 800; }
+.social-copy { min-width: 0; display: grid; gap: 2px; }
+.social-copy strong { font-size: 13px; color: var(--ab-ink); }
+.social-copy small { font-size: 11px; color: var(--ab-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.social-arrow { margin-left: auto; color: var(--ab-gold); font-size: 16px; }
+
 .contact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .contact-card { min-height: 220px; display: flex; flex-direction: column; padding: 20px; border: 1px solid var(--ab-line); border-radius: 17px; background: #fff; }
 .contact-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; background: var(--ab-navy); color: var(--ll-brand-gold-soft); }
@@ -476,6 +542,10 @@ async function copyText(text, label) {
   .ip-notice { flex-direction: column; align-items: stretch; }
   .ip-notice-badge { flex-basis: auto; }
   .matrix-head { display: block; } .matrix-badge { display: inline-flex; margin-top: 12px; }
+  .author-profile { align-items: flex-start; }
+  .author-badge { margin-left: 0; margin-top: 2px; }
+  .social-panel-head { align-items: flex-start; flex-direction: column; }
+  .social-grid { grid-template-columns: 1fr; }
   .legal-list li { grid-template-columns: 1fr; gap: 4px; }
 }
 </style>

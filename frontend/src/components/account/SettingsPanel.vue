@@ -108,6 +108,7 @@
           <div class="row-title">Cookie 与隐私偏好</div>
           <div class="row-desc">管理必要、偏好、分析和营销 Cookie。必要 Cookie 始终启用。</div>
           <div v-if="cookieSummary" class="row-desc">当前：{{ cookieSummary }}</div>
+          <div v-if="cookieConsent?.updatedAt" class="row-desc">更新时间：{{ formatCookieTime(cookieConsent.updatedAt) }}</div>
         </div>
         <a-button class="touch-sm" @click="openCookieSettings">管理 Cookie</a-button>
       </div>
@@ -178,6 +179,15 @@ const cookieSummary = computed(() => {
 })
 function openCookieSettings() {
   openCookiePreferences()
+}
+
+function formatCookieTime(value) {
+  if (!value) return ''
+  try {
+    return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+  } catch (e) {
+    return value
+  }
 }
 
 function handleCookieConsentChanged(event) {

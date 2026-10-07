@@ -1,6 +1,7 @@
 package com.lanlink.shopping.config;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.lanlink.shopping.common.CryptoUtil;
 import com.lanlink.shopping.entity.*;
 import com.lanlink.shopping.mapper.*;
 import com.lanlink.shopping.module.activity.entity.Activity;
@@ -41,13 +42,14 @@ public class DataInitializer implements CommandLineRunner {
     private final ActivityMapper activityMapper;
     private final PromotionMapper promotionMapper;
     private final PasswordEncoder passwordEncoder;
+    private final CryptoUtil cryptoUtil;
 
     public DataInitializer(UserMapper userMapper, RoleMapper roleMapper, EnterpriseMapper enterpriseMapper,
                            MerchantMapper merchantMapper, ProductMapper productMapper,
                            CategoryMapper categoryMapper, ThirdAuthMapper thirdAuthMapper,
                            MessageMapper messageMapper,
                            ActivityMapper activityMapper, PromotionMapper promotionMapper,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder, CryptoUtil cryptoUtil) {
         this.userMapper = userMapper; this.roleMapper = roleMapper;
         this.enterpriseMapper = enterpriseMapper; this.merchantMapper = merchantMapper;
         this.productMapper = productMapper; this.categoryMapper = categoryMapper;
@@ -56,6 +58,7 @@ public class DataInitializer implements CommandLineRunner {
         this.activityMapper = activityMapper;
         this.promotionMapper = promotionMapper;
         this.passwordEncoder = passwordEncoder;
+        this.cryptoUtil = cryptoUtil;
     }
 
     @Override
@@ -82,7 +85,7 @@ public class DataInitializer implements CommandLineRunner {
         // 企业
         Enterprise ent = new Enterprise();
         ent.setName("华晨建材集团有限公司");
-        ent.setCreditCode("91500000MA5U0000XA");
+        ent.setCreditCode(cryptoUtil.encrypt("91500000MA5U0000XA"));
         ent.setMemberLevel(2);
         ent.setCreateTime(LocalDateTime.now());
         enterpriseMapper.insert(ent);

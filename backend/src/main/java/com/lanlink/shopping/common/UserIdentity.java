@@ -30,6 +30,17 @@ public enum UserIdentity {
     ADMIN("admin", "管理员", "全部前台服务 + 平台运营后台（数据概览、商户管理、商品管理、交易管理、审计日志）",
             List.of("admin:all"));
 
+    /**
+     * 商户档「可选权限」白名单：运营端可对单个商户授予/回收，商户档案 perm_codes 仅允许配置该集合内的权限点。
+     * 判定规则（见 integration.security.PermInterceptor）：
+     *  - 商户身份下这些权限不再由角色矩阵直接决定，而以商户档案授权为准
+     *    （perm_codes 为 null=未配置 → 默认全量授予，保证存量商户不降权；空串 → 显式不授予任何可选权限）；
+     *  - 账户状态为冻结(2)/注销(3) 时可选项权限全部失效，实现「冻结即时收回经营权限」；
+     *  - 其余权限仍走角色矩阵，保证按商户差异化授权的同时不越权。
+     */
+    public static final List<String> MERCHANT_OPTIONAL_PERMS =
+            List.of("merchant:manage", "product:publish");
+
     /** 稳定标识（前端/日志使用） */
     private final String code;
     /** 展示名称 */

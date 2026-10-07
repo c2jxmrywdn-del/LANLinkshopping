@@ -32,3 +32,6 @@ backend/src/main/resources/application-payment.yml
 
 # IDE 规划文档
 .trae/
+
+# AI 编辑器本地数据（含规则、会话与 plan.json/plan.md 等内部计划文件，属本机工作区状态，不入库）
+.codebuddy/

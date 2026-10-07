@@ -1,22 +1,36 @@
 package com.lanlink.shopping.controller;
 
-import com.lanlink.shopping.common.R;
-import com.lanlink.shopping.config.UserContext;
-import com.lanlink.shopping.dto.MerchantApplyDTO;
-import com.lanlink.shopping.entity.Merchant;
-import com.lanlink.shopping.service.MerchantService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.lanlink.shopping.common.R;
+import com.lanlink.shopping.config.UserContext;
+import com.lanlink.shopping.dto.MerchantApplyDTO;
+import com.lanlink.shopping.dto.MerchantStatusDTO;
+import com.lanlink.shopping.dto.MerchantUpdateDTO;
+import com.lanlink.shopping.entity.Merchant;
+import com.lanlink.shopping.service.MerchantService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 /**
  * 商户入驻与筛选 + 运营审核
@@ -72,10 +86,10 @@ public class MerchantController {
         return R.ok("上传成功", Map.of("url", url));
     }
 
-    /** 我的商户信息 */
+    /** 我的商户信息（税务登记号脱敏展示） */
     @GetMapping("/my")
     public R<Merchant> my(HttpServletRequest request) {
-        return R.ok(merchantService.getByUser(UserContext.currentUserId(request)));
+        return R.ok(merchantService.getForDisplay(UserContext.currentUserId(request)));
     }
 
     /** 营业执照上传（商户专属）：JPG/PNG 合规校验，落盘并同步写入商户档案 license_url */
@@ -115,6 +129,22 @@ public class MerchantController {
         return R.ok(merchantService.listForAdmin(reviewStatus));
     }
 
+    /** 运营端: 商户分页列表（支持审核状态/账户状态/关键词筛选，商户ID或企业ID精确、企业名称模糊） */
+    @GetMapping("/admin/page")
+    public R<Page<Merchant>> adminPage(@RequestParam(defaultValue = "1") long page,
+                                       @RequestParam(defaultValue = "10") long size,
+                                       @RequestParam(required = false) Integer reviewStatus,
+                                       @RequestParam(required = false) Integer status,
+                                       @RequestParam(required = false) String keyword) {
+        return R.ok(merchantService.listForAdminPage(page, size, reviewStatus, status, keyword));
+    }
+
+    /** 入驻流程跟踪：某商户的审核历史 */
+    @GetMapping("/admin/review-logs/{merId}")
+    public R<List<com.lanlink.shopping.entity.MerchantReviewLog>> reviewLogs(@PathVariable Long merId) {
+        return R.ok(merchantService.reviewLogs(merId));
+    }
+
     /** 运营端: 商户详情（工商信息/资质/证照完整度，资料维护与资质验证视图） */
     @GetMapping("/admin/detail/{merId}")
     public R<Map<String, Object>> adminDetail(@PathVariable Long merId) {
@@ -125,8 +155,65 @@ public class MerchantController {
     @PostMapping("/admin/review/{merId}")
     public R<Merchant> review(@PathVariable Long merId,
                               @RequestParam Integer reviewStatus,
-                              @RequestParam(required = false) String reason) {
-        return R.ok(merchantService.review(merId, reviewStatus, reason));
+                              @RequestParam(required = false) String reason,
+                              HttpServletRequest request) {
+        return R.ok(merchantService.review(merId, reviewStatus, reason, UserContext.currentUserId(request)));
+    }
+
+    // ===== 运营端商户管理：基本资料维护 / 账户状态 / 权限配置（/admin/ 路径由 AuthInterceptor 限定仅平台运营）=====
+
+    /** 运营端: 修改商户基本资料（企业工商信息联动更新，敏感字段加密存储） */
+    @PutMapping("/admin/{merId}")
+    public R<Merchant> adminUpdate(@PathVariable Long merId,
+                                  @Valid @RequestBody MerchantUpdateDTO dto,
+                                  HttpServletRequest request) {
+        return R.ok("商户资料已更新", merchantService.updateByAdmin(merId, dto, UserContext.currentUserId(request), request));
+    }
+
+    /** 运营端: 注销商户（账户状态置注销 + 逻辑删除 + 商户身份降级） */
+    @DeleteMapping("/admin/{merId}")
+    public R<Void> adminDelete(@PathVariable Long merId,
+                               @RequestParam(required = false) String reason,
+                               HttpServletRequest request) {
+        merchantService.deleteByAdmin(merId, reason, UserContext.currentUserId(request), request);
+        return R.ok("商户已注销", null);
+    }
+
+    /** 运营端: 账户状态变更（1正常 2冻结 3注销，必须填写原因） */
+    @PostMapping("/admin/status/{merId}")
+    public R<Merchant> adminStatus(@PathVariable Long merId,
+                                   @Valid @RequestBody MerchantStatusDTO dto,
+                                   HttpServletRequest request) {
+        return R.ok("账户状态已更新",
+                merchantService.changeStatus(merId, dto.getStatus(), dto.getReason(), UserContext.currentUserId(request), request));
+    }
+
+    /** 运营端: 商户权限配置详情（可选权限白名单 + 当前授权） */
+    @GetMapping("/admin/perms/{merId}")
+    public R<Map<String, Object>> adminPermConfig(@PathVariable Long merId) {
+        return R.ok(merchantService.permConfig(merId));
+    }
+
+    /** 运营端: 商户权限配置（授予/回收商户档可选权限，白名单外权限点拒绝） */
+    @PutMapping("/admin/perms/{merId}")
+    public R<Merchant> adminPermUpdate(@PathVariable Long merId,
+                                       @RequestBody(required = false) List<String> permCodes,
+                                       HttpServletRequest request) {
+        return R.ok("权限配置已生效",
+                merchantService.configPerms(merId, permCodes, UserContext.currentUserId(request), request));
+    }
+
+    /** 运营端: 解密查看完整税务登记号（敏感操作，写审计日志） */
+    @GetMapping("/admin/{merId}/tax-reg-no")
+    public R<Map<String, Object>> adminTaxRegNo(@PathVariable Long merId, HttpServletRequest request) {
+        return R.ok(merchantService.viewTaxRegNo(merId, UserContext.currentUserId(request), request));
+    }
+
+    /** 驳回后重新提交入驻申请（复用原记录重新筛选，需登录） */
+    @PostMapping("/reapply")
+    public R<Merchant> reapply(@Valid @RequestBody MerchantApplyDTO dto, HttpServletRequest request) {
+        Long userId = UserContext.currentUserId(request);
+        return R.ok("重新提交成功", merchantService.reapply(userId, dto));
     }
 
     // ===== 上传文件落盘与合规校验 =====

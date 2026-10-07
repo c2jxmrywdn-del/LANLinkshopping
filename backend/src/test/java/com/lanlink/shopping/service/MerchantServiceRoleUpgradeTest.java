@@ -1,6 +1,7 @@
 package com.lanlink.shopping.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.lanlink.shopping.common.CryptoUtil;
 import com.lanlink.shopping.dto.MerchantApplyDTO;
 import com.lanlink.shopping.entity.Enterprise;
 import com.lanlink.shopping.entity.Merchant;
@@ -35,7 +36,7 @@ class MerchantServiceRoleUpgradeTest {
         qualificationMapper = mock(QualificationMapper.class);
         auditService = mock(AuditService.class);
         userMapper = mock(UserMapper.class);
-        service = new MerchantService(merchantMapper, enterpriseMapper, qualificationMapper, auditService, userMapper);
+        service = new MerchantService(merchantMapper, enterpriseMapper, qualificationMapper, auditService, userMapper, null, CryptoUtil.devDefault());
     }
 
     @Test
@@ -85,7 +86,7 @@ class MerchantServiceRoleUpgradeTest {
         when(merchantMapper.selectById(1L)).thenReturn(m);
         when(userMapper.selectById(userId)).thenReturn(user);
 
-        service.review(1L, 1, null);
+        service.review(1L, 1, null, 9L);
 
         assertEquals(2L, user.getRoleId(), "人工审核通过后，用户角色应升级为 2 (商户)");
         assertEquals(88L, user.getEntId(), "人工审核通过后，用户企业ID应同步");
@@ -107,7 +108,7 @@ class MerchantServiceRoleUpgradeTest {
         when(merchantMapper.selectById(2L)).thenReturn(m);
         when(userMapper.selectById(userId)).thenReturn(user);
 
-        service.review(2L, 2, "证照不符合要求");
+        service.review(2L, 2, "证照不符合要求", 9L);
 
         assertEquals(1L, user.getRoleId(), "人工审核驳回后，若角色为商户应重置为买家 (1)");
         verify(userMapper).updateById(user);

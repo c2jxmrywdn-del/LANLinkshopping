@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS t_role (
 CREATE TABLE IF NOT EXISTS t_enterprise (
   ent_id      BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '企业ID',
   name        VARCHAR(128) NOT NULL COMMENT '企业名称',
-  credit_code VARCHAR(64)  COMMENT '统一社会信用代码',
+  credit_code VARCHAR(255) COMMENT '统一社会信用代码(加密存储时带enc:前缀)',
   member_level INT DEFAULT 1 COMMENT '会员等级',
   create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
   update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -89,7 +89,9 @@ CREATE TABLE IF NOT EXISTS t_merchant (
   reject_reason VARCHAR(255) COMMENT '驳回原因',
   license_url   VARCHAR(255) COMMENT '营业执照图片URL(JPG/PNG)',
   tax_proof_urls VARCHAR(1000) COMMENT '近3个月税务缴纳证明URL(逗号分隔,PDF/JPG)',
-  tax_reg_no    VARCHAR(32) COMMENT '税务登记号(查询纳税记录用)',
+  tax_reg_no    VARCHAR(255) COMMENT '税务登记号(查询纳税记录用,加密存储时带enc:前缀)',
+  status        TINYINT DEFAULT 1 COMMENT '账户状态 1正常 2冻结 3注销',
+  perm_codes    VARCHAR(500) COMMENT '商户授权权限点(逗号分隔,商户档白名单内)',
   create_time   DATETIME DEFAULT CURRENT_TIMESTAMP,
   update_time   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted       TINYINT DEFAULT 0
@@ -105,6 +107,35 @@ PREPARE mc_stmt2 FROM @mc2; EXECUTE mc_stmt2; DEALLOCATE PREPARE mc_stmt2;
 SET @mc3 = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_merchant ADD COLUMN tax_reg_no VARCHAR(32) COMMENT ''税务登记号(查询纳税记录用)''', 'SELECT 1')
             FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_merchant' AND COLUMN_NAME='tax_reg_no');
 PREPARE mc_stmt3 FROM @mc3; EXECUTE mc_stmt3; DEALLOCATE PREPARE mc_stmt3;
+
+-- 幂等升级：商户管理模块——账户状态/授权权限两列（列不存在时才 ADD），存量行 status 自动补默认值 1(正常)
+SET @mc4 = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_merchant ADD COLUMN status TINYINT DEFAULT 1 COMMENT ''账户状态 1正常 2冻结 3注销''', 'SELECT 1')
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_merchant' AND COLUMN_NAME='status');
+PREPARE mc_stmt4 FROM @mc4; EXECUTE mc_stmt4; DEALLOCATE PREPARE mc_stmt4;
+SET @mc5 = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_merchant ADD COLUMN perm_codes VARCHAR(500) COMMENT ''商户授权权限点(逗号分隔,商户档白名单内)''', 'SELECT 1')
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_merchant' AND COLUMN_NAME='perm_codes');
+PREPARE mc_stmt5 FROM @mc5; EXECUTE mc_stmt5; DEALLOCATE PREPARE mc_stmt5;
+
+-- 幂等升级：税务登记号列扩长（加密密文 enc:前缀+Base64(IV+密文) 需要更长字段，仅当列长度不足 255 时才 MODIFY）
+SET @mc6 = (SELECT IF(COUNT(*) > 0, 'ALTER TABLE t_merchant MODIFY COLUMN tax_reg_no VARCHAR(255) COMMENT ''税务登记号(查询纳税记录用,加密存储时带enc:前缀)''', 'SELECT 1')
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_merchant' AND COLUMN_NAME='tax_reg_no' AND CHARACTER_MAXIMUM_LENGTH < 255);
+PREPARE mc_stmt6 FROM @mc6; EXECUTE mc_stmt6; DEALLOCATE PREPARE mc_stmt6;
+
+-- 幂等升级：t_merchant 查询性能索引（索引不存在时才 ADD）——user_id 高频点查(getByUser)、review_status/status 管理端筛选
+SET @mi1 = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_merchant ADD INDEX idx_merchant_user (user_id)', 'SELECT 1')
+            FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_merchant' AND INDEX_NAME='idx_merchant_user');
+PREPARE mi_stmt1 FROM @mi1; EXECUTE mi_stmt1; DEALLOCATE PREPARE mi_stmt1;
+SET @mi2 = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_merchant ADD INDEX idx_merchant_review_status (review_status)', 'SELECT 1')
+            FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_merchant' AND INDEX_NAME='idx_merchant_review_status');
+PREPARE mi_stmt2 FROM @mi2; EXECUTE mi_stmt2; DEALLOCATE PREPARE mi_stmt2;
+SET @mi3 = (SELECT IF(COUNT(*) = 0, 'ALTER TABLE t_merchant ADD INDEX idx_merchant_status (status)', 'SELECT 1')
+            FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_merchant' AND INDEX_NAME='idx_merchant_status');
+PREPARE mi_stmt3 FROM @mi3; EXECUTE mi_stmt3; DEALLOCATE PREPARE mi_stmt3;
+
+-- 幂等升级：企业统一社会信用代码列扩长（加密密文 enc:前缀+Base64(IV+密文) 需要更长字段，仅当列长度不足 255 时才 MODIFY）
+SET @me1 = (SELECT IF(COUNT(*) > 0, 'ALTER TABLE t_enterprise MODIFY COLUMN credit_code VARCHAR(255) COMMENT ''统一社会信用代码(加密存储时带enc:前缀)''', 'SELECT 1')
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='lanlink_shopping' AND TABLE_NAME='t_enterprise' AND COLUMN_NAME='credit_code' AND CHARACTER_MAXIMUM_LENGTH < 255);
+PREPARE me_stmt1 FROM @me1; EXECUTE me_stmt1; DEALLOCATE PREPARE me_stmt1;
 
 -- 资质表
 CREATE TABLE IF NOT EXISTS t_qualification (
@@ -572,6 +603,17 @@ CREATE TABLE IF NOT EXISTS t_wallet_log (
   KEY idx_wallet_user (user_id),
   KEY idx_wallet_order (ref_order_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='钱包流水';
+
+-- ==================== 商户审核历史（入驻流程跟踪） ====================
+CREATE TABLE IF NOT EXISTS t_merchant_review_log (
+  id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+  mer_id      BIGINT NOT NULL COMMENT '商户ID',
+  action      VARCHAR(16) NOT NULL COMMENT 'submit提交申请/resubmit重新提交/approve审核通过/reject审核驳回',
+  operator_id BIGINT COMMENT '操作人ID(审核动作为运营, 申请动作为用户本人)',
+  reason      VARCHAR(255) COMMENT '原因/备注(驳回原因等)',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_mrl_mer (mer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='商户审核历史';
 
 
 -- ==================== 商户流量中心：行为事件采集 ====================

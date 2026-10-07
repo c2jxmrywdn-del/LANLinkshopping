@@ -132,6 +132,8 @@ export const userApi = {
 
 export const merchantApi = {
   apply: (d) => request.post('/merchant/apply', d),
+  // 驳回后整改重新提交（复用原商户记录重跑筛选，仅 review_status=2 可用）
+  reapply: (d) => request.post('/merchant/reapply', d),
   my: () => request.get('/merchant/my'),
   // 入驻申请材料上传（申请阶段，仅需登录）：kind=license 工商执照(JPG/PNG) | taxProof 纳税记录(JPG/PNG/PDF)，≤10MB
   applyUpload: (kind, file, onProgress) => {
@@ -155,8 +157,17 @@ export const merchantApi = {
   taxQuery: (taxRegNo) => request.get('/merchant/tax-query', { params: { taxRegNo } }),
   // 管理后台专用
   adminList: (reviewStatus) => request.get('/merchant/admin/list', { params: { reviewStatus } }),
+  // 分页 + 服务端筛选：reviewStatus 审核状态 / status 账户状态 / keyword 商户ID·企业ID·企业名称
+  adminPage: (params) => request.get('/merchant/admin/page', { params }),
   adminDetail: (merId) => request.get(`/merchant/admin/detail/${merId}`),
-  adminReview: (merId, reviewStatus, reason) => request.post(`/merchant/admin/review/${merId}`, null, { params: { reviewStatus, reason } })
+  adminReview: (merId, reviewStatus, reason) => request.post(`/merchant/admin/review/${merId}`, null, { params: { reviewStatus, reason } }),
+  // ===== 运营端商户管理（基本资料 / 账户状态 / 权限配置，仅平台运营）=====
+  adminUpdate: (merId, d) => request.put(`/merchant/admin/${merId}`, d),
+  adminDelete: (merId, reason) => request.delete(`/merchant/admin/${merId}`, { params: { reason } }),
+  adminStatus: (merId, status, reason) => request.post(`/merchant/admin/status/${merId}`, { status, reason }),
+  adminPermConfig: (merId) => request.get(`/merchant/admin/perms/${merId}`),
+  adminPermUpdate: (merId, permCodes) => request.put(`/merchant/admin/perms/${merId}`, permCodes),
+  adminTaxRegNo: (merId) => request.get(`/merchant/admin/${merId}/tax-reg-no`)
 }
 
 // ===== 商户端：流量管理（经营数据统计） =====

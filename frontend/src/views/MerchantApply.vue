@@ -93,7 +93,12 @@
           </div>
         </a-form-item>
 
-        <a-button type="primary" html-type="submit" size="large" block :loading="loading">提交申请</a-button>
+        <a-alert v-if="isRejected" type="warning" show-icon style="margin-bottom:12px"
+                 message="上次申请未通过"
+                 description="请按右侧「我的商户状态」中的驳回原因整改后重新提交，系统将重新执行筛选核验。" />
+        <a-button type="primary" html-type="submit" size="large" block :loading="loading">
+          {{ isRejected ? '重新提交申请' : '提交申请' }}
+        </a-button>
       </a-form>
     </a-card>
     <a-card title="我的商户状态" class="right">
@@ -125,6 +130,8 @@ const loading = ref(false)
 const mine = ref(null)
 const form = reactive({ entName: '', creditCode: '', regType: '公司', regCapital: 500000, taxStatus: 1, joinType: '入驻', qNames: '' })
 const statusText = computed(() => ({ 0: '审核中', 1: '审核通过 · 已入驻', 2: '审核未通过' }[mine.value?.reviewStatus] || ''))
+/** 已被驳回：走「重新提交」链路（后端复用原商户记录重跑筛选） */
+const isRejected = computed(() => mine.value?.reviewStatus === 2)
 
 // ===== 材料上传：自管理状态（uploading/done/error + 进度），支持重试 =====
 const MAX_MB = 10
@@ -209,7 +216,8 @@ async function submit() {
       licenseUrl: license.url || null,
       taxProofUrls: taxFiles.value.filter(t => t.status === 'done').map(t => t.url)
     }
-    const r = await merchantApi.apply(payload)
+    // 已被驳回 → 复用原记录重新申请；首次申请 → 新建入驻申请
+    const r = isRejected.value ? await merchantApi.reapply(payload) : await merchantApi.apply(payload)
     mine.value = r
     message.success(r.reviewStatus === 1 ? '恭喜，自动审核通过！' : '已提交，请等待审核')
   } finally { loading.value = false }

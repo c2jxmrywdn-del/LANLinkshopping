@@ -23,7 +23,9 @@ public class Merchant {
     private String rejectReason;
     private String licenseUrl;      // 营业执照图片URL(JPG/PNG)
     private String taxProofUrls;    // 近3个月税务缴纳证明URL(逗号分隔)
-    private String taxRegNo;        // 税务登记号(查询纳税记录用)
+    private String taxRegNo;        // 税务登记号(查询纳税记录用,加密存储时带enc:前缀)
+    private Integer status;         // 账户状态 1正常 2冻结 3注销
+    private String permCodes;       // 商户授权权限点(逗号分隔,商户档白名单内)
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     @TableLogic

@@ -285,7 +285,31 @@ frontend/src/views/admin/AdminPayments.vue
 
 ### 7.2 移植后（最新 `origin/main` 基线 + 本次改动）
 
-见下文「移植后验证」小节（移植完成并修复冲突后回填）。
+移植方式：`git checkout -b feature/merchant-admin-module origin/main` 后 `git cherry-pick` 上述 3 个快照提交。
+共产生 4 处冲突（`MerchantService.java`、`schema.sql`、`MerchantServiceRoleUpgradeTest.java`、`MerchantReview.vue`），
+全部按「保留 main 内容 + 叠加商户能力」解决（详见第 8 节）。cherry-pick 后新分支相对 `origin/main` 的净变更为
+**29 个路径：A 14 / M 15 / D 0** —— 无任何删除，main 的 232 个提交与 101 个独有/更新路径全部保留。
+
+```
+后端  mvn clean test  →  Tests run: 182, Failures: 0, Errors: 0, Skipped: 0  /  BUILD SUCCESS
+前端  npm run build   →  ✓ built successfully（3480 modules transformed）
+      npm test        →  3 files, 28 tests passed（含 main 的 i18n 重复键守卫）
+```
+
+> 后端用例数由 174（旧基线）增至 182：差额来自 main 已有的额外测试（`IdentityServiceTest`、`OrderDetailAdminTest` 等）
+> 与本模块新增用例的合并结果，全部通过；前端用例数由 27 增至 28 同为 main 侧新增用例。
+
+### 7.3 合并冲突解决记录
+
+| 文件 | 冲突性质 | 解决口径 |
+| --- | --- | --- |
+| `backend/.../service/MerchantService.java` | 6 处（import / 字段与构造器 / 兼容构造器 / `apply()` 审核历史 / `review()` 审核历史与签名） | 取本地版本：经 `git diff 05609db origin/main` 核验，main 自共同基线以来的 48 行改动（`userMapper` 注入 + 审核角色升降级）**已被本地版本完全覆盖且内容一致**，无丢失 |
+| `backend/.../resources/sql/schema.sql` | 1 处（文件尾部建表位置重叠） | 保留双方：main 的流量/账期等建表全部保留，并追加本地 `t_merchant_review_log` 建表 |
+| `backend/.../test/.../MerchantServiceRoleUpgradeTest.java` | add/add（main 亦有该文件） | 取本地版本：与 main 版本仅差 3 处签名适配（`CryptoUtil` 导入、7 参构造器、4 参 `review`） |
+| `frontend/src/views/admin/MerchantReview.vue` | 2 处（操作列按钮组 / `<script setup>` 导入） | 保留双方：保留 main 的「快速查看 + 档案（跳转 `admin-merchant-detail`）」入口与 `useRouter`，同时叠加本地的资料/权限/冻结/注销入口与 `reactive` 分页状态 |
+
+其余 24 个文件（含 `application.yml`、`api/index.js`、`MerchantController.java` 等）由 Git 三方合并自动完成，
+其中 `application.yml` 同时保留了 main 的跨站 Session Cookie 配置与本地新增的 `lanlink.crypto` 密钥项。
 
 ## 8. 移植风险与处理口径
 

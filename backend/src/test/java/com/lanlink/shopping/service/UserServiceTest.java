@@ -2,13 +2,11 @@ package com.lanlink.shopping.service;
 
 import com.lanlink.shopping.common.BusinessException;
 import com.lanlink.shopping.entity.User;
-import com.lanlink.shopping.dto.RegisterDTO;
 import com.lanlink.shopping.mapper.RoleMapper;
 import com.lanlink.shopping.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -19,14 +17,13 @@ import static org.mockito.Mockito.*;
 class UserServiceTest {
 
     private UserMapper userMapper;
-    private RoleMapper roleMapper;
     private UserService service;
     private User user;
 
     @BeforeEach
     void setUp() {
         userMapper = mock(UserMapper.class);
-        roleMapper = mock(RoleMapper.class);
+        RoleMapper roleMapper = mock(RoleMapper.class);
         service = new UserService(userMapper, roleMapper, new BCryptPasswordEncoder());
         user = new User();
         user.setUserId(1L);
@@ -39,4 +36,48 @@ class UserServiceTest {
     @Test
     void changePasswordSuccess() {
         service.changePassword(1L, "OldPass123!", "NewPass456@");
-        assertTrue(new BCryptPasswor���q�^
+        assertTrue(new BCryptPasswordEncoder().matches("NewPass456@", user.getPassword()), "新密码应已加密落库");
+    }
+
+    @Test
+    void wrongOldPasswordRejected() {
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.changePassword(1L, "WrongPass1!", "NewPass456@"));
+        assertTrue(ex.getMessage().contains("原密码错误"));
+    }
+
+    @Test
+    void weakPasswordRejected() {
+        // 缺少大写/特殊字符
+        assertThrows(BusinessException.class, () -> service.changePassword(1L, "OldPass123!", "abcdef1234"));
+        // 过短
+        assertThrows(BusinessException.class, () -> service.changePassword(1L, "OldPass123!", "Ab1!"));
+        // 不含特殊字符
+        assertThrows(BusinessException.class, () -> service.changePassword(1L, "OldPass123!", "Abcdef123456"));
+        // 超过 20 位
+        assertThrows(BusinessException.class,
+                () -> service.changePassword(1L, "OldPass123!", "Abcdef123456789012345!"));
+    }
+
+    @Test
+    void newPasswordSameAsOldRejected() {
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.changePassword(1L, "OldPass123!", "OldPass123!"));
+        assertTrue(ex.getMessage().contains("不能与原密码相同"));
+    }
+
+    @Test
+    void changePhoneOccupiedRejected() {
+        when(userMapper.selectCount(any())).thenReturn(1L);
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.changePhone(1L, "13800000000"));
+        assertTrue(ex.getMessage().contains("已被占用"));
+    }
+
+    @Test
+    void changePhoneSuccessUpdatesUser() {
+        when(userMapper.selectCount(any())).thenReturn(0L);
+        service.changePhone(1L, "13800000000");
+        assertEquals("13800000000", user.getPhone());
+        verify(userMapper, times(1)).updateById(user);
+    }
+}

@@ -33,4 +33,46 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        String uri = request.getRequestU���q�^
+        String uri = request.getRequestURI().replace(request.getContextPath(), "");
+
+        // 实时身份识别（每次请求现场计算，保证准确性与实时性；身份变更无需重新登录即平滑切换）
+        UserIdentity identity = identityService.identify(request);
+        request.setAttribute(UserContext.IDENTITY_KEY, identity);
+
+        if (isWhiteList(uri)) {
+            return true;
+        }
+        if (UserContext.current(request) == null) {
+            write(response, R.fail(401, "请先登录"));
+            return false;
+        }
+        // 运营后台鉴权（越权访问记录审计日志）
+        if (uri.startsWith("/admin/") || uri.contains("/admin/")) {
+            User u = UserContext.current(request);
+            if (u.getRoleId() == null || u.getRoleId() != 3L) {
+                auditService.record(u.getUserId(), "ACCESS_DENIED", "越权访问后台: " + uri, request);
+                write(response, R.fail(403, "无权限：仅平台运营可操作"));
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isWhiteList(String uri) {
+        return uri.startsWith("/auth/login")
+                || uri.startsWith("/auth/register")
+                || uri.startsWith("/home/")
+                || uri.startsWith("/category/")
+                // 商品仅公开浏览(分页/详情)；发布/图片上传/我的列表/审核均需登录
+                || uri.equals("/product/page")
+                || uri.startsWith("/product/detail/")
+                // 支付渠道异步通知与同步回跳：无登录态，公开放行（内部已做签名校验）
+                || uri.startsWith("/payment/notify/")
+                || uri.equals("/payment/alipay/return");
+    }
+
+    private void write(HttpServletResponse response, R<?> body) throws Exception {
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(objectMapper.writeValueAsString(body));
+    }
+}

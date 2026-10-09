@@ -15,19 +15,41 @@ public class WebConfig implements WebMvcConfigurer {
 
     private final AuthInterceptor authInterceptor;
     private final com.lanlink.shopping.integration.security.PermInterceptor permInterceptor;
-    private final com.lanlink.shopping.service.SysConfigService sysConfigService;
 
     @Value("${app.cors.allowed-origin-patterns:http://localhost:*,http://127.0.0.1:*}")
     private String allowedOriginPatterns;
 
     public WebConfig(AuthInterceptor authInterceptor,
-                     com.lanlink.shopping.integration.security.PermInterceptor permInterceptor,
-                     com.lanlink.shopping.service.SysConfigService sysConfigService) {
+                     com.lanlink.shopping.integration.security.PermInterceptor permInterceptor) {
         this.authInterceptor = authInterceptor;
         this.permInterceptor = permInterceptor;
-        this.sysConfigService = sysConfigService;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new RateLimitInterce���q�^
+        registry.addInterceptor(authInterceptor)
+                .addPathPatterns("/**");
+        // 权限校验：AuthInterceptor 之后执行（先保证登录与身份识别）
+        registry.addInterceptor(permInterceptor)
+                .addPathPatterns("/**");
+        // CSRF：仅对 /user/** 校验（AuthInterceptor 之后执行，先保证已登录）
+        registry.addInterceptor(new CsrfInterceptor())
+                .addPathPatterns("/user/**");
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOriginPatterns(allowedOriginPatterns.split("\\s*,\\s*"))
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowCredentials(true)
+                .maxAge(3600);
+    }
+
+    /** 头像等上传文件静态访问：{user.dir}/uploads/** → /api/uploads/** */
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String uploadDir = System.getProperty("user.dir") + "/uploads/";
+        registry.addResourceHandler("/uploads/**").addResourceLocations("file:" + uploadDir);
+    }
+}

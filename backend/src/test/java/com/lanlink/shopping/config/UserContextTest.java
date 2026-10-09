@@ -22,7 +22,6 @@ class UserContextTest {
         request = mock(HttpServletRequest.class);
         session = mock(HttpSession.class);
         when(request.getSession()).thenReturn(session);
-        when(request.getSession(false)).thenReturn(session);
     }
 
     private User loggedUser() {
@@ -44,4 +43,33 @@ class UserContextTest {
     @Test
     void loggedInWithoutIdentityAttributeReturnsBuyer() {
         mockRequest();
-        // 已登录（session 有用户）但身份属性缺失 → 兜底 BUYER，绝���q�^
+        // 已登录（session 有用户）但身份属性缺失 → 兜底 BUYER，绝不返回 null
+        when(request.getAttribute(UserContext.IDENTITY_KEY)).thenReturn(null);
+        when(session.getAttribute(UserContext.SESSION_KEY)).thenReturn(loggedUser());
+        UserIdentity id = UserContext.identity(request);
+        assertEquals(UserIdentity.BUYER, id);
+        // 兜底身份必须可用（PermInterceptor 将直接调用 has()）
+        assertFalse(id.has("product:publish"));
+        assertTrue(id.has("cart:manage"));
+    }
+
+    @Test
+    void loggedInWithIdentityAttributeReturnsOriginal() {
+        mockRequest();
+        // 已登录且身份属性存在 → 原样返回（如商户）
+        when(request.getAttribute(UserContext.IDENTITY_KEY)).thenReturn(UserIdentity.MERCHANT);
+        when(session.getAttribute(UserContext.SESSION_KEY)).thenReturn(loggedUser());
+        assertEquals(UserIdentity.MERCHANT, UserContext.identity(request));
+    }
+
+    @Test
+    void identityNeverNullAcrossScenarios() {
+        mockRequest();
+        when(session.getAttribute(UserContext.SESSION_KEY)).thenReturn(null);
+        // 遍历常见身份属性取值，断言均非 null
+        for (UserIdentity id : new UserIdentity[]{null, UserIdentity.GUEST, UserIdentity.BUYER, UserIdentity.VIP}) {
+            when(request.getAttribute(UserContext.IDENTITY_KEY)).thenReturn(id);
+            assertNotNull(UserContext.identity(request), "identity() 不应返回 null");
+        }
+    }
+}

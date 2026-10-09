@@ -8,22 +8,7 @@ server:
         http-only: true
         same-site: none
 
-app:
-  demo-codes:
-    enabled: false
-  demo-data:
-    enabled: false
-  demo-accounts:
-    enabled: false
-  upload-dir: ${APP_UPLOAD_DIR:${user.dir}/uploads}
-lanlink:
-  payment:
-    mock: ${PAYMENT_MOCK:false}
-
 spring:
-  sql:
-    init:
-      mode: never
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: ${SPRING_DATASOURCE_URL}

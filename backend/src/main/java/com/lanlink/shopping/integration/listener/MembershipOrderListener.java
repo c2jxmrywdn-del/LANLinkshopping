@@ -9,7 +9,7 @@ import com.lanlink.shopping.module.membership.service.MembershipService;
 import com.lanlink.shopping.service.IdentityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,4 +30,26 @@ public class MembershipOrderListener {
     private final UserMapper userMapper;
 
     public MembershipOrderListener(MembershipService membershipService, IdentityService identityService,
-                              ���q�^
+                                   UserMapper userMapper) {
+        this.membershipService = membershipService;
+        this.identityService = identityService;
+        this.userMapper = userMapper;
+    }
+
+    @EventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void onOrderPaid(OrderPaidEvent event) {
+        try {
+            User u = userMapper.selectById(event.getUserId());
+            Long roleId = u == null ? null : u.getRoleId();
+            UserIdentity identity = identityService.identify(event.getUserId(), roleId);
+            int multiplier = identity == UserIdentity.VIP ? MemberRule.VIP_EARN_MULTIPLIER : 1;
+            membershipService.earnGrowth(event.getUserId(), event.getAmount(), event.getOrderNo(), multiplier);
+            log.info("[membership] 订单 {} 支付成功，会员成长值/积分已累计 userId={} multiplier={}",
+                    event.getOrderNo(), event.getUserId(), multiplier);
+        } catch (Exception e) {
+            // 隔离原则：营销侧异常不得影响订单主流程，仅记录
+            log.error("[membership] 会员积分累计失败 orderNo={}", event.getOrderNo(), e);
+        }
+    }
+}

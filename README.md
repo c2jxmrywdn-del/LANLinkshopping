@@ -60,9 +60,9 @@ spring:
       schema-locations: classpath:sql/schema.sql    # 脚本在 sql/ 子目录，必须显式指定
 ```
 
-关于**谁真正负责建库**：自动路径下是数据源 URL 里的 <`createDatabaseIfNotExist=true`>——JDBC 驱动必须先连上（或先建好）目标库，连接建立成功后才轮到 `spring.sql.init` 跑脚本，所以脚本内的 `CREATE DATABASE IF NOT EXISTS` 在这条路径上是幂等的双保险，执行时直接跳过。手动导入时反过来的：由脚本自己建库，无需提前手建。
+关于**谁真正负责建库**：自动路径下是数据源 URL 里的 <createDatabaseIfNotExist=true>——JDBC 驱动必须先连上（或先建好）目标库，连接建立成功后才轮到 `spring.sql.init` 跑脚本，所以脚本内的 `CREATE DATABASE IF NOT EXISTS` 在这条路径上是幂等的双保险，执行时直接跳过。手动导入时反过来的：由脚本自己建库，无需提前手建。
 
-需要**手动先建库**的只有两种情况：① URL 去掉了 `createDatabaseIfNotExist=true`；② 执行账号没有 `CREATE DATABASE` 权限（由 DBA 先建库）。另外，若你改了 URL 里的库名，请同步修改脚本中 `CREATE DATABASE` 与 `USE` 两行（或删掉这两行完全交给 URL）。
+需要**手动先建库**的只有两种情况：① URL 去掉了 <createDatabaseIfNotExist=true>；② 执行账号没有 `CREATE DATABASE` 权限（由 DBA 先建库）。另外，若你改了 URL 里的库名，请同步修改脚本中 `CREATE DATABASE` 与 `USE` 两行（或删掉这两行完全交给 URL）。
 
 #### 方式 B：手动导入
 

@@ -20,10 +20,11 @@ export async function fetchCsrfToken() {
   return csrfToken
 }
 
-// 是否需要携带 CSRF 令牌：非 GET 且 url 以 /user 开头
-function isUserMutation(config) {
+function isCsrfMutation(config) {
   const method = (config.method || 'get').toLowerCase()
-  return method !== 'get' && (config.url || '').startsWith('/user')
+  const url = (config.url || '').split('?')[0]
+  if (['get', 'head', 'options'].includes(method)) return false
+  return !['/auth/login', '/auth/register', '/auth/login/2fa'].includes(url) && !url.startsWith('/payment/notify/')
 }
 
 // 是否为 CSRF 失效响应：403 且 message 含 CSRF
@@ -40,57 +41,4 @@ async function retryWithCsrf(config) {
   return request(config)
 }
 
-request.interceptors.request.use((config) => {
-  if (isUserMutation(config) && csrfToken) {
-    config.headers = config.headers || {}
-    config.headers['X-CSRF-TOKEN'] = csrfToken
-  }
-  return config
-})
-
-request.interceptors.response.use(
-  (res) => {
-    // 二进制响应（如 CSV 导出）不按业务 JSON 解析
-    if (res.config.responseType === 'blob') return res.data
-    const body = res.data
-    if (body && body.code !== 200) {
-      if ([429, 502, 503, 504].includes(Number(body.code))) {
-        showBusyLoading({ reason: 'congestion' })
-        hideBusyLoading(5200)
-        return Promise.reject(new Error(body.message || '系统繁忙'))
-      }
-      // CSRF 令牌失效：换新后重放一次
-      if (isCsrfFailure(body.code, body) && !res.config._retried && isUserMutation(res.config)) {
-        return retryWithCsrf(res.config)
-      }
-      // /auth/me 仅用于静默探测登录态：401 时不弹提示、不强制跳登录
-      const isMe = (res.config.url || '').includes('/auth/me')
-      if (!isMe) {
-        message.error(body.message || '请求失败')
-        if (body.code === 401) {
-          router.push('/login')
-        }
-      }
-      return Promise.reject(new Error(body.message))
-    }
-    hideBusyLoading(180)
-    return body.data
-  },
-  (err) => {
-    // HTTP 层 403 的 CSRF 失效（后端直接以状态码返回时）
-    const resp = err.response
-    const isCongested = !!(resp && [429, 502, 503, 504].includes(Number(resp.status))) || err.code === 'ECONNABORTED' || /timeout/i.test(err.message || '')
-    if (isCongested) {
-      showBusyLoading({ reason: 'congestion' })
-      hideBusyLoading(5200)
-      return Promise.reject(err)
-    }
-    if (resp && err.config && isCsrfFailure(resp.status, resp.data) && !err.config._retried && isUserMutation(err.config)) {
-      return retryWithCsrf(err.config)
-    }
-    message.error('网络错误: ' + (err.message || ''))
-    return Promise.reject(err)
-  }
-)
-
-export default request
+���q�^

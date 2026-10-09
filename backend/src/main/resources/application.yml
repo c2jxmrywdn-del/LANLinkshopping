@@ -15,7 +15,7 @@ server:
 
 spring:
   profiles:
-    active: dev
+    default: prod
   config:
     import: optional:classpath:application-payment.yml
   application:
@@ -56,4 +56,4 @@ mybatis-plus:
       id-type: auto
       logic-delete-field: deleted
       logic-delete-value: 1
-      logic-not-delete-value: 0
+      logic-n¶»§q«^

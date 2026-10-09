@@ -4,7 +4,7 @@ import com.lanlink.shopping.integration.event.OrderPaidEvent;
 import com.lanlink.shopping.module.activity.service.ActivityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +25,7 @@ public class ActivityOrderListener {
         this.activityService = activityService;
     }
 
-    @EventListener
+    @TransactionalEventListener(phase = org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onOrderPaid(OrderPaidEvent event) {
         try {

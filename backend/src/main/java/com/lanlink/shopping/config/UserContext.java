@@ -14,7 +14,9 @@ public class UserContext {
 
     public static User current(HttpServletRequest request) {
         if (request == null) return null;
-        Object obj = request.getSession().getAttribute(SESSION_KEY);
+        jakarta.servlet.http.HttpSession session = request.getSession(false);
+        if (session == null) return null;
+        Object obj = session.getAttribute(SESSION_KEY);
         return obj instanceof User ? (User) obj : null;
     }
 
@@ -28,7 +30,4 @@ public class UserContext {
         Object obj = request == null ? null : request.getAttribute(IDENTITY_KEY);
         if (obj instanceof UserIdentity) return (UserIdentity) obj;
         // 兜底：未登录 → GUEST；已登录但身份属性缺失 → 按普通用户（BUYER）处理，
-        // 保证调用方 identity.has() 永远不为 null 触发 NPE。
-        return current(request) == null ? UserIdentity.GUEST : UserIdentity.BUYER;
-    }
-}
+        // 保证调用方 identity.has() 永远不为 null 触叶��q�^

@@ -36,7 +36,7 @@ LANLinkshopping/
 
 ### 1. 初始化数据库
 
-**前提**：本机 MySQL 8 已启动，账号 `<你的用户名>`，密码就是 `application-dev.yml` 里 `spring.datasource.password` 的值（下文命令统一用占位符 `<你的MySQL密码>`， ；不想把密码写进命令行就把 `-p"<你的MySQL密码>"` 换成 `-p` 回车后交互输入）。
+**前提**：本机 MySQL 8 已启动，账号 <你的用户名>，密码就是 <application-dev.yml> 里 `spring.datasource.password` 的值（下文命令统一用占位符 `<你的MySQL密码>`， ；不想把密码写进命令行就把 `-p"<你的MySQL密码>"` 换成 `-p` 回车后交互输入）。
 
 脚本按下面 4 步引导式执行，**全文没有 `DROP DATABASE` / `DROP TABLE` / `TRUNCATE` / `DELETE`，可以重复执行且不丢数据**：
 

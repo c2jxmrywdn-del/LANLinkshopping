@@ -12,7 +12,7 @@
 
     <div class="author-card__meta">
       <span>© {{ year }} {{ AUTHOR.name }}</span>
-      <span v-if="variant === 'detailed'">版权所有 · 未经授权请勿擅自复制、冒用或商业化 \n21/9/2026</span>
+      <span v-if="variant === 'detailed'">版权所有 · 未经授权请勿擅自复制、冒用或商业化 \n 21/9/2026</span>
     </div>
 
     <div v-if="showSocials" class="author-card__link-groups">

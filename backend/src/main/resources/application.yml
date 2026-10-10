@@ -28,11 +28,12 @@ spring:
       max-file-size: 5MB
       max-request-size: 6MB
 
-  # 邮箱验证码使用 SMTP；验证码回显仅在开发 Profile 中显式开启
-  # 例：QQ 邮箱 SMTP host=smtp.qq.com port=465，密码为「授权码」而非登录密码
+  # 邮箱验证码 SMTP。QQ 邮箱默认使用隐式 TLS 465；切换到 587 时请关闭 SSL 并开启 STARTTLS。
+  # 密码必须是邮件服务的 SMTP 授权码/应用专用密码，而不是邮箱网页登录密码。
   mail:
     host: ${MAIL_HOST:}
     port: ${MAIL_PORT:465}
+    protocol: smtp
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
     default-encoding: UTF-8
@@ -41,7 +42,10 @@ spring:
         smtp:
           auth: true
           ssl:
-            enable: true
+            enable: ${MAIL_SMTP_SSL:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+            required: ${MAIL_SMTP_STARTTLS_REQUIRED:false}
           # 超时机制：连接/读取/写入均 10 秒，避免 SMTP 无响应拖垮接口
           connectiontimeout: 10000
           timeout: 10000

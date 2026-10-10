@@ -16,8 +16,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 验证码服务：内存存储，5 分钟过期 + 60 秒冷却 + 单次使用。
- * 邮件通道：接入 JavaMailSender（SMTP），真实发送验证码邮件；
- * 仅开发环境显式开启 demo-mode 时允许回显验证码；生产环境无可用通道时拒绝发送。
+ * 邮件通道通过 SMTP 发送；仅开发环境显式开启 demo-mode 时允许回显验证码。
+ * 生产环境缺少完整 SMTP 配置时拒绝发送，不回显验证码。
  */
 @Service
 public class VerifyCodeService {
@@ -26,7 +26,6 @@ public class VerifyCodeService {
 
     private static final long TTL_MS = 5 * 60 * 1000L;
     private static final long COOLDOWN_MS = 60 * 1000L;
-    /** 验证码邮件标题 */
     private static final String MAIL_SUBJECT = "【LANLink 商城】邮箱验证码";
 
     private static class CodeBox {
@@ -40,16 +39,24 @@ public class VerifyCodeService {
     private final JavaMailSender mailSender;
     private final String mailHost;
     private final String mailFrom;
+    private final boolean mailConfigured;
     private final boolean demoMode;
 
     public VerifyCodeService(
             @Autowired(required = false) JavaMailSender mailSender,
             @Value("${spring.mail.host:}") String mailHost,
             @Value("${spring.mail.username:}") String mailFrom,
+            @Value("${spring.mail.password:}") String mailPassword,
             @Value("${lanlink.verify-code.demo-mode:false}") boolean demoMode) {
         this.mailSender = mailSender;
-        this.mailHost = mailHost;
-        this.mailFrom = mailFrom;
+        this.mailHost = mailHost == null ? "" : mailHost.trim();
+        this.mailFrom = mailFrom == null ? "" : mailFrom.trim();
+        // 仅保存“是否完整配置”，不在服务对象中保留 SMTP 密码。
+        this.mailConfigured = mailSender != null
+                && !this.mailHost.isBlank()
+                && !this.mailFrom.isBlank()
+                && mailPassword != null
+                && !mailPassword.isBlank();
         this.demoMode = demoMode;
     }
 
@@ -67,7 +74,6 @@ public class VerifyCodeService {
 
         String key = key(userId, type, target);
         long now = System.currentTimeMillis();
-        // 清理过期项，避免长时间运行后验证码缓存无限增长。
         store.entrySet().removeIf(entry -> entry.getValue().exp < now);
 
         String code = String.format("%06d", ThreadLocalRandom.current().nextInt(1_000_000));
@@ -91,7 +97,7 @@ public class VerifyCodeService {
                     return null; // 已真实发送，不回显验证码
                 }
                 if (demoMode) {
-                    log.warn("SMTP 未配置（host={}），当前为开发验证码演示模式", mailHost);
+                    log.warn("SMTP 配置不完整（host={}），当前为开发验证码演示模式", mailHost);
                     return code;
                 }
                 store.remove(key, nb);
@@ -123,32 +129,30 @@ public class VerifyCodeService {
         if (!box.code.equals(code)) {
             throw new BusinessException("验证码错误");
         }
-        // compare-and-remove 保证并发校验时只有一个请求能成功消费验证码。
         if (!store.remove(key, box)) {
             throw new BusinessException("验证码已使用，请重新获取");
         }
     }
 
-    /** 通过 SMTP 发送验证码邮件；返回 false 表示 SMTP 未配置。 */
+    /** 通过 SMTP 发送验证码邮件；返回 false 表示 SMTP 缺少必要配置。 */
     private boolean sendEmailCode(String to, String code) throws BusinessException {
-        if (mailSender == null || mailHost == null || mailHost.isBlank()) {
+        if (!mailConfigured) {
             return false;
         }
         try {
             MimeMessage msg = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
-            if (mailFrom != null && !mailFrom.isBlank()) {
-                helper.setFrom(mailFrom);
-            }
+            helper.setFrom(mailFrom);
             helper.setTo(to);
             helper.setSubject(MAIL_SUBJECT);
             helper.setText(buildHtmlBody(code), true);
             mailSender.send(msg);
-            log.info("验证码邮件已发送至 {}（5 分钟内有效）", to);
+            log.info("验证码邮件发送成功（有效期 5 分钟）");
             return true;
         } catch (jakarta.mail.MessagingException | org.springframework.mail.MailException ex) {
-            log.error("验证码邮件发送失败 to={}", to, ex);
-            throw new BusinessException("邮件发送失败，请稍后重试");
+            // 不在日志中输出收件人地址或 SMTP 凭据。
+            log.error("验证码邮件发送失败，SMTP 主机={}", mailHost, ex);
+            throw new BusinessException("邮件发送失败，请检查邮件通道配置后重试");
         }
     }
 

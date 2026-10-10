@@ -34,6 +34,8 @@ public class AgentLoadoutMcpClient {
     private final URI endpoint;
     private final String apiKey;
     private final String inboxId;
+    private volatile boolean initialized;
+    private volatile String cachedSessionId = "";
 
     public AgentLoadoutMcpClient(
             @Value("${AGENT_LOADOUT_MCP_URL:https://agent-loadout.com/api/mcp}") String endpoint,
@@ -62,7 +64,7 @@ public class AgentLoadoutMcpClient {
         }
 
         try {
-            String sessionId = initializeSession();
+            String sessionId = ensureInitialized();
             ObjectNode args = JSON.createObjectNode();
             args.put("inbox_id", inboxId);
             args.putArray("to").add(to);
@@ -94,21 +96,32 @@ public class AgentLoadoutMcpClient {
         }
     }
 
-    private String initializeSession() throws IOException, InterruptedException {
-        ObjectNode params = JSON.createObjectNode();
-        params.put("protocolVersion", "2025-03-26");
-        params.set("capabilities", JSON.createObjectNode());
-        ObjectNode clientInfo = JSON.createObjectNode();
-        clientInfo.put("name", "LANLinkshopping");
-        clientInfo.put("version", "1.0.0");
-        params.set("clientInfo", clientInfo);
+    private String ensureInitialized() throws IOException, InterruptedException {
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    ObjectNode params = JSON.createObjectNode();
+                    params.put("protocolVersion", "2025-03-26");
+                    params.set("capabilities", JSON.createObjectNode());
+                    ObjectNode clientInfo = JSON.createObjectNode();
+                    clientInfo.put("name", "LANLinkshopping");
+                    clientInfo.put("version", "1.0.0");
+                    params.set("clientInfo", clientInfo);
 
-        JsonNode response = postRpc("initialize", params, 1, null, false);
-        if (response.has("error") || response.path("result").isMissingNode()) {
-            throw new BusinessException("Agent Loadout MCP 初始化失败，请检查服务器地址和 API Key");
+                    JsonNode response = postRpc("initialize", params, 1, null, false);
+                    if (response.has("error") || response.path("result").isMissingNode()) {
+                        throw new BusinessException("Agent Loadout MCP 初始化失败，请检查服务器地址和 API Key");
+                    }
+                    // Stateless MCP servers omit this header; session-based servers return it.
+                    cachedSessionId = response.path("_mcpSessionId").asText("");
+                    if (!cachedSessionId.isBlank()) {
+                        postRpc("notifications/initialized", JSON.createObjectNode(), 0, cachedSessionId, true);
+                    }
+                    initialized = true;
+                }
+            }
         }
-        // Stateless MCP servers omit this header; session-based servers return it.
-        return response.path("_mcpSessionId").asText("");
+        return cachedSessionId;
     }
 
     private JsonNode postRpc(String method, JsonNode params, int id, String sessionId, boolean notification)

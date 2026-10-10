@@ -39,7 +39,7 @@ public class VerifyCodeService {
     private static final long COOLDOWN_MS = 60 * 1000L;
     private static final String MAIL_SUBJECT = "【LANLink 商城】邮箱验证码";
     private static final String DEFAULT_RESEND_API_URL = "https://api.resend.com/emails";
-    private static final Set<String> SUPPORTED_PROVIDERS = Set.of("auto", "smtp", "resend");
+    private static final Set<String> SUPPORTED_PROVIDERS = Set.of("auto", "smtp", "resend", "agent-loadout");
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
@@ -62,6 +62,7 @@ public class VerifyCodeService {
     private final String resendApiKey;
     private final URI resendApiUri;
     private final boolean demoMode;
+    private final AgentLoadoutMcpClient agentLoadoutMcpClient;
 
     @Autowired
     public VerifyCodeService(
@@ -73,7 +74,8 @@ public class VerifyCodeService {
             @Value("${MAIL_PROVIDER:auto}") String mailProvider,
             @Value("${RESEND_API_KEY:}") String resendApiKey,
             @Value("${lanlink.mail.resend.api-url:https://api.resend.com/emails}") String resendApiUrl,
-            @Value("${lanlink.verify-code.demo-mode:false}") boolean demoMode) {
+            @Value("${lanlink.verify-code.demo-mode:false}") boolean demoMode,
+            AgentLoadoutMcpClient agentLoadoutMcpClient) {
         this.mailSender = mailSender;
         this.mailHost = normalize(mailHost);
         this.mailUsername = normalize(mailUsername);
@@ -91,12 +93,21 @@ public class VerifyCodeService {
             provider = "auto";
         }
         if (!SUPPORTED_PROVIDERS.contains(provider)) {
-            throw new IllegalArgumentException("MAIL_PROVIDER must be auto, smtp, or resend");
+            throw new IllegalArgumentException("MAIL_PROVIDER must be auto, smtp, resend, or agent-loadout");
         }
         this.mailProvider = provider;
         this.resendApiKey = normalize(resendApiKey);
         this.resendApiUri = validateResendEndpoint(resendApiUrl);
         this.demoMode = demoMode;
+        this.agentLoadoutMcpClient = agentLoadoutMcpClient;
+    }
+
+    /** Compatibility constructor for existing unit tests and direct instantiation. */
+    VerifyCodeService(JavaMailSender mailSender, String mailHost, String mailUsername,
+                      String configuredMailFrom, String mailPassword, String mailProvider,
+                      String resendApiKey, String resendApiUrl, boolean demoMode) {
+        this(mailSender, mailHost, mailUsername, configuredMailFrom, mailPassword, mailProvider,
+                resendApiKey, resendApiUrl, demoMode, null);
     }
 
     /** Compatibility constructor for unit tests and simple direct instantiation. */
@@ -185,6 +196,16 @@ public class VerifyCodeService {
         if (provider == null) {
             return false;
         }
+        if ("agent-loadout".equals(provider)) {
+            if (agentLoadoutMcpClient == null) {
+                throw new BusinessException("Agent Loadout 邮件通道尚未配置");
+            }
+            String text = "LANLink 商城\\n\\n您的邮箱验证码为：" + code
+                    + "\\n验证码 5 分钟内有效，请勿泄露给他人。若非本人操作，请忽略此邮件。";
+            agentLoadoutMcpClient.sendMessage(to, MAIL_SUBJECT, text, buildHtmlBody(code), java.util.UUID.randomUUID().toString());
+            log.info("验证码邮件发送成功，provider=agent-loadout");
+            return true;
+        }
         if ("resend".equals(provider)) {
             sendViaResend(to, code);
             log.info("验证码邮件发送成功，provider=resend");
@@ -196,11 +217,18 @@ public class VerifyCodeService {
     }
 
     private String resolveEmailProvider() {
+        if ("agent-loadout".equals(mailProvider)) {
+            return agentLoadoutMcpClient != null && agentLoadoutMcpClient.isConfigured() ? "agent-loadout" : null;
+        }
         if ("resend".equals(mailProvider)) {
             return isResendConfigured() ? "resend" : null;
         }
         if ("smtp".equals(mailProvider)) {
             return smtpConfigured ? "smtp" : null;
+        }
+        // Agent Loadout was explicitly requested as the preferred provider when configured.
+        if (agentLoadoutMcpClient != null && agentLoadoutMcpClient.isConfigured()) {
+            return "agent-loadout";
         }
         // Railway 若限制 SMTP 出站，优先使用 HTTPS 邮件 API。
         if (isResendConfigured()) {

@@ -63,7 +63,8 @@ class PaymentFlowTest {
 
     @BeforeEach
     void setUp() {
-        props = new PaymentProperties();          // 默认 mock=true
+        props = new PaymentProperties();
+        props.setMock(true); // 支付流程单测显式开启模拟支付，不依赖生产默认值
         wechat = mock(WechatPayClient.class);
         alipay = mock(AlipayPayClient.class);
         orderService = mock(OrderService.class);
@@ -106,7 +107,12 @@ class PaymentFlowTest {
     }
 
     @Test
-    void mockModeDefaultsToMockChannel() {
+    void paymentMockIsDisabledByDefault() {
+        assertFalse(new PaymentProperties().isMock());
+    }
+
+    @Test
+    void mockModeUsesMockChannelWhenEnabled() {
         when(orderMapper.selectById("NO1")).thenReturn(order(0, null, new BigDecimal("10.00"), null));
         PayCreateVO vo = service.create("NO1", 2L, null);
         assertEquals("mock", vo.getChannel());

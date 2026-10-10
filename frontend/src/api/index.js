@@ -12,9 +12,11 @@ export const supportApi = {
         body: JSON.stringify({ question })
       })
       const body = await response.json()
+      // Distinguish transport/access failures from a successful KB fallback without exposing internals.
+      if (!response.ok) return { answer: '客服暂时无法响应，请稍后重试。', unavailable: true }
       const answer = body?.data?.answer || body?.message
       if (typeof answer !== 'string' || !answer) return { answer: fallback }
-      return { answer: response.ok ? answer : fallback }
+      return { answer, unavailable: false }
     } catch {
       return { answer: fallback }
     }

@@ -11,8 +11,8 @@
     @pointerleave="resetTilt"
     @pointercancel="resetTilt"
     @click="emit('click', $event)"
-    @keydown.enter.prevent="activate"
-    @keydown.space.prevent="activate"
+    @keydown.enter="activate"
+    @keydown.space="activate"
   >
     <img
       v-if="imageUrl"
@@ -101,6 +101,7 @@ function resetTilt() {
 function activate(event) {
   // Keyboard activation is only for the card itself, never nested CTA buttons.
   if (event.target !== cardRef.value || event.currentTarget !== cardRef.value) return
+  event.preventDefault()
   emit('click', event)
 }
 </script>

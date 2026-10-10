@@ -40,3 +40,7 @@ lanlink:
     demo-mode: false
   demo-data:
     enabled: false
+
+# Server-only proxy secret. A blank or missing secret fails closed.
+support:
+  proxy-secret: ${SUPPORT_PROXY_SECRET:}

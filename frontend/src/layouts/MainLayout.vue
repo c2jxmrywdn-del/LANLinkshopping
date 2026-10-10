@@ -107,6 +107,7 @@
         <AuthorCard variant="compact" />
       </div>
     </a-layout-footer>
+    <SupportChat />
   </a-layout>
 </template>
 
@@ -121,6 +122,7 @@ import IndustryCategoryMenu from '../components/IndustryCategoryMenu.vue'
 import AuthorCard from '../components/AuthorCard.vue'
 import UserAvatar from '../components/ui/UserAvatar.vue'
 import MembershipIcon from '../components/ui/MembershipIcon.vue'
+import SupportChat from '../components/SupportChat.vue'
 
 const router = useRouter()
 const route = useRoute()

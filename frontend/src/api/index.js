@@ -1,6 +1,26 @@
 import request, { fetchCsrfToken } from './request'
 import { hasCookieConsent } from '../utils/cookieConsent'
 
+// Static knowledge-base support; no LLM, arbitrary tools or code-execution endpoint.
+export const supportApi = {
+  async ask(question) {
+    const fallback = '抱歉，当前客服仅能解答 LANLinkshopping 专属知识库已收录的电商相关问题。可咨询账号注册与登录、商品浏览、购物车与订单、商户入驻、钱包与账期、会员与活动、站内消息及 Cookie 设置；其他问题暂不在可答范围内。'
+    try {
+      const response = await fetch('/api/support/ask', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
+        body: JSON.stringify({ question })
+      })
+      const body = await response.json()
+      const answer = body?.data?.answer || body?.message
+      if (typeof answer !== 'string' || !answer) return { answer: fallback }
+      return { answer: response.ok ? answer : fallback }
+    } catch {
+      return { answer: fallback }
+    }
+  }
+}
+
 export const authApi = {
   register: (d) => request.post('/auth/register', d),
   login: (d) => request.post('/auth/login', d),

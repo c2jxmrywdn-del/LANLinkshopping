@@ -20,5 +20,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/support/ask.js": {
+      "maxDuration": 10
+    }
+  }
 }

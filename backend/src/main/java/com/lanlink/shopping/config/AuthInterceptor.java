@@ -35,6 +35,9 @@ public class AuthInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String uri = request.getRequestURI().replace(request.getContextPath(), "");
 
+        // Support requests are authenticated by the server-side proxy before any identity/database lookup.
+        if (uri.equals("/support/ask")) return true;
+
         // 健康探针不创建会话，也不查询用户/订单数据；只允许公开的状态端点。
         if (isPublicHealthCheck(uri)) {
             return true;

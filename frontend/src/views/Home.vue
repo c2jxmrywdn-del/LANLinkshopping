@@ -27,15 +27,17 @@
     <div class="section-head"><h2 class="sec"><span>02</span> 热销推荐</h2><button class="section-link" type="button" @click="$router.push('/mall')">查看全部商品 →</button></div>
     <a-row :gutter="16">
       <a-col :span="6" v-for="p in hot" :key="p.prodId">
-        <a-card hoverable class="prod-card" :cover="null" @click="$router.push('/product/' + p.prodId)">
-          <div class="thumb">
-            <img v-if="p.coverUrl" :src="p.coverUrl" :alt="p.title" loading="lazy" decoding="async" />
-            <span v-else>{{ p.title.slice(0, 2) }}</span>
-          </div>
-          <div class="product-brand">LANLINK SELECTION</div><div class="ptitle">{{ p.title }}</div>
-          <div class="pprice">¥{{ p.price }}</div>
-          <div class="pmeta">销量 {{ p.sales }} · 库存 {{ p.stock }}</div>
-        </a-card>
+        <InteractiveProductCard
+          :image-url="p.coverUrl || ''"
+          :title="p.title"
+          :description="p.brand || 'LANLINK SELECTION'"
+          :price="'¥' + p.price"
+          @click="$router.push('/product/' + p.prodId)"
+        >
+          <template #footer>
+            <div class="product-card-meta">销量 {{ p.sales }} · 库存 {{ p.stock }}</div>
+          </template>
+        </InteractiveProductCard>
       </a-col>
     </a-row>
   </div>
@@ -47,6 +49,7 @@ import { homeApi } from '../api'
 import BannerCarousel from '../components/BannerCarousel.vue'
 import BrandWordmark from '../components/BrandWordmark.vue'
 import BrandSymbol from '../components/BrandSymbol.vue'
+import InteractiveProductCard from '../components/ui/InteractiveProductCard.vue'
 const industries = ref([])
 const hot = ref([])
 onMounted(async () => {
@@ -61,7 +64,7 @@ onMounted(async () => {
 .ind-card :deep(.ant-card-body) { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 16px; }
 .ind-name { font-size: 18px; font-weight: 700; color: var(--ll-navy); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ind-desc { color: var(--ll-muted); font-size: 13px; margin-top: 6px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.prod-card { margin-bottom: 16px; }
+.home-page :deep(.interactive-product-card) { margin-bottom: 16px; }
 .thumb { height: 120px; background: var(--ll-thumb-bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: var(--ll-thumb-fg); margin-bottom: 8px; overflow: hidden; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; }
 .ptitle { font-size: 14px; height: 40px; overflow: hidden; }

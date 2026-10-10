@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 public class SupportLearningSandboxController {
     private static final Pattern ENTRY_ID = Pattern.compile("[a-z0-9][a-z0-9-]{1,63}");
     private static final Pattern CREDENTIAL_CONTENT = Pattern.compile(
-            "(?i)(-----BEGIN [A-Z ]*PRIVATE KEY-----|sk-[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|(?:SUPPORT_PROXY_SECRET|API_KEY|ACCESS_TOKEN)\\\\s*[:=])");
+            "(?i)(-----BEGIN [A-Z ]*PRIVATE KEY-----|sk-[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|(?:SUPPORT_PROXY_SECRET|API_KEY|ACCESS_TOKEN)\\s*[:=])");
 
     private final SupportAnswerService answers;
 

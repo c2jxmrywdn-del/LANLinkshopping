@@ -79,7 +79,9 @@ public class AuthInterceptor implements HandlerInterceptor {
                 || uri.startsWith("/product/detail/")
                 // 支付渠道异步通知与同步回跳：无登录态，公开放行（内部已做签名校验）
                 || uri.startsWith("/payment/notify/")
-                || uri.equals("/payment/alipay/return");
+                || uri.equals("/payment/alipay/return")
+                // Public one-click marketing unsubscribe uses a signed, account-bound token.
+                || uri.equals("/marketing-email/unsubscribe");
     }
 
     private void write(HttpServletResponse response, R<?> body) throws Exception {

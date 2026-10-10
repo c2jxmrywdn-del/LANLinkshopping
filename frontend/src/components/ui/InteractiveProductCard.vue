@@ -99,7 +99,9 @@ function resetTilt() {
 }
 
 function activate(event) {
-  if (event.currentTarget === cardRef.value && clickable) emit('click', event)
+  // Keyboard activation is only for the card itself, never nested CTA buttons.
+  if (event.target !== cardRef.value || event.currentTarget !== cardRef.value) return
+  emit('click', event)
 }
 </script>
 

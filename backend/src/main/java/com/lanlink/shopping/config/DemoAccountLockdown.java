@@ -77,6 +77,8 @@ public class DemoAccountLockdown implements CommandLineRunner {
         }
         if (locked > 0) {
             log.warn("Disabled {} seeded demo login(s) in production; account and business rows were retained", locked);
+        } else {
+            log.info("Production demo-account lockdown check complete; no known demo password matched");
         }
     }
 }

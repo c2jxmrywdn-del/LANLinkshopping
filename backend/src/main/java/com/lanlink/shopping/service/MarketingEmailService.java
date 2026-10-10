@@ -1,7 +1,10 @@
 package com.lanlink.shopping.service;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.lanlink.shopping.common.BusinessException;
 import com.lanlink.shopping.dto.MarketingEmailCampaignDTO;
+import com.lanlink.shopping.entity.UserProfile;
+import com.lanlink.shopping.mapper.UserProfileMapper;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -18,17 +21,23 @@ import java.util.Set;
 
 /**
  * Admin-triggered promotional email workflow routed through Agent Loadout.
- * Each recipient must already have opted in; sending is per-recipient to keep
- * addresses private. A functional unsubscribe endpoint is mandatory.
+ * Sends only to registered users whose email and promotion notifications are
+ * enabled in their account preferences. Each recipient is sent separately.
  */
 @Service
 public class MarketingEmailService {
     private static final int MAX_RECIPIENTS = 20;
 
     private final AgentLoadoutMcpClient agentLoadoutMcpClient;
+    private final UserProfileMapper userProfileMapper;
+    private final UserSettingsService userSettingsService;
 
-    public MarketingEmailService(AgentLoadoutMcpClient agentLoadoutMcpClient) {
+    public MarketingEmailService(AgentLoadoutMcpClient agentLoadoutMcpClient,
+                                 UserProfileMapper userProfileMapper,
+                                 UserSettingsService userSettingsService) {
         this.agentLoadoutMcpClient = agentLoadoutMcpClient;
+        this.userProfileMapper = userProfileMapper;
+        this.userSettingsService = userSettingsService;
     }
 
     public Map<String, Object> sendCampaign(MarketingEmailCampaignDTO campaign) {
@@ -52,6 +61,7 @@ public class MarketingEmailService {
             }
         }
 
+        Map<String, UserProfile> profilesByEmail = loadProfilesByEmail();
         String subject = normalizeSubject(campaign.getSubject());
         String body = campaign.getText().trim()
                 + "\n\n---\n这是一封 LANLinkshopping 商业推广邮件。"
@@ -59,6 +69,7 @@ public class MarketingEmailService {
                 + campaign.getUnsubscribeUrl().trim();
 
         int queued = 0;
+        int skippedNoConsent = 0;
         int failed = 0;
         List<Map<String, Object>> outcomes = new ArrayList<>();
         int index = 0;
@@ -66,6 +77,13 @@ public class MarketingEmailService {
             index++;
             Map<String, Object> outcome = new LinkedHashMap<>();
             outcome.put("recipientIndex", index);
+            UserProfile profile = profilesByEmail.get(recipient.trim().toLowerCase(Locale.ROOT));
+            if (profile == null || !hasMarketingConsent(profile.getUserId())) {
+                skippedNoConsent++;
+                outcome.put("status", "skipped_no_consent");
+                outcomes.add(outcome);
+                continue;
+            }
             try {
                 agentLoadoutMcpClient.sendMessage(
                         recipient.trim(),
@@ -87,12 +105,41 @@ public class MarketingEmailService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("requested", campaign.getRecipients().size());
         result.put("queued", queued);
+        result.put("skippedNoConsent", skippedNoConsent);
         result.put("failed", failed);
         result.put("results", outcomes);
         result.put("message", failed == 0
-                ? "营销邮件已提交至 Agent Loadout 邮件队列"
+                ? "营销邮件处理完成；仅向已启用营销邮件订阅的账号提交"
                 : "部分邮件未能提交，请检查邮件服务配置后重试失败项");
         return result;
+    }
+
+    private Map<String, UserProfile> loadProfilesByEmail() {
+        List<UserProfile> profiles = userProfileMapper.selectList(
+                Wrappers.<UserProfile>lambdaQuery()
+                        .select(UserProfile::getUserId, UserProfile::getEmail)
+                        .isNotNull(UserProfile::getEmail));
+        Map<String, UserProfile> indexed = new LinkedHashMap<>();
+        for (UserProfile profile : profiles) {
+            if (profile.getEmail() != null && !profile.getEmail().isBlank()) {
+                indexed.putIfAbsent(profile.getEmail().trim().toLowerCase(Locale.ROOT), profile);
+            }
+        }
+        return indexed;
+    }
+
+    private boolean hasMarketingConsent(Long userId) {
+        if (userId == null) return false;
+        Map<String, Object> settings = userSettingsService.get(userId);
+        Map<String, Object> notify = asMap(settings.get("notify"));
+        Map<String, Object> groups = asMap(notify.get("groups"));
+        return Boolean.TRUE.equals(notify.get("email"))
+                && Boolean.TRUE.equals(groups.get("promotion"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> asMap(Object value) {
+        return value instanceof Map<?, ?> ? (Map<String, Object>) value : Map.of();
     }
 
     private static String normalizeSubject(String subject) {

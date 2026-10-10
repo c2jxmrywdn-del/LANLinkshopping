@@ -69,7 +69,7 @@ public class DemoAccountLockdown implements CommandLineRunner {
                 continue;
             }
 
-            String unusableRandomPassword = UUID.randomUUID() + "-" + UUID.randomUUID();
+            String unusableRandomPassword = UUID.randomUUID().toString();
             user.setPassword(passwordEncoder.encode(unusableRandomPassword));
             user.setUpdateTime(LocalDateTime.now());
             userMapper.updateById(user);

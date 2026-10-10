@@ -1,10 +1,9 @@
 import { isIP } from "node:net";
 
 const ORIGIN = "https://lan-linkshopping.vercel.app";
-const HOST = "lan-linkshopping.vercel.app";
 const BACKEND = "https://lanlinkshopping-production.up.railway.app/api/support/ask";
 const FALLBACK = "抱歉，当前客服仅能解答 LANLinkshopping 专属知识库已收录的电商相关问题。可咨询账号注册与登录、商品浏览、购物车与订单、商户入驻、钱包与账期、会员与活动、站内消息及 Cookie 设置；其他问题暂不在可答范围内。";
-const LIMIT = 20, WINDOW_MS = 60_000, MAX_TRACKED = 10_000;
+const LIMIT = 20, UNKNOWN_IP_LIMIT = 300, WINDOW_MS = 60_000, MAX_TRACKED = 10_000;
 const rateWindows = globalThis.__lanlinkSupportRateWindows || new Map();
 globalThis.__lanlinkSupportRateWindows = rateWindows;
 
@@ -13,13 +12,16 @@ function header(req, name) {
   return Array.isArray(value) ? String(value[0] || "") : String(value || "");
 }
 function trustedBrowserRequest(req) {
-  if (header(req, "origin") !== ORIGIN || header(req, "host").toLowerCase() !== HOST) return false;
+  const origin = header(req, "origin");
   const fetchSite = header(req, "sec-fetch-site");
-  if (fetchSite && fetchSite.toLowerCase() !== "same-origin") return false;
   const referer = header(req, "referer");
+  if (origin && origin !== ORIGIN) return false;
+  if (fetchSite && fetchSite.toLowerCase() !== "same-origin") return false;
   if (referer) {
     try { if (new URL(referer).origin !== ORIGIN) return false; } catch { return false; }
   }
+  // If Origin is omitted, require same-origin Fetch Metadata and a same-origin Referer.
+  if (!origin && (!referer || !fetchSite || fetchSite.toLowerCase() !== "same-origin")) return false;
   return true;
 }
 function clientIp(req) {
@@ -28,7 +30,7 @@ function clientIp(req) {
   const forwarded = header(req, "x-forwarded-for").split(",")[0].trim();
   if (isIP(forwarded)) return forwarded;
   const remote = String(req.socket?.remoteAddress || "").trim();
-  return isIP(remote) ? remote : "";
+  return isIP(remote) ? remote : "unknown";
 }
 function allowRate(ip) {
   if (!ip) return false;
@@ -41,7 +43,7 @@ function allowRate(ip) {
   if (!existing || now - existing.startedAt >= WINDOW_MS) {
     rateWindows.set(ip, { startedAt: now, count: 1 }); return true;
   }
-  if (existing.count >= LIMIT) return false;
+  if (existing.count >= (ip === "unknown" ? UNKNOWN_IP_LIMIT : LIMIT)) return false;
   existing.count += 1; return true;
 }
 function send(res, status, answer) {

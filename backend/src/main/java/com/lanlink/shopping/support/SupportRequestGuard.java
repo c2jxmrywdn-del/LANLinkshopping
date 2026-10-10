@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentMap;
 public class SupportRequestGuard {
     private static final long WINDOW_MILLIS = 60_000L;
     private static final int MAX_REQUESTS_PER_WINDOW = 20;
+    private static final int MAX_UNKNOWN_REQUESTS_PER_WINDOW = 300;
     private static final int MAX_TRACKED_SOURCES = 10_000;
 
     private final String expectedProxySecret;
@@ -33,7 +34,9 @@ public class SupportRequestGuard {
     public boolean allowRequest(String clientAddress) {
         if (!StringUtils.hasText(clientAddress)) return false;
         String key = clientAddress.trim();
-        if (key.length() > 64 || !key.matches("[0-9a-fA-F:.]{2,64}")) return false;
+        boolean unknownSource = "unknown".equalsIgnoreCase(key);
+        if (!unknownSource && (key.length() > 64 || !key.matches("[0-9a-fA-F:.]{2,64}"))) return false;
+        int requestLimit = unknownSource ? MAX_UNKNOWN_REQUESTS_PER_WINDOW : MAX_REQUESTS_PER_WINDOW;
 
         long now = System.currentTimeMillis();
         if (windows.size() >= MAX_TRACKED_SOURCES) {
@@ -46,7 +49,7 @@ public class SupportRequestGuard {
                 allowed[0] = true;
                 return new Window(now, 1);
             }
-            if (existing.count >= MAX_REQUESTS_PER_WINDOW) return existing;
+            if (existing.count >= requestLimit) return existing;
             existing.count++;
             allowed[0] = true;
             return existing;

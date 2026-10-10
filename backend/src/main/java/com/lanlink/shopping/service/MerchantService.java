@@ -11,6 +11,7 @@ import com.lanlink.shopping.mapper.EnterpriseMapper;
 import com.lanlink.shopping.mapper.MerchantMapper;
 import com.lanlink.shopping.mapper.QualificationMapper;
 import com.lanlink.shopping.mapper.UserMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -36,6 +37,7 @@ public class MerchantService {
     private final AuditService auditService;
     private final UserMapper userMapper;
 
+    @Autowired
     public MerchantService(MerchantMapper merchantMapper, EnterpriseMapper enterpriseMapper,
                            QualificationMapper qualificationMapper, AuditService auditService,
                            UserMapper userMapper) {

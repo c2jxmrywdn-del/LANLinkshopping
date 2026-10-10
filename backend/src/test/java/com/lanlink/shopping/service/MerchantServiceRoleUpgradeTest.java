@@ -12,6 +12,7 @@ import com.lanlink.shopping.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.math.BigDecimal;
 
@@ -36,6 +37,20 @@ class MerchantServiceRoleUpgradeTest {
         auditService = mock(AuditService.class);
         userMapper = mock(UserMapper.class);
         service = new MerchantService(merchantMapper, enterpriseMapper, qualificationMapper, auditService, userMapper);
+    }
+
+    @Test
+    void springCanCreateServiceWhenMultipleConstructorsExist() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.getBeanFactory().registerSingleton("merchantMapper", merchantMapper);
+            context.getBeanFactory().registerSingleton("enterpriseMapper", enterpriseMapper);
+            context.getBeanFactory().registerSingleton("qualificationMapper", qualificationMapper);
+            context.getBeanFactory().registerSingleton("auditService", auditService);
+            context.getBeanFactory().registerSingleton("userMapper", userMapper);
+            context.register(MerchantService.class);
+            context.refresh();
+            assertNotNull(context.getBean(MerchantService.class));
+        }
     }
 
     @Test

@@ -36,7 +36,16 @@ public class SupportAnswerService {
             "密码重置", "重置密码", "找回密码", "忘记密码", "修改密码",
             "订单状态", "订单号", "查询余额", "余额是多少", "我的余额", "我的积分",
             "积分余额", "我的订单状态", "授信额度", "账期额度", "申请条件", "审核结果",
+            "我的收货地址", "地址是什么", "具体地址", "读取地址", "我的手机号", "身份证号",
+            "我的密码", "个人资料内容", "私人信息", "用户隐私数据", "个人订单", "订单个人信息",
             "活动规则", "优惠规则", "用户数据", "用户信息", "账号申诉"
+    );
+    // Only questions within the platform's supported e-commerce domains can enter the learning sandbox.
+    private static final List<String> LEARNING_DOMAIN_SIGNALS = List.of(
+            "账号", "注册", "登录", "登陆", "验证码", "商品", "产品", "商城", "分类",
+            "购物车", "结算", "订单", "下单", "商户", "供应商", "入驻", "开店",
+            "钱包", "充值", "账期", "会员", "积分", "活动", "促销", "优惠",
+            "消息", "通知", "cookie", "隐私", "收货地址", "地址管理"
     );
     private static final Pattern INJECTION_COMBINATION = Pattern.compile(
             "(?i)(ignore|disregard|forget|override|bypass)[\\s\\S]{0,80}(instruction|prompt|system|policy|knowledge base|rules)"
@@ -95,23 +104,64 @@ public class SupportAnswerService {
     public String welcome() { return welcome; }
 
     public String answer(String rawQuestion) {
-        if (!StringUtils.hasText(rawQuestion) || rawQuestion.length() > MAX_QUESTION_LENGTH) return fallback;
+        String question = validatedQuestion(rawQuestion);
+        if (question == null || isBlockedQuestion(question)) return fallback;
+        Entry entry = findEntry(question);
+        return entry == null ? fallback : entry.answer();
+    }
+
+    /** Exposes the intent selected by the exact same matcher for the admin-only sandbox. */
+    public String matchedEntryId(String rawQuestion) {
+        String question = validatedQuestion(rawQuestion);
+        if (question == null || isBlockedQuestion(question)) return "";
+        Entry entry = findEntry(question);
+        return entry == null ? "" : entry.id();
+    }
+
+    /**
+     * A question may be considered for a human-reviewed draft only when it is safe
+     * and clearly within the platform's documented e-commerce scope.
+     */
+    public boolean isEligibleForKnowledgeLearning(String rawQuestion) {
+        String question = validatedQuestion(rawQuestion);
+        return question != null && !isBlockedQuestion(question)
+                && containsAny(question, LEARNING_DOMAIN_SIGNALS);
+    }
+
+    /** Candidate keywords are tested in memory only; they are never persisted by this service. */
+    public boolean candidateKeywordsMatch(String rawQuestion, List<String> candidateKeywords) {
+        if (!isEligibleForKnowledgeLearning(rawQuestion) || candidateKeywords == null) return false;
+        String question = validatedQuestion(rawQuestion);
+        return candidateKeywords.stream()
+                .filter(StringUtils::hasText)
+                .filter(keyword -> keyword.length() <= 80)
+                .map(SupportAnswerService::normalize)
+                .filter(StringUtils::hasText)
+                .anyMatch(question::contains);
+    }
+
+    private String validatedQuestion(String rawQuestion) {
+        if (!StringUtils.hasText(rawQuestion) || rawQuestion.length() > MAX_QUESTION_LENGTH) return null;
         if (rawQuestion.chars().anyMatch(Character::isISOControl)
                 || rawQuestion.contains("<") || rawQuestion.contains(">")
-                || rawQuestion.indexOf(96) >= 0) return fallback;
-
+                || rawQuestion.indexOf(96) >= 0) return null;
         String question = normalize(INVISIBLE_CHARACTERS.matcher(rawQuestion).replaceAll(""));
-        if (question.isEmpty() || isPromptInjection(question)
-                || containsAny(question, UNSUPPORTED_BUSINESS_SIGNALS)) return fallback;
+        return question.isEmpty() ? null : question;
+    }
 
+    private boolean isBlockedQuestion(String question) {
+        return isPromptInjection(question) || containsAny(question, UNSUPPORTED_BUSINESS_SIGNALS);
+    }
+
+    private Entry findEntry(String question) {
         return entries.stream()
                 .map(entry -> new Match(entry, entry.keywords().stream()
                         .filter(question::contains)
                         .max(Comparator.comparingInt(String::length)).orElse(null)))
                 .filter(match -> match.keyword() != null)
                 .max(Comparator.comparingInt(match -> match.keyword().length()))
-                .map(match -> match.entry().answer())
-                .orElse(fallback);
+                .map(Match::entry)
+                .orElse(null);
     }
 
     private static boolean isPromptInjection(String question) {
@@ -125,7 +175,7 @@ public class SupportAnswerService {
         return Normalizer.normalize(value, Normalizer.Form.NFKC).trim().toLowerCase(Locale.ROOT);
     }
     private static boolean containsAny(String text, List<String> phrases) {
-        for (String phrase : phrases) if (text.contains(phrase)) return true;
+        for (String phrase : phrases) if (text.contains(normalize(phrase))) return true;
         return false;
     }
     private record Entry(String id, List<String> keywords, String answer) {}

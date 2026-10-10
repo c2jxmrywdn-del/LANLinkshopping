@@ -10,6 +10,7 @@
         <a-menu-item key="admin-products">商品管理</a-menu-item>
         <a-menu-item key="admin-payments">交易管理</a-menu-item><a-menu-item key="admin-credit-terms">账期审核</a-menu-item>
         <a-menu-item key="admin-audit">审计日志</a-menu-item>
+        <a-menu-item key="admin-support-learning">客服学习沙盒</a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout>

@@ -217,7 +217,8 @@ export const trafficApi = {
 // ===== 管理后台审计（/admin/**，AuthInterceptor 已限定 admin 角色） =====
 export const adminApi = {
   auditPage: (params) => request.get('/admin/audit/page', { params }),
-  auditExport: (params) => request.get('/admin/audit/export', { params, responseType: 'blob' })
+  auditExport: (params) => request.get('/admin/audit/export', { params, responseType: 'blob' }),
+  supportLearningPreview: (payload) => request.post('/admin/support-learning/preview', payload)
 }
 
 // ===== 营销中台：活动系统 / 促销系统 / 会员系统 =====

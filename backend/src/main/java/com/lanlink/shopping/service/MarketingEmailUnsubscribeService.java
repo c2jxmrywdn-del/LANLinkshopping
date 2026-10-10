@@ -1,6 +1,6 @@
 package com.lanlink.shopping.service;
 
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.lanlink.shopping.common.BusinessException;
 import com.lanlink.shopping.entity.UserProfile;
 import com.lanlink.shopping.mapper.UserProfileMapper;
@@ -80,9 +80,9 @@ public class MarketingEmailUnsubscribeService {
         }
 
         UserProfile profile = userProfileMapper.selectList(
-                Wrappers.<UserProfile>lambdaQuery()
-                        .select(UserProfile::getUserId, UserProfile::getEmail)
-                        .eq(UserProfile::getUserId, userId))
+                new QueryWrapper<UserProfile>()
+                        .select("user_id", "email")
+                        .eq("user_id", userId))
                 .stream().findFirst().orElse(null);
         if (profile == null || profile.getEmail() == null || profile.getEmail().isBlank()) {
             throw new BusinessException("退订链接无效或已失效");

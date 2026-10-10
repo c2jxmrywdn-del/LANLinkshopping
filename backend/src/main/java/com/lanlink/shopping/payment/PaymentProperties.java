@@ -6,14 +6,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * 支付配置（前缀 lanlink.payment）。
  * 安全约定：所有密钥/证书路径仅从环境变量或 gitignore 的本地配置文件读取，
- * 默认值不含任何真实凭证；未配置真实凭证时 mock=true 走本地模拟支付，保证可运行。
+ * 默认关闭模拟支付；只在开发配置中显式开启，避免生产环境意外接受模拟支付。
  */
 @Data
 @ConfigurationProperties(prefix = "lanlink.payment")
 public class PaymentProperties {
 
     /** 全局模拟开关：true 时不请求真实渠道，本地直接生成支付参数并支持手动确认回调 */
-    private boolean mock = true;
+    private boolean mock = false;
 
     /** 回调/跳转的公网基础地址（真实联调需部署到 HTTPS 域名，例：https://shop.example.com/api） */
     private String notifyBaseUrl = "http://localhost:8080/api";

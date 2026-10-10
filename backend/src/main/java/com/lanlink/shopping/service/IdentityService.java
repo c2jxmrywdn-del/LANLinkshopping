@@ -6,6 +6,7 @@ import com.lanlink.shopping.entity.User;
 import com.lanlink.shopping.mapper.OrderMapper;
 import com.lanlink.shopping.mapper.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -36,6 +37,7 @@ public class IdentityService {
     private final OrderMapper orderMapper;
     private final UserMapper userMapper;
 
+    @Autowired
     public IdentityService(OrderMapper orderMapper, UserMapper userMapper) {
         this.orderMapper = orderMapper;
         this.userMapper = userMapper;

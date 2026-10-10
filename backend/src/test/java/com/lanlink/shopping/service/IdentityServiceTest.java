@@ -8,6 +8,7 @@ import com.lanlink.shopping.mapper.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -26,6 +27,17 @@ class IdentityServiceTest {
         orderMapper = mock(OrderMapper.class);
         userMapper = mock(UserMapper.class);
         service = new IdentityService(orderMapper, userMapper);
+    }
+
+    @Test
+    void springCanCreateServiceWhenMultipleConstructorsExist() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.getBeanFactory().registerSingleton("orderMapper", orderMapper);
+            context.getBeanFactory().registerSingleton("userMapper", userMapper);
+            context.register(IdentityService.class);
+            context.refresh();
+            assertNotNull(context.getBean(IdentityService.class));
+        }
     }
 
     @Test

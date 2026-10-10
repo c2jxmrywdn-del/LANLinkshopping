@@ -73,7 +73,7 @@
                   <a-menu-divider />
                   <a-menu-item @click="$router.push('/wallet')">💰 我的钱包</a-menu-item><a-menu-item v-if="user.hasPerm('credit:view')" @click="$router.push('/credit-term')">企业账期</a-menu-item>
                   <a-menu-item @click="$router.push('/activity')">🎯 活动中心</a-menu-item>
-                  <a-menu-item @click="$router.push('/membership')">💎 会员中心</a-menu-item>
+                  <a-menu-item @click="$router.push('/membership')"><MembershipIcon :size="18" class="membership-menu-icon" /> 会员中心</a-menu-item>
                   <a-menu-item @click="$router.push('/me')">个人资料</a-menu-item><a-menu-item @click="$router.push('/me/messages')">消息中心</a-menu-item><a-menu-item @click="$router.push('/me/address')">收货地址</a-menu-item><a-menu-item @click="$router.push('/me/login-log')">登录安全</a-menu-item><a-menu-item @click="$router.push('/me/settings')">账户设置</a-menu-item>
                   <a-menu-item @click="doLogout">退出登录</a-menu-item>
                 </a-menu>
@@ -120,6 +120,7 @@ import { tapFeedback } from '../utils/feedback'
 import IndustryCategoryMenu from '../components/IndustryCategoryMenu.vue'
 import AuthorCard from '../components/AuthorCard.vue'
 import UserAvatar from '../components/ui/UserAvatar.vue'
+import MembershipIcon from '../components/ui/MembershipIcon.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -281,6 +282,7 @@ function secretTap() {
 .right { display: flex; align-items: center; gap: 16px; }
 .user-trigger { display: inline-flex; align-items: center; gap: 7px; }
 .header-avatar { vertical-align: middle; }
+.membership-menu-icon { margin-right: 7px; }
 .header-user-name { white-space: nowrap; }
 /* 身份徽章 */
 .id-badge { display: inline-block; font-size: 11px; font-weight: 700; line-height: 1;

@@ -56,11 +56,17 @@ function send(res, status, answer) {
 
 export default async function handler(req, res) {
   if (req.method !== "POST") { res.setHeader("Allow", "POST"); return send(res, 405, FALLBACK); }
-  if (!trustedBrowserRequest(req)) return send(res, 403, FALLBACK);
+  if (!trustedBrowserRequest(req)) {
+    console.warn("[support-proxy] browser-source-rejected", { hasOrigin: Boolean(header(req, "origin")), originMatches: header(req, "origin") === ORIGIN, fetchSite: header(req, "sec-fetch-site") || "missing", hasReferer: Boolean(header(req, "referer")) });
+    return send(res, 403, FALLBACK);
+  }
   const length = Number(header(req, "content-length") || "0");
   if (Number.isFinite(length) && length > 4096) return send(res, 413, FALLBACK);
   const ip = clientIp(req);
-  if (!allowRate(ip)) return send(res, 429, FALLBACK);
+  if (!allowRate(ip)) {
+    console.warn("[support-proxy] request-rate-limited", { knownClientIp: ip !== "unknown" });
+    return send(res, 429, FALLBACK);
+  }
   if (!header(req, "content-type").toLowerCase().startsWith("application/json")) return send(res, 400, FALLBACK);
 
   let body = req.body;
@@ -69,7 +75,10 @@ export default async function handler(req, res) {
       || typeof body.question !== "string" || body.question.length > 300) return send(res, 200, FALLBACK);
 
   const secret = process.env.SUPPORT_PROXY_SECRET;
-  if (typeof secret !== "string" || secret.length < 40) return send(res, 503, FALLBACK);
+  if (typeof secret !== "string" || secret.length < 40) {
+    console.error("[support-proxy] server-secret-missing-or-short");
+    return send(res, 503, FALLBACK);
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8_000);
@@ -84,10 +93,12 @@ export default async function handler(req, res) {
     const payload = await upstream.json().catch(() => null);
     const answer = typeof payload?.data?.answer === "string" ? payload.data.answer
       : typeof payload?.message === "string" ? payload.message : FALLBACK;
+    console.info("[support-proxy] upstream-response", { status: upstream.status, hasPayload: Boolean(payload), hasDataAnswer: typeof payload?.data?.answer === "string", hasMessage: typeof payload?.message === "string", bodyCode: payload?.code ?? null });
     if ([403,429,413].includes(upstream.status)) return send(res, upstream.status, FALLBACK);
     if (!upstream.ok || !payload) return send(res, 503, FALLBACK);
     return send(res, 200, answer);
-  } catch {
+  } catch (error) {
+    console.error("[support-proxy] upstream-request-failed", { name: error?.name || "UnknownError" });
     return send(res, 503, FALLBACK);
   } finally {
     clearTimeout(timeout);

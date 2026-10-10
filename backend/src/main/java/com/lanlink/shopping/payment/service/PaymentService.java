@@ -86,11 +86,15 @@ public class PaymentService {
                 orderService.setPrepay(orderNo, "alipay", null);
                 info.put("form", form);
             }
-            default -> { // mock
+            case "mock" -> {
+                if (!props.isMock()) {
+                    throw new BusinessException("模拟支付未启用");
+                }
                 orderService.setPrepay(orderNo, "mock", null);
                 info.put("token", "MOCK-" + UUID.randomUUID().toString().replace("-", ""));
                 vo.setMock(true);
             }
+            default -> throw new BusinessException("不支持的支付渠道: " + channel);
         }
         vo.setPayInfo(info);
         payLog.info(orderNo, channel, "CREATE", "OUT", true, "amount=" + o.getTotalAmount());
@@ -112,9 +116,18 @@ public class PaymentService {
         return m;
     }
 
-    /** mock 模式下前端"模拟支付成功"入口 */
+    /** 仅开发/演示环境允许的模拟支付确认入口 */
     public boolean mockConfirm(String orderNo, Long userId) {
+        if (!props.isMock()) {
+            throw new BusinessException("模拟支付未启用");
+        }
         Order o = mustOwn(orderNo, userId);
+        if (!"mock".equals(o.getPayChannel())) {
+            throw new BusinessException("该订单不支持模拟支付");
+        }
+        if (isPaid(o)) {
+            throw new BusinessException("订单已支付");
+        }
         boolean settled = orderService.settlePaid(orderNo, "mock", "MOCKTXN" + ts());
         payLog.info(orderNo, "mock", "NOTIFY", "IN", settled, "模拟支付确认 settled=" + settled);
         return settled;
@@ -294,10 +307,18 @@ public class PaymentService {
     /** 渠道决策：wallet 为本地渠道任何模式可用；结算选择"企业钱包"的订单默认钱包支付 */
     private String decideChannel(String req, Order o) {
         String wanted = req == null || req.isBlank() ? null : req.trim().toLowerCase();
-        if ("wallet".equals(wanted)) return "wallet";
         if (wanted == null && "balance".equals(o.getPayType())) return "wallet";
-        if (props.isMock()) return "mock";
-        return wanted == null ? "wechat" : wanted;
+        if (wanted == null) return props.isMock() ? "mock" : "wechat";
+
+        if (!List.of("wallet", "wechat", "alipay", "mock").contains(wanted)) {
+            throw new BusinessException("不支持的支付渠道: " + wanted);
+        }
+        if ("wallet".equals(wanted)) return "wallet";
+        if ("mock".equals(wanted)) {
+            if (!props.isMock()) throw new BusinessException("模拟支付未启用");
+            return "mock";
+        }
+        return props.isMock() ? "mock" : wanted;
     }
 
     private Order mustOwn(String orderNo, Long userId) {

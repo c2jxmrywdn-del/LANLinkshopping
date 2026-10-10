@@ -17,7 +17,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * 验证码服务：内存存储，5 分钟过期 + 60 秒冷却 + 单次使用。
  * 邮件通道：接入 JavaMailSender（SMTP），真实发送验证码邮件；
- * 未配置 SMTP 时回退演示模式（接口回显 devCode），便于离线演示。
+ * 仅开发环境显式开启 demo-mode 时允许回显验证码；生产环境无可用通道时拒绝发送。
  */
 @Service
 public class VerifyCodeService {
@@ -40,66 +40,96 @@ public class VerifyCodeService {
     private final JavaMailSender mailSender;
     private final String mailHost;
     private final String mailFrom;
+    private final boolean demoMode;
 
     public VerifyCodeService(
             @Autowired(required = false) JavaMailSender mailSender,
             @Value("${spring.mail.host:}") String mailHost,
-            @Value("${spring.mail.username:}") String mailFrom) {
+            @Value("${spring.mail.username:}") String mailFrom,
+            @Value("${lanlink.verify-code.demo-mode:false}") boolean demoMode) {
         this.mailSender = mailSender;
         this.mailHost = mailHost;
         this.mailFrom = mailFrom;
+        this.demoMode = demoMode;
     }
 
     /**
-     * 发送验证码。
-     * - phone：演示环境，返回明文（devCode 回显，未接短信通道）
-     * - email：配置 SMTP 时真实发送并返回 null（不回显）；未配置时回退返回明文
-     * 发送失败时移除已生成的验证码，避免占用冷却期。
+     * 发送验证码。开发演示回显必须显式开启 demo-mode。
+     * 发送失败时移除本次验证码，避免无效验证码占用冷却期。
      */
     public String send(Long userId, String type, String target) {
-        String key = key(userId, type, target);
-        CodeBox box = store.get(key);
-        long now = System.currentTimeMillis();
-        if (box != null && now - box.lastSendAt < COOLDOWN_MS) {
-            throw new BusinessException("验证码发送过于频繁，请稍后再试");
+        if (target == null || target.isBlank()) {
+            throw new BusinessException("验证码接收方不能为空");
         }
+        if (!"email".equals(type) && !"phone".equals(type)) {
+            throw new BusinessException("不支持的验证码类型");
+        }
+
+        String key = key(userId, type, target);
+        long now = System.currentTimeMillis();
+        // 清理过期项，避免长时间运行后验证码缓存无限增长。
+        store.entrySet().removeIf(entry -> entry.getValue().exp < now);
+
         String code = String.format("%06d", ThreadLocalRandom.current().nextInt(1_000_000));
         CodeBox nb = new CodeBox();
         nb.code = code;
         nb.exp = now + TTL_MS;
         nb.lastSendAt = now;
-        store.put(key, nb);
+
+        // 对单个 key 原子预留冷却窗口，避免并发请求同时通过限流检查。
+        store.compute(key, (k, current) -> {
+            if (current != null && now - current.lastSendAt < COOLDOWN_MS
+                    && current.exp >= now) {
+                throw new BusinessException("验证码发送过于频繁，请稍后再试");
+            }
+            return nb;
+        });
 
         if ("email".equals(type)) {
             try {
                 if (sendEmailCode(target, code)) {
                     return null; // 已真实发送，不回显验证码
                 }
-                log.warn("SMTP 未配置（host={}），邮箱验证码回退演示模式", mailHost);
-                return code; // 演示回退：接口回显
+                if (demoMode) {
+                    log.warn("SMTP 未配置（host={}），当前为开发验证码演示模式", mailHost);
+                    return code;
+                }
+                store.remove(key, nb);
+                throw new BusinessException("邮箱验证码服务暂未配置");
             } catch (BusinessException ex) {
-                store.remove(key); // 发送失败：清除验证码与冷却记录，允许立即重试
+                store.remove(key, nb);
                 throw ex;
             }
         }
-        return code; // phone 演示
+
+        if (!demoMode) {
+            store.remove(key, nb);
+            throw new BusinessException("短信验证码服务暂未配置");
+        }
+        return code; // 仅开发演示模式回显
     }
 
     /** 校验验证码；成功后立即失效（单次使用） */
     public void verify(Long userId, String type, String target, String code) {
         String key = key(userId, type, target);
         CodeBox box = store.get(key);
-        if (box == null || box.exp < System.currentTimeMillis()) {
-            store.remove(key);
+        if (box == null) {
+            throw new BusinessException("验证码已过期，请重新获取");
+        }
+        if (box.exp < System.currentTimeMillis()) {
+            store.remove(key, box);
             throw new BusinessException("验证码已过期，请重新获取");
         }
         if (!box.code.equals(code)) {
             throw new BusinessException("验证码错误");
         }
-        store.remove(key);
+        // compare-and-remove 保证并发校验时只有一个请求能成功消费验证码。
+        if (!store.remove(key, box)) {
+            throw new BusinessException("验证码已使用，请重新获取");
+        }
     }
 
-    /** 通过 SMTP 发送验证码邮件；返回 false 表示 SMTP 未配置（回退演示模式） */
+    /** 通过 SMTP 发送验证码邮件；返回 false 表示 SMTP 未配置。 */
     private boolean sendEmailCode(String to, String code) throws BusinessException {
         if (mailSender == null || mailHost == null || mailHost.isBlank()) {
             return false;

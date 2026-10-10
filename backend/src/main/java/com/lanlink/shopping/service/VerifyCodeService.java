@@ -28,7 +28,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 验证码服务：内存存储，5 分钟过期 + 60 秒冷却 + 单次使用。
- * 邮件通道支持 HTTPS 邮件 API（Resend）和 SMTP。
+ * 邮件通道支持 Agent Loadout MCP、HTTPS 邮件 API（Resend）和 SMTP。
  * 生产环境缺少完整配置时拒绝发送且不回显验证码。
  */
 @Service
@@ -190,7 +190,7 @@ public class VerifyCodeService {
         }
     }
 
-    /** 根据配置选用 HTTPS 邮件 API 或 SMTP；返回 false 只代表必要凭据不完整。 */
+    /** 根据配置选用 Agent Loadout、HTTPS 邮件 API 或 SMTP；返回 false 只代表必要凭据不完整。 */
     private boolean sendEmailCode(String to, String code) {
         String provider = resolveEmailProvider();
         if (provider == null) {
@@ -200,8 +200,8 @@ public class VerifyCodeService {
             if (agentLoadoutMcpClient == null) {
                 throw new BusinessException("Agent Loadout 邮件通道尚未配置");
             }
-            String text = "LANLink 商城\\n\\n您的邮箱验证码为：" + code
-                    + "\\n验证码 5 分钟内有效，请勿泄露给他人。若非本人操作，请忽略此邮件。";
+            String text = "LANLink 商城\n\n您的邮箱验证码为：" + code
+                    + "\n验证码 5 分钟内有效，请勿泄露给他人。若非本人操作，请忽略此邮件。";
             agentLoadoutMcpClient.sendMessage(to, MAIL_SUBJECT, text, buildHtmlBody(code), java.util.UUID.randomUUID().toString());
             log.info("验证码邮件发送成功，provider=agent-loadout");
             return true;

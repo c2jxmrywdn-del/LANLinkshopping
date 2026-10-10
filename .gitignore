@@ -7,6 +7,10 @@ out/
 *.log
 run.log
 
+# 本地环境覆盖（不得提交）
+.env.local
+.env.*.local
+
 # IDE
 .idea/
 .vscode/

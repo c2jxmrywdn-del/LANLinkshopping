@@ -32,9 +32,9 @@ public class WebConfig implements WebMvcConfigurer {
         // 权限校验：AuthInterceptor 之后执行（先保证登录与身份识别）
         registry.addInterceptor(permInterceptor)
                 .addPathPatterns("/**");
-        // CSRF：仅对 /user/** 校验（AuthInterceptor 之后执行，先保证已登录）
+        // CSRF：保护账号写操作与营销邮件发送（AuthInterceptor 之后执行，先保证已登录）
         registry.addInterceptor(new CsrfInterceptor())
-                .addPathPatterns("/user/**");
+                .addPathPatterns("/user/**", "/admin/marketing-email/**");
     }
 
     @Override

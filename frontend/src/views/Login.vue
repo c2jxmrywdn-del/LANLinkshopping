@@ -8,12 +8,13 @@
           <!-- 第一步：手机号 + 密码 -->
           <a-form v-if="!twofa" :model="form" layout="vertical" @finish="submit">
             <a-form-item label="手机号" :rules="[{ required: true, message: '请输入手机号' }]">
-              <a-input v-model:value="form.phone" placeholder="演示: 13900000001" size="large" />
+              <a-input v-model:value="form.phone" placeholder="请输入已注册的手机号" size="large" />
             </a-form-item>
             <a-form-item label="密码" :rules="[{ required: true, message: '请输入密码' }]">
-              <a-input-password v-model:value="form.password" placeholder="演示密码: 123456" size="large" />
+              <a-input-password v-model:value="form.password" placeholder="请输入注册时设置的密码" size="large" />
             </a-form-item>
             <a-button type="primary" html-type="submit" block size="large" :loading="loading">登录</a-button>
+            <div class="tip">首次使用？请切换到“注册”创建账号。</div>
           </a-form>
 
           <!-- 第二步：两步验证动态码 -->
@@ -28,12 +29,6 @@
             <div class="tip"><a @click="reset2fa">返回重新登录</a></div>
           </a-form>
 
-          <a-divider>演示账号（密码均 123456）</a-divider>
-          <a-space direction="vertical" style="width:100%">
-            <a-button block @click="quick('13800000000')">平台运营 13800000000</a-button>
-            <a-button block @click="quick('13900000001')">采购方 13900000001</a-button>
-            <a-button block @click="quick('13700000002')">商户 13700000002</a-button>
-          </a-space>
         </a-tab-pane>
 
         <!-- ===== 注册 ===== -->
@@ -91,7 +86,7 @@ const user = useUserStore(); const cart = useCartStore()
 const tab = ref('login')
 const loading = ref(false)
 const regLoading = ref(false)
-const form = reactive({ phone: '', password: '123456' })
+const form = reactive({ phone: '', password: '' })
 const reg = reactive({ roleCode: 'buyer', phone: '', email: '', nickname: '', code: '', password: '', confirm: '', _srvCode: '' })
 
 // 两步验证步骤状态：{ loginTicket, hint, code }
@@ -120,8 +115,6 @@ function sendCode() {
   cd.value = 60
   timer = setInterval(() => { cd.value--; if (cd.value <= 0) clearInterval(timer) }, 1000)
 }
-
-function quick(p) { form.phone = p; form.password = '123456'; submit() }
 
 async function afterLoginSuccess() {
   await cart.load()

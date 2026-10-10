@@ -27,7 +27,8 @@ public class LoginLogService {
     public void record(Long userId, String phone, boolean success, String reason, HttpServletRequest request) {
         LoginLog log = new LoginLog();
         log.setUserId(userId);
-        log.setPhone(phone == null ? "" : phone);
+        // t_login_log.phone is VARCHAR(20); malformed input must not break failure auditing.
+        log.setPhone(trim(phone, 20));
         log.setSuccess(success ? 1 : 0);
         log.setReason(reason == null ? "" : reason);
         if (request != null) {

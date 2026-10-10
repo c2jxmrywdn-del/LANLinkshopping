@@ -139,7 +139,7 @@ public class UserController {
     public R<Map<String, String>> sendEmailCode(@Valid @RequestBody EmailDTO dto, HttpServletRequest request) {
         Long userId = UserContext.currentUserId(request);
         String code = verifyCodeService.send(userId, "email", dto.getEmail());
-        // SMTP 已配置时验证码真实发往邮箱，不回显；仅演示回退（未配置 SMTP）时返回 devCode
+        // Agent Loadout/SMTP/邮件 API 真实发送时不回显验证码；仅显式开启的演示模式可返回 devCode
         Map<String, String> out = new HashMap<>();
         if (code != null) out.put("devCode", code);
         return R.ok(out);

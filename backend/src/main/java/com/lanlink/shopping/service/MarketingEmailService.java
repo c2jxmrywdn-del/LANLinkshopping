@@ -1,6 +1,6 @@
 package com.lanlink.shopping.service;
 
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.lanlink.shopping.common.BusinessException;
 import com.lanlink.shopping.dto.MarketingEmailCampaignDTO;
 import com.lanlink.shopping.entity.UserProfile;
@@ -124,9 +124,9 @@ public class MarketingEmailService {
 
     private Map<String, UserProfile> loadProfilesByEmail() {
         List<UserProfile> profiles = userProfileMapper.selectList(
-                Wrappers.<UserProfile>lambdaQuery()
-                        .select(UserProfile::getUserId, UserProfile::getEmail)
-                        .isNotNull(UserProfile::getEmail));
+                new QueryWrapper<UserProfile>()
+                        .select("user_id", "email")
+                        .isNotNull("email"));
         Map<String, UserProfile> indexed = new LinkedHashMap<>();
         for (UserProfile profile : profiles) {
             if (profile.getEmail() != null && !profile.getEmail().isBlank()) {

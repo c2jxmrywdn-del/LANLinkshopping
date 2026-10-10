@@ -16,6 +16,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Minimal Streamable HTTP MCP client for Agent Loadout outbound email.
@@ -36,6 +37,7 @@ public class AgentLoadoutMcpClient {
     private final String inboxId;
     private volatile boolean initialized;
     private volatile String cachedSessionId = "";
+    private final AtomicInteger rpcSequence = new AtomicInteger(1);
 
     public AgentLoadoutMcpClient(
             @Value("${AGENT_LOADOUT_MCP_URL:https://agent-loadout.com/api/mcp}") String endpoint,
@@ -77,7 +79,7 @@ public class AgentLoadoutMcpClient {
             ObjectNode params = JSON.createObjectNode();
             params.put("name", "send_message");
             params.set("arguments", args);
-            JsonNode result = postRpc("tools/call", params, 2, sessionId, false);
+            JsonNode result = postRpc("tools/call", params, rpcSequence.incrementAndGet(), sessionId, false);
             if (result.has("error") || result.path("result").isMissingNode()) {
                 throw new BusinessException("Agent Loadout 邮件发送失败，请检查认证权限和邮箱配置");
             }

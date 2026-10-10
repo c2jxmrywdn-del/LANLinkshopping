@@ -31,13 +31,16 @@ public class MarketingEmailService {
     private final AgentLoadoutMcpClient agentLoadoutMcpClient;
     private final UserProfileMapper userProfileMapper;
     private final UserSettingsService userSettingsService;
+    private final MarketingEmailUnsubscribeService unsubscribeService;
 
     public MarketingEmailService(AgentLoadoutMcpClient agentLoadoutMcpClient,
                                  UserProfileMapper userProfileMapper,
-                                 UserSettingsService userSettingsService) {
+                                 UserSettingsService userSettingsService,
+                                 MarketingEmailUnsubscribeService unsubscribeService) {
         this.agentLoadoutMcpClient = agentLoadoutMcpClient;
         this.userProfileMapper = userProfileMapper;
         this.userSettingsService = userSettingsService;
+        this.unsubscribeService = unsubscribeService;
     }
 
     public Map<String, Object> sendCampaign(MarketingEmailCampaignDTO campaign) {
@@ -52,6 +55,10 @@ public class MarketingEmailService {
             throw new BusinessException("单次营销邮件需包含 1–20 位已订阅收件人");
         }
         validateUnsubscribeUrl(campaign.getUnsubscribeUrl());
+        if (!unsubscribeService.isConfigured()
+                || !unsubscribeService.canonicalUnsubscribeUrl().equals(campaign.getUnsubscribeUrl().trim())) {
+            throw new BusinessException("请使用系统配置的真实退订地址，并先配置退订签名密钥");
+        }
 
         Set<String> distinctRecipients = new HashSet<>();
         for (String recipient : campaign.getRecipients()) {
@@ -88,7 +95,8 @@ public class MarketingEmailService {
                 agentLoadoutMcpClient.sendMessage(
                         recipient.trim(),
                         subject,
-                        body,
+                        body.replace(campaign.getUnsubscribeUrl().trim(),
+                                unsubscribeService.buildUnsubscribeUrl(profile.getUserId(), recipient)),
                         null,
                         idempotencyKey(campaign.getIdempotencyKey(), recipient));
                 queued++;

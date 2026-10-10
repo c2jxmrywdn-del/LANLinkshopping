@@ -21,6 +21,7 @@ class AgentLoadoutMcpClientTest {
         List<String> methods = new ArrayList<>();
         AtomicReference<String> authorization = new AtomicReference<>();
         AtomicReference<JsonNode> callPayload = new AtomicReference<>();
+        AtomicReference<String> toolsCallSession = new AtomicReference<>();
 
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/mcp", exchange -> {
@@ -36,6 +37,7 @@ class AgentLoadoutMcpClientTest {
                 exchange.sendResponseHeaders(202, -1);
                 exchange.close();
             } else if ("tools/call".equals(method)) {
+                toolsCallSession.set(exchange.getRequestHeaders().getFirst("Mcp-Session-Id"));
                 callPayload.set(request);
                 writeJson(exchange, 200, "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"queued\"}],\"isError\":false}}");
             } else {
@@ -57,7 +59,7 @@ class AgentLoadoutMcpClientTest {
             assertEquals("inb_test", args.path("inbox_id").asText());
             assertEquals("person@example.com", args.path("to").get(0).asText());
             assertEquals("stable-test-key", args.path("idempotency_key").asText());
-            assertEquals("test-session", rpc.path("_unused").asText(""));
+            assertEquals("test-session", toolsCallSession.get());
         } finally {
             server.stop(0);
         }

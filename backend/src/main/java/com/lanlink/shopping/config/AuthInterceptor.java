@@ -35,6 +35,11 @@ public class AuthInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String uri = request.getRequestURI().replace(request.getContextPath(), "");
 
+        // 健康探针不创建会话，也不查询用户/订单数据；只允许公开的状态端点。
+        if (isPublicHealthCheck(uri)) {
+            return true;
+        }
+
         // 实时身份识别（每次请求现场计算，保证准确性与实时性；身份变更无需重新登录即平滑切换）
         UserIdentity identity = identityService.identify(request);
         request.setAttribute(UserContext.IDENTITY_KEY, identity);
@@ -56,6 +61,12 @@ public class AuthInterceptor implements HandlerInterceptor {
             }
         }
         return true;
+    }
+
+    private boolean isPublicHealthCheck(String uri) {
+        return uri.equals("/actuator/health")
+                || uri.equals("/actuator/health/liveness")
+                || uri.equals("/actuator/health/readiness");
     }
 
     private boolean isWhiteList(String uri) {

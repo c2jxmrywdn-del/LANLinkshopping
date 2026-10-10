@@ -27,7 +27,6 @@ spring:
     multipart:
       max-file-size: 5MB
       max-request-size: 6MB
-
   # 邮箱验证码 SMTP。QQ 邮箱默认使用隐式 TLS 465；切换到 587 时请关闭 SSL 并开启 STARTTLS。
   # 密码必须是邮件服务的 SMTP 授权码/应用专用密码，而不是邮箱网页登录密码。
   mail:
@@ -50,6 +49,18 @@ spring:
           connectiontimeout: 10000
           timeout: 10000
           writetimeout: 10000
+
+# 只公开健康状态，不公开组件详情、数据库地址或凭据。
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
 
 mybatis-plus:
   configuration:

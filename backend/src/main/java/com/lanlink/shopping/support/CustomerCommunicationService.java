@@ -45,7 +45,8 @@ public class CustomerCommunicationService {
             "(?i)(收货地址|详细地址|公司地址|家庭住址|家庭地址|住址|我的地址)(?:\\s*(?:是|为|[:：=])\\s*|\\s+)[^，,。；;\\n]{3,100}");
     private static final Pattern PERSON_NAME_VALUE = Pattern.compile(
             "(?i)(我叫|我的名字是|开户名|收件人姓名)\\s*(?:是|为|[:：=])?\\s*[\\p{IsHan}A-Za-z·.]{2,32}");
-    private static final Pattern PRIVATE_KEY = Pattern.compile("(?i)-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{16,}");
+    private static final Pattern PRIVATE_KEY = Pattern.compile(
+            "(?is)-----BEGIN [A-Z ]*PRIVATE KEY-----[\\s\\S]*?-----END [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{16,}|Bearer\\s+[A-Za-z0-9._-]{16,}");
     private static final Pattern ENTRY_ID = Pattern.compile("[a-z0-9][a-z0-9-]{1,63}");
     private static final DateTimeFormatter NO_TIME = DateTimeFormatter.ofPattern("yyMMddHHmmss");
 
@@ -291,6 +292,9 @@ public class CustomerCommunicationService {
         }
         if (!answers.candidateKeywordsMatch(safeQuestion, keywords)) {
             throw new IllegalArgumentException("至少一个关键词必须能匹配脱敏后的客户问题。");
+        }
+        if (answers.hasKeywordConflict(keywords)) {
+            throw new IllegalArgumentException("候选关键词与现有知识条目存在完全重复项，请缩小关键词并在沙盒中重新测试。");
         }
         if (!StringUtils.hasText(safeAnswer) || PRIVATE_KEY.matcher(safeAnswer).find()
                 || CREDENTIAL_VALUE.matcher(safeAnswer).find()) {

@@ -64,6 +64,9 @@ public class SupportAnswerService {
     private volatile String fallback;
     private volatile String welcome;
     private volatile List<Entry> entries = List.of();
+    private volatile long publishedCacheLoadedAtMs;
+    private volatile List<Entry> publishedEntriesCache = List.of();
+    private final Object publishedCacheLock = new Object();
 
     @Autowired
     public SupportAnswerService(
@@ -191,37 +194,59 @@ public class SupportAnswerService {
     /** Only admin-published, human-reviewed candidates join the live knowledge matcher. */
     private List<Entry> publishedEntries() {
         if (jdbcTemplate == null) return List.of();
-        try {
-            List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-                    "SELECT entry_id AS entryId, keywords_json AS keywordsJson, answer_text AS answerText " +
-                    "FROM t_support_learning_candidate WHERE status = 'published' ORDER BY published_at DESC, id DESC LIMIT 500");
-            List<Entry> published = new ArrayList<>();
-            for (Map<String, Object> row : rows) {
-                Object idValue = row.get("entryId");
-                Object keywordValue = row.get("keywordsJson");
-                Object answerValue = row.get("answerText");
-                if (idValue == null || keywordValue == null || answerValue == null) continue;
-                try {
-                    List<String> keywords = objectMapper.readValue(
-                            String.valueOf(keywordValue), new TypeReference<List<String>>() {});
-                    List<String> normalized = keywords.stream()
-                            .filter(StringUtils::hasText)
-                            .map(SupportAnswerService::normalize)
-                            .filter(StringUtils::hasText)
-                            .toList();
-                    String answer = String.valueOf(answerValue);
-                    if (!normalized.isEmpty() && StringUtils.hasText(answer)) {
-                        published.add(new Entry(String.valueOf(idValue), normalized, answer));
+        long now = System.currentTimeMillis();
+        if (now - publishedCacheLoadedAtMs < 5_000L) return publishedEntriesCache;
+        synchronized (publishedCacheLock) {
+            now = System.currentTimeMillis();
+            if (now - publishedCacheLoadedAtMs < 5_000L) return publishedEntriesCache;
+            try {
+                List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                        "SELECT entry_id AS entryId, keywords_json AS keywordsJson, answer_text AS answerText " +
+                        "FROM t_support_learning_candidate WHERE status = 'published' ORDER BY published_at DESC, id DESC LIMIT 500");
+                List<Entry> published = new ArrayList<>();
+                for (Map<String, Object> row : rows) {
+                    Object idValue = row.get("entryId");
+                    Object keywordValue = row.get("keywordsJson");
+                    Object answerValue = row.get("answerText");
+                    if (idValue == null || keywordValue == null || answerValue == null) continue;
+                    try {
+                        List<String> keywords = objectMapper.readValue(
+                                String.valueOf(keywordValue), new TypeReference<List<String>>() {});
+                        List<String> normalized = keywords.stream()
+                                .filter(StringUtils::hasText)
+                                .map(SupportAnswerService::normalize)
+                                .filter(StringUtils::hasText)
+                                .toList();
+                        String text = String.valueOf(answerValue);
+                        if (!normalized.isEmpty() && StringUtils.hasText(text)) {
+                            published.add(new Entry(String.valueOf(idValue), normalized, text));
+                        }
+                    } catch (JsonProcessingException ignored) {
+                        // Ignore one malformed candidate without affecting the versioned knowledge base.
                     }
-                } catch (JsonProcessingException ignored) {
-                    // A malformed single candidate is skipped; it cannot affect known-good entries.
                 }
+                publishedEntriesCache = List.copyOf(published);
+                publishedCacheLoadedAtMs = now;
+                return publishedEntriesCache;
+            } catch (DataAccessException ignored) {
+                if (publishedCacheLoadedAtMs == 0L) publishedCacheLoadedAtMs = now;
+                return publishedEntriesCache;
             }
-            return published;
-        } catch (DataAccessException ignored) {
-            // Keep the immutable, version-controlled base knowledge available if DB lookup degrades.
-            return List.of();
         }
+    }
+
+    /** Reject exact keyword collisions across distinct knowledge entries. */
+    public boolean hasKeywordConflict(List<String> candidateKeywords) {
+        if (candidateKeywords == null || candidateKeywords.isEmpty()) return true;
+        List<String> normalized = candidateKeywords.stream()
+                .filter(StringUtils::hasText)
+                .map(SupportAnswerService::normalize)
+                .filter(StringUtils::hasText)
+                .toList();
+        List<Entry> available = new ArrayList<>(entries);
+        available.addAll(publishedEntries());
+        return available.stream().anyMatch(entry ->
+                entry.keywords().stream().anyMatch(normalized::contains));
     }
 
     private static boolean isPromptInjection(String question) {

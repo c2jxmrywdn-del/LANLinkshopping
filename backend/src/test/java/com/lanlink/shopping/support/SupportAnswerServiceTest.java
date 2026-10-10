@@ -101,7 +101,14 @@ class SupportAnswerServiceTest {
 
         assertEquals("请进入商城的行业分类区域，再选择对应供应商分类。",
                 dynamic.answer("如何筛选供应商？"));
-        assertEquals(answers.fallback(), answers.answer("如何筛选供应商？"));
+        assertNotEquals("请进入商城的行业分类区域，再选择对应供应商分类。",
+                answers.answer("如何筛选供应商？"));
+    }
+
+    @Test
+    void exactKeywordConflictsAreRejectedForLearningCandidates() {
+        assertTrue(answers.hasKeywordConflict(List.of("注册")));
+        assertFalse(answers.hasKeywordConflict(List.of("一种从未收录的行业用语")));
     }
 
     @Test

@@ -3,7 +3,7 @@ import { hasCookieConsent } from '../utils/cookieConsent'
 
 // The public assistant stays knowledge-base-only. Dialogue storage is token-scoped and redacted server-side.
 export const supportApi = {
-  async ask(question, visitorToken) {
+  async ask(question, visitorToken, persistConversation = false) {
     const unavailable = '客服暂时无法响应，请稍后重试。'
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000)
@@ -11,7 +11,7 @@ export const supportApi = {
       const response = await fetch('/api/support/ask', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
-        body: JSON.stringify({ action: 'ask', question, visitorToken }),
+        body: JSON.stringify({ action: 'ask', question, visitorToken, persistConversation }),
         signal: controller.signal
       })
       if (!response.ok) return { answer: unavailable, unavailable: true, visitorToken }

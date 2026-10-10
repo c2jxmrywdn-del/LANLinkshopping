@@ -94,14 +94,16 @@ public class SupportController {
             String question = body.path("question").asText();
             String answer = answers.answer(question);
             long lastMessageId = 0L;
-            try {
-                CustomerCommunicationService.TurnResult turn =
-                        communications.recordCustomerTurn(visitorToken, question, answer);
-                visitorToken = turn.visitorToken();
-                lastMessageId = turn.lastMessageId();
-            } catch (DataAccessException | IllegalStateException ex) {
-                // Knowledge replies remain available if optional conversation logging is temporarily degraded.
-                System.err.println("[support] conversation persistence unavailable; question omitted from logs");
+            if (body.path("persistConversation").asBoolean(false)) {
+                try {
+                    CustomerCommunicationService.TurnResult turn =
+                            communications.recordCustomerTurn(visitorToken, question, answer);
+                    visitorToken = turn.visitorToken();
+                    lastMessageId = turn.lastMessageId();
+                } catch (DataAccessException | IllegalStateException ex) {
+                    // Knowledge replies remain available if optional conversation logging is temporarily degraded.
+                    System.err.println("[support] opted-in conversation persistence unavailable; question omitted from logs");
+                }
             }
             return ResponseEntity.ok(R.ok(Map.of(
                     "answer", answer, "visitorToken", visitorToken, "lastMessageId", lastMessageId)));

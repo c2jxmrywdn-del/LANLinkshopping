@@ -44,7 +44,13 @@
           <button type="submit" :disabled="loading || !draft.trim()">发送</button>
         </div>
       </form>
-      <footer class="support-scope-note">未收录的问题将返回统一引导提示；客服不会查询个人账号、订单或钱包数据。对话将进行常见信息脱敏，用于客服处理与质量改进；请勿发送密码、验证码或银行卡信息。</footer>
+      <footer class="support-scope-note">
+        <label class="support-consent">
+          <input v-model="persistConversation" type="checkbox" />
+          <span>允许保存脱敏对话，供客服跟进与改进知识库（可选）</span>
+        </label>
+        <p>不勾选时仍可使用知识库客服，但本次对话不会保存到客服工作台。请勿发送密码、验证码或银行卡信息。</p>
+      </footer>
     </section>
   </div>
 </template>
@@ -80,6 +86,7 @@ const draft = ref('')
 const loading = ref(false)
 const messageList = ref(null)
 const visitorToken = ref(createToken())
+const persistConversation = ref(false)
 const lastHistoryMessageId = ref(0)
 const messages = ref([{ role: 'assistant', text: WELCOME }])
 let pollTimer = null
@@ -134,7 +141,7 @@ async function send() {
   draft.value = ''
   loading.value = true
   try {
-    const result = await supportApi.ask(question, visitorToken.value)
+    const result = await supportApi.ask(question, visitorToken.value, persistConversation.value)
     if (result.visitorToken) visitorToken.value = result.visitorToken
     const answer = typeof result?.answer === 'string' && result.answer ? result.answer : FALLBACK
     messages.value.push({ role: 'assistant', text: answer, unavailable: result.unavailable === true })
@@ -174,6 +181,16 @@ async function send() {
 .support-compose-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; color: #98a2b3; font-size: 10px; }
 .support-compose-footer button { padding: 7px 14px; border: 0; border-radius: 8px; color: #fff; background: #13233A; font-size: 12px; font-weight: 650; cursor: pointer; }
 .support-compose-footer button:disabled { opacity: .45; cursor: not-allowed; }
+.support-consent { display:flex; align-items:flex-start; gap:7px; color:#344054; font-size:10px; line-height:1.5; cursor:pointer; }
+.support-consent input { margin-top:2px; accent-color:#13233a; }
+.support-scope-note p { margin:5px 0 0; }
+.support-launcher { position:relative; overflow:hidden; background:linear-gradient(135deg,#13233a 0%,#203958 62%,#34577a 100%); transition:transform .18s ease,box-shadow .18s ease; }
+.support-launcher::after { content:""; position:absolute; top:-80%; left:-40%; width:40%; height:260%; transform:rotate(28deg); background:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent); animation:support-sheen 6s ease-in-out infinite; pointer-events:none; }
+.support-launcher:hover { transform:translateY(-1px); box-shadow:0 14px 34px rgba(19,35,58,.3); }
+.support-message { transition:transform .16s ease,border-color .16s ease; }
+.support-message:hover { border-color:#d0d5dd; }
+@keyframes support-sheen { 0%,70%,100% { left:-45%; } 30% { left:130%; } }
+@media (prefers-reduced-motion:reduce) { .support-launcher,.support-message { transition:none; } .support-launcher::after { animation:none; display:none; } }
 .support-scope-note { padding: 0 12px 12px; color: #667085; background: #fff; font-size: 10px; line-height: 1.5; }
 .support-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 @media (max-width: 520px) { .support-root { right: 12px; bottom: 12px; } .support-panel { right: -4px; bottom: 58px; height: min(540px, calc(100vh - 90px)); } }

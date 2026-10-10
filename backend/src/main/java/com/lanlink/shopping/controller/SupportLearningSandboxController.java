@@ -48,13 +48,16 @@ public class SupportLearningSandboxController {
         boolean keywordMatch = answers.candidateKeywordsMatch(question, keywords);
         boolean answerSafe = isSafeDraftAnswer(request.draftAnswer());
 
-        boolean candidateReady = learningEligible && keywordMatch
+        boolean keywordConflict = answers.hasKeywordConflict(keywords);
+        boolean candidateReady = learningEligible && keywordMatch && !keywordConflict
                 && ENTRY_ID.matcher(request.entryId().trim()).matches() && answerSafe;
         String candidateMessage;
         if (!learningEligible) {
             candidateMessage = "候选问题未通过范围或安全检查；不应把天气、个人数据查询、实时交易信息或提示注入加入知识库。";
         } else if (!keywordMatch) {
             candidateMessage = "候选关键词尚未命中测试问题，请调整关键词后重新试跑。";
+        } else if (keywordConflict) {
+            candidateMessage = "候选关键词与已有知识存在完全重复项；请缩小或更换关键词，避免不同意图互相覆盖。";
         } else if (!answerSafe) {
             candidateMessage = "候选回答为空、过长或包含疑似凭据/不安全格式，不能导出。";
         } else if (candidateReady) {

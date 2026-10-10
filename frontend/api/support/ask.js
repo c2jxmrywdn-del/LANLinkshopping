@@ -86,7 +86,7 @@ export default async function handler(req, res) {
     };
   } else {
     if (typeof body.question !== "string" || body.question.length > 300 || !visitorToken) return send(res, 200, FALLBACK);
-    upstreamBody = { action: "ask", question: body.question, visitorToken };
+    upstreamBody = { action: "ask", question: body.question, visitorToken, persistConversation: body.persistConversation === true };
   }
 
   const secret = process.env.SUPPORT_PROXY_SECRET;

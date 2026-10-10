@@ -1,0 +1,132 @@
+package com.lanlink.shopping.service;
+
+import com.lanlink.shopping.common.BusinessException;
+import com.lanlink.shopping.dto.MarketingEmailCampaignDTO;
+import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Admin-triggered promotional email workflow routed through Agent Loadout.
+ * Each recipient must already have opted in; sending is per-recipient to keep
+ * addresses private. A functional unsubscribe endpoint is mandatory.
+ */
+@Service
+public class MarketingEmailService {
+    private static final int MAX_RECIPIENTS = 20;
+
+    private final AgentLoadoutMcpClient agentLoadoutMcpClient;
+
+    public MarketingEmailService(AgentLoadoutMcpClient agentLoadoutMcpClient) {
+        this.agentLoadoutMcpClient = agentLoadoutMcpClient;
+    }
+
+    public Map<String, Object> sendCampaign(MarketingEmailCampaignDTO campaign) {
+        if (campaign == null || !campaign.isConsentConfirmed()) {
+            throw new BusinessException("仅可向已明确订阅营销邮件的收件人发送");
+        }
+        if (!agentLoadoutMcpClient.isConfigured()) {
+            throw new BusinessException("Agent Loadout 邮件通道尚未配置");
+        }
+        if (campaign.getRecipients() == null || campaign.getRecipients().isEmpty()
+                || campaign.getRecipients().size() > MAX_RECIPIENTS) {
+            throw new BusinessException("单次营销邮件需包含 1–20 位已订阅收件人");
+        }
+        validateUnsubscribeUrl(campaign.getUnsubscribeUrl());
+
+        Set<String> distinctRecipients = new HashSet<>();
+        for (String recipient : campaign.getRecipients()) {
+            if (recipient == null || recipient.isBlank()
+                    || !distinctRecipients.add(recipient.trim().toLowerCase(Locale.ROOT))) {
+                throw new BusinessException("收件人不能为空，且同一批次不能重复出现");
+            }
+        }
+
+        String subject = normalizeSubject(campaign.getSubject());
+        String body = campaign.getText().trim()
+                + "\n\n---\n这是一封 LANLinkshopping 商业推广邮件。"
+                + "\n如不希望继续接收此类邮件，请通过以下链接退订：\n"
+                + campaign.getUnsubscribeUrl().trim();
+
+        int queued = 0;
+        int failed = 0;
+        List<Map<String, Object>> outcomes = new ArrayList<>();
+        int index = 0;
+        for (String recipient : campaign.getRecipients()) {
+            index++;
+            Map<String, Object> outcome = new LinkedHashMap<>();
+            outcome.put("recipientIndex", index);
+            try {
+                agentLoadoutMcpClient.sendMessage(
+                        recipient.trim(),
+                        subject,
+                        body,
+                        null,
+                        idempotencyKey(campaign.getIdempotencyKey(), recipient));
+                queued++;
+                outcome.put("status", "queued");
+            } catch (RuntimeException ex) {
+                // Never return recipient addresses, message content, or credentials in campaign results.
+                failed++;
+                outcome.put("status", "failed");
+                outcome.put("reason", "MAIL_PROVIDER_ERROR");
+            }
+            outcomes.add(outcome);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("requested", campaign.getRecipients().size());
+        result.put("queued", queued);
+        result.put("failed", failed);
+        result.put("results", outcomes);
+        result.put("message", failed == 0
+                ? "营销邮件已提交至 Agent Loadout 邮件队列"
+                : "部分邮件未能提交，请检查邮件服务配置后重试失败项");
+        return result;
+    }
+
+    private static String normalizeSubject(String subject) {
+        String value = subject == null ? "" : subject.replace('\r', ' ').replace('\n', ' ').trim();
+        if (value.isBlank()) throw new BusinessException("邮件主题不能为空");
+        if (value.startsWith("【广告】") || value.startsWith("【商业推广】")
+                || value.toLowerCase(Locale.ROOT).startsWith("[advertisement]")) {
+            return value;
+        }
+        return "【商业推广】" + value;
+    }
+
+    private static void validateUnsubscribeUrl(String value) {
+        try {
+            URI uri = URI.create(value == null ? "" : value.trim());
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null
+                    || uri.getUserInfo() != null || uri.getFragment() != null) {
+                throw new BusinessException("请提供可用的 HTTPS 退订地址");
+            }
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException("请提供可用的 HTTPS 退订地址");
+        }
+    }
+
+    private static String idempotencyKey(String campaignKey, String recipient) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String source = campaignKey.trim() + "|" + recipient.trim().toLowerCase(Locale.ROOT);
+            byte[] bytes = digest.digest(source.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(bytes.length * 2);
+            for (byte b : bytes) hex.append(String.format("%02x", b));
+            return hex.toString();
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 is required by the Java runtime", ex);
+        }
+    }
+}

@@ -27,3 +27,16 @@ spring:
     multipart:
       max-file-size: 5MB
       max-request-size: 6MB
+
+  sql:
+    init:
+      mode: never
+
+# Production defaults are fail-closed.
+lanlink:
+  payment:
+    mock: false
+  verify-code:
+    demo-mode: false
+  demo-data:
+    enabled: false

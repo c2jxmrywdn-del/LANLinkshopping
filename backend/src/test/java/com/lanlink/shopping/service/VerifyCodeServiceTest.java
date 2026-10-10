@@ -16,7 +16,7 @@ class VerifyCodeServiceTest {
     @BeforeEach
     void setUp() {
         // 测试场景走 phone 演示分支，mailSender 传 null 即可
-        service = new VerifyCodeService(null, "", "");
+        service = new VerifyCodeService(null, "", "", true);
     }
 
     @Test
@@ -56,6 +56,22 @@ class VerifyCodeServiceTest {
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> service.send(1L, "phone", "13900000001"));
         assertTrue(ex.getMessage().contains("频繁"));
+    }
+
+    @Test
+    void productionDoesNotEchoPhoneCodeWhenSmsIsNotConfigured() {
+        VerifyCodeService production = new VerifyCodeService(null, "", "", false);
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> production.send(7L, "phone", "13900000007"));
+        assertTrue(ex.getMessage().contains("短信验证码服务暂未配置"));
+    }
+
+    @Test
+    void productionDoesNotEchoEmailCodeWhenSmtpIsNotConfigured() {
+        VerifyCodeService production = new VerifyCodeService(null, "", "", false);
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> production.send(8L, "email", "buyer@example.com"));
+        assertTrue(ex.getMessage().contains("邮箱验证码服务暂未配置"));
     }
 
     @Test

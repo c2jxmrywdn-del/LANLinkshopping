@@ -15,7 +15,7 @@ server:
 
 spring:
   profiles:
-    active: dev
+    default: prod
   config:
     import: optional:classpath:application-payment.yml
   application:
@@ -28,7 +28,7 @@ spring:
       max-file-size: 5MB
       max-request-size: 6MB
 
-  # 邮箱验证码 SMTP 通道（环境变量驱动；未配置时自动回退 devCode 演示模式）
+  # 邮箱验证码使用 SMTP；验证码回显仅在开发 Profile 中显式开启
   # 例：QQ 邮箱 SMTP host=smtp.qq.com port=465，密码为「授权码」而非登录密码
   mail:
     host: ${MAIL_HOST:}
@@ -50,7 +50,7 @@ spring:
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   global-config:
     db-config:
       id-type: auto

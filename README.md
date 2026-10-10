@@ -36,7 +36,7 @@ LANLinkshopping/
 
 ### 1. 初始化数据库
 
-**前提**：本机 MySQL 8 已启动，账号 <你的用户名>，密码就是 <application-dev.yml> 里 <spring.datasource.password> 的值（下文命令统一用占位符 `<你的MySQL密码>`， ；不想把密码写进命令行就把 `-p"<你的MySQL密码>"` 换成 `-p` 回车后交互输入）。
+**前提**：本机 MySQL 8 已启动。开发环境通过 `SPRING_DATASOURCE_URL`、`SPRING_DATASOURCE_USERNAME` 和 `SPRING_DATASOURCE_PASSWORD` 环境变量配置连接；数据库密码不再保存在仓库文件中。运行一键脚本前需设置 `SPRING_DATASOURCE_PASSWORD`。
 
 脚本按下面 4 步引导式执行，**全文没有 `DROP DATABASE` / `DROP TABLE` / `TRUNCATE` / `DELETE`，可以重复执行且不丢数据**：
 
@@ -47,7 +47,7 @@ LANLinkshopping/
 | 3 | 插基础字典：角色 3 条、行业 4 条、分类 11 条（显式主键 + `INSERT IGNORE`） | `schema.sql` 第 3 段 |
 | 4 | 示例用户 / 企业 / 商户 / 商品（密码 BCrypt） | 后端 `DataInitializer`，仅当 `t_user` 为空时写入 |
 
-#### 方式 A：自动执行（推荐，dev 默认）
+#### 方式 A：自动执行（仅开发 Profile）
 
 `application-dev.yml` 已配置好，**不需要手动建表**，直接启动后端即可：
 
@@ -120,11 +120,11 @@ SELECT title FROM t_product LIMIT 3;                                            
 ### 2. 启动后端（端口 8080，接口前缀 /api）
 ```bash
 cd backend
-mvn spring-boot:run
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 # 或运行已打好的 jar：
-java -jar target/lanlink-shopping.jar
+java -jar target/lanlink-shopping.jar --spring.profiles.active=dev
 ```
-建表/字典数据由启动时的 `spring.sql.init` 自动完成，`DataInitializer` 再写入示例数据（若用户表为空）。
+开发 Profile 下 `spring.sql.init` 自动执行脚本，`DataInitializer` 根据开关写入演示数据；生产 Profile 默认禁用 SQL 自动初始化和演示数据注入。
 
 ### 3. 启动前端（端口 5173，已配 /api 代理到 8080）
 ```bash
@@ -134,7 +134,7 @@ npm run dev
 ```
 浏览器打开 http://localhost:5173
 
-## 三、演示账号（密码均为 123456）
+## 三、演示账号（仅开发 Profile 提供，密码均为 123456）
 
 | 手机号 | 身份 | 说明 |
 |--------|------|------|
@@ -173,3 +173,8 @@ npm run dev
 
 供应链金融（账期/尾款）、礼品定制、消息中心、评价信用、运营数据看板等增值模块，
 可基于上述"链式"复用点增量开发，无需改动核心交易链路。
+
+
+## 生产部署配置
+
+默认 Profile 为 `prod`。部署到 Railway 等环境时，应配置 `SPRING_DATASOURCE_URL`、`SPRING_DATASOURCE_USERNAME`、`SPRING_DATASOURCE_PASSWORD`，并按需配置 `MAIL_HOST`、`MAIL_PORT`、`MAIL_USERNAME`、`MAIL_PASSWORD`。生产 Profile 显式关闭 SQL 自动初始化、模拟支付、验证码回显和演示数据注入。不要把数据库口令、邮件授权码或支付私钥提交到 GitHub。本地开发时请显式指定 `--spring.profiles.active=dev`。

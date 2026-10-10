@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/lanlink_shopping?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    url: "${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/lanlink_shopping?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true}"
     username: ${SPRING_DATASOURCE_USERNAME:root}
     password: ${SPRING_DATASOURCE_PASSWORD:}
   # 启动时自动执行建表脚本(脚本幂等, 表已存在/字典已插入时会跳过, 不会覆盖业务数据)
@@ -17,3 +17,5 @@ lanlink:
     mock: ${LANLINK_PAYMENT_MOCK:true}
   verify-code:
     demo-mode: true
+  demo-data:
+    enabled: true

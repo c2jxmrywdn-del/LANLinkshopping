@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -29,6 +30,9 @@ import java.util.List;
 public class DataInitializer implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+
+    @Value("${lanlink.demo-data.enabled:false}")
+    private boolean demoDataEnabled;
 
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
@@ -60,6 +64,10 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        if (!demoDataEnabled) {
+            log.info("演示数据初始化已关闭，跳过示例用户、营销及授权数据");
+            return;
+        }
         // 营销中台演示数据：与主初始化解耦，已存在的库也补种子（幂等）
         seedMarketingDemo();
         // 第三方授权演示数据：与主初始化解耦，已存在的库也会补种子（按 用户+应用 幂等判断）

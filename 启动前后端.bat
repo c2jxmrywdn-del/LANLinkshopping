@@ -5,8 +5,16 @@ set "ROOT=%~dp0"
 set "BACKEND=%ROOT%backend"
 set "FRONTEND=%ROOT%frontend"
 set "SQLFILE=%BACKEND%\src\main\resources\sql\schema.sql"
-set "DBPASS=Root666."
+set "DBPASS=%SPRING_DATASOURCE_PASSWORD%"
 set "MYSQL="
+set "SPRING_PROFILES_ACTIVE=dev"
+if not defined DBPASS (
+  echo [!] Set SPRING_DATASOURCE_PASSWORD in your environment before running this launcher.
+  pause
+  exit /b 1
+)
+set "SPRING_DATASOURCE_PASSWORD=%DBPASS%"
+set "MYSQL_PWD=%DBPASS%"
 
 echo ==========================================
 echo   LANLinkshopping - one click launcher
@@ -25,11 +33,11 @@ if not defined MYSQL goto :no_mysql
 echo [i] Found mysql: %MYSQL%
 
 echo [0] Checking database ...
-"%MYSQL%" -uroot --password="%DBPASS%" -e "CREATE DATABASE IF NOT EXISTS lanlink_shopping;" 1>nul 2>nul
-"%MYSQL%" -uroot --password="%DBPASS%" lanlink_shopping -e "SELECT 1 FROM t_user LIMIT 1;" 1>nul 2>nul
+"%MYSQL%" -uroot -e "CREATE DATABASE IF NOT EXISTS lanlink_shopping;" 1>nul 2>nul
+"%MYSQL%" -uroot lanlink_shopping -e "SELECT 1 FROM t_user LIMIT 1;" 1>nul 2>nul
 if errorlevel 1 (
     echo     First run - creating tables and dictionary data ...
-    "%MYSQL%" -uroot --password="%DBPASS%" < "%SQLFILE%"
+    "%MYSQL%" -uroot < "%SQLFILE%"
     echo     Database initialized.
 ) else (
     echo     Database ready, skipping schema.
@@ -42,8 +50,10 @@ echo     Start MySQL and run schema.sql manually if this is the first time.
 echo.
 
 :start_apps
+set "MYSQL_PWD="
+set "DBPASS="
 echo [1/2] Starting backend  -^> http://localhost:8080/api
-start "LANLink-Backend" /D "%BACKEND%" cmd /k "java -jar target\lanlink-shopping.jar"
+start "LANLink-Backend" /D "%BACKEND%" cmd /k "java -jar target\lanlink-shopping.jar --spring.profiles.active=dev"
 
 timeout /t 8 /nobreak 1>nul
 

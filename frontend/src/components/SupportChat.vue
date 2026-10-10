@@ -44,26 +44,47 @@
           <button type="submit" :disabled="loading || !draft.trim()">发送</button>
         </div>
       </form>
-      <footer class="support-scope-note">未收录的问题将返回统一引导提示；客服不会查询个人账号、订单或钱包数据。</footer>
+      <footer class="support-scope-note">未收录的问题将返回统一引导提示；客服不会查询个人账号、订单或钱包数据。对话将进行常见信息脱敏，用于客服处理与质量改进；请勿发送密码、验证码或银行卡信息。</footer>
     </section>
   </div>
 </template>
 
 <script setup>
-import { nextTick, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { supportApi } from '../api'
 
 const FALLBACK = '抱歉，当前客服仅能解答 LANLinkshopping 专属知识库已收录的电商相关问题。可咨询账号注册与登录、商品浏览、购物车与订单、商户入驻、钱包与账期、会员与活动、站内消息及 Cookie 设置；其他问题暂不在可答范围内。'
 const WELCOME = '您好，我是 LANLinkshopping 专属客服。请咨询平台账号注册与登录、商品浏览、购物车与订单、商户入驻、钱包与账期、会员与活动、站内消息或 Cookie 设置等已收录问题。'
+const TOKEN_KEY = 'll_support_visitor_token'
+
+function createToken() {
+  try {
+    const existing = sessionStorage.getItem(TOKEN_KEY)
+    if (existing && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(existing)) return existing
+    const token = window.crypto?.randomUUID?.() || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    })
+    sessionStorage.setItem(TOKEN_KEY, token)
+    return token
+  } catch {
+    return window.crypto?.randomUUID?.() || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    })
+  }
+}
 
 const visible = ref(false)
 const draft = ref('')
 const loading = ref(false)
 const messageList = ref(null)
+const visitorToken = ref(createToken())
+const lastHistoryMessageId = ref(0)
 const messages = ref([{ role: 'assistant', text: WELCOME }])
+let pollTimer = null
 
 function toggle() { visible.value = !visible.value }
-
 function askSuggested(question) {
   if (loading.value) return
   draft.value = question
@@ -75,6 +96,33 @@ watch(messages, async () => {
   if (messageList.value) messageList.value.scrollTop = messageList.value.scrollHeight
 }, { deep: true })
 
+watch(visible, isVisible => {
+  stopPolling()
+  if (isVisible) {
+    void syncHistory()
+    pollTimer = window.setInterval(() => { void syncHistory() }, 12000)
+  }
+})
+onBeforeUnmount(stopPolling)
+function stopPolling() {
+  if (pollTimer) window.clearInterval(pollTimer)
+  pollTimer = null
+}
+async function syncHistory() {
+  if (!visible.value || loading.value) return
+  const result = await supportApi.history(visitorToken.value, lastHistoryMessageId.value)
+  if (result.visitorToken) visitorToken.value = result.visitorToken
+  let maxId = lastHistoryMessageId.value
+  for (const item of result.messages || []) {
+    const id = Number(item.id || 0)
+    if (!id || id <= lastHistoryMessageId.value) continue
+    const senderType = String(item.senderType || '')
+    const role = senderType === 'customer' ? 'user' : 'assistant'
+    messages.value.push({ role, text: String(item.content || ''), messageId: id, senderName: item.senderName || '' })
+    maxId = Math.max(maxId, id)
+  }
+  lastHistoryMessageId.value = Math.max(maxId, Number(result.lastMessageId || 0))
+}
 async function send() {
   const question = draft.value.trim()
   if (!question || loading.value) return
@@ -82,18 +130,20 @@ async function send() {
     messages.value.push({ role: 'assistant', text: FALLBACK })
     return
   }
-
   messages.value.push({ role: 'user', text: question })
   draft.value = ''
   loading.value = true
   try {
-    const result = await supportApi.ask(question)
+    const result = await supportApi.ask(question, visitorToken.value)
+    if (result.visitorToken) visitorToken.value = result.visitorToken
     const answer = typeof result?.answer === 'string' && result.answer ? result.answer : FALLBACK
-    messages.value.push({ role: 'assistant', text: answer })
+    messages.value.push({ role: 'assistant', text: answer, unavailable: result.unavailable === true })
+    lastHistoryMessageId.value = Math.max(lastHistoryMessageId.value, Number(result.lastMessageId || 0))
   } catch {
     messages.value.push({ role: 'assistant', text: FALLBACK })
   } finally {
     loading.value = false
+    void syncHistory()
   }
 }
 </script>

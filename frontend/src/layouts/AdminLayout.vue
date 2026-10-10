@@ -10,7 +10,13 @@
         <a-menu-item key="admin-products">商品管理</a-menu-item>
         <a-menu-item key="admin-payments">交易管理</a-menu-item><a-menu-item key="admin-credit-terms">账期审核</a-menu-item>
         <a-menu-item key="admin-audit">审计日志</a-menu-item>
-        <a-menu-item key="admin-support-learning">客服学习沙盒</a-menu-item>
+        <a-sub-menu key="admin-customer-communication">
+          <template #title>客户沟通中心</template>
+          <a-menu-item key="admin-communications">沟通概览</a-menu-item>
+          <a-menu-item key="admin-communications-inbox">会话工作台</a-menu-item>
+          <a-menu-item key="admin-communications-learning">对话学习审核</a-menu-item>
+          <a-menu-item key="admin-support-learning">学习沙盒</a-menu-item>
+        </a-sub-menu>
       </a-menu>
     </a-layout-sider>
     <a-layout>

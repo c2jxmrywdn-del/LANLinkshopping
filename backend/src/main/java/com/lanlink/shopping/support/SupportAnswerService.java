@@ -2,7 +2,12 @@ package com.lanlink.shopping.support;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -14,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /** Every answer returned here is an exact string loaded from the local knowledge base. */
@@ -54,15 +60,31 @@ public class SupportAnswerService {
 
     private final ObjectMapper objectMapper;
     private final Resource knowledgeBaseResource;
+    private final JdbcTemplate jdbcTemplate;
     private volatile String fallback;
     private volatile String welcome;
     private volatile List<Entry> entries = List.of();
 
+    @Autowired
     public SupportAnswerService(
             ObjectMapper objectMapper,
-            @Value("classpath:knowledge-base/customer-service-zh-CN.json") Resource knowledgeBaseResource) {
+            @Value("classpath:knowledge-base/customer-service-zh-CN.json") Resource knowledgeBaseResource,
+            JdbcTemplate jdbcTemplate) {
         this.objectMapper = objectMapper;
         this.knowledgeBaseResource = knowledgeBaseResource;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    /** Kept for the isolated unit tests that exercise the static knowledge base without a database. */
+    public SupportAnswerService(ObjectMapper objectMapper, Resource knowledgeBaseResource) {
+        this.objectMapper = objectMapper;
+        this.knowledgeBaseResource = knowledgeBaseResource;
+        this.jdbcTemplate = null;
+    }
+
+    public boolean hasStaticEntryId(String entryId) {
+        if (!StringUtils.hasText(entryId)) return false;
+        return entries.stream().anyMatch(entry -> entry.id().equals(entryId.trim()));
     }
 
     @PostConstruct
@@ -154,7 +176,9 @@ public class SupportAnswerService {
     }
 
     private Entry findEntry(String question) {
-        return entries.stream()
+        List<Entry> available = new ArrayList<>(entries);
+        available.addAll(publishedEntries());
+        return available.stream()
                 .map(entry -> new Match(entry, entry.keywords().stream()
                         .filter(question::contains)
                         .max(Comparator.comparingInt(String::length)).orElse(null)))
@@ -162,6 +186,42 @@ public class SupportAnswerService {
                 .max(Comparator.comparingInt(match -> match.keyword().length()))
                 .map(Match::entry)
                 .orElse(null);
+    }
+
+    /** Only admin-published, human-reviewed candidates join the live knowledge matcher. */
+    private List<Entry> publishedEntries() {
+        if (jdbcTemplate == null) return List.of();
+        try {
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                    "SELECT entry_id AS entryId, keywords_json AS keywordsJson, answer_text AS answerText " +
+                    "FROM t_support_learning_candidate WHERE status = 'published' ORDER BY published_at DESC, id DESC LIMIT 500");
+            List<Entry> published = new ArrayList<>();
+            for (Map<String, Object> row : rows) {
+                Object idValue = row.get("entryId");
+                Object keywordValue = row.get("keywordsJson");
+                Object answerValue = row.get("answerText");
+                if (idValue == null || keywordValue == null || answerValue == null) continue;
+                try {
+                    List<String> keywords = objectMapper.readValue(
+                            String.valueOf(keywordValue), new TypeReference<List<String>>() {});
+                    List<String> normalized = keywords.stream()
+                            .filter(StringUtils::hasText)
+                            .map(SupportAnswerService::normalize)
+                            .filter(StringUtils::hasText)
+                            .toList();
+                    String answer = String.valueOf(answerValue);
+                    if (!normalized.isEmpty() && StringUtils.hasText(answer)) {
+                        published.add(new Entry(String.valueOf(idValue), normalized, answer));
+                    }
+                } catch (JsonProcessingException ignored) {
+                    // A malformed single candidate is skipped; it cannot affect known-good entries.
+                }
+            }
+            return published;
+        } catch (DataAccessException ignored) {
+            // Keep the immutable, version-controlled base knowledge available if DB lookup degrades.
+            return List.of();
+        }
     }
 
     private static boolean isPromptInjection(String question) {

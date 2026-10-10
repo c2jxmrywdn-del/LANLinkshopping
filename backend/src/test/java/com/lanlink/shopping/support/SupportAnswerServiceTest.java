@@ -5,6 +5,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.jdbc.core.JdbcTemplate;
+import java.util.List;
+import java.util.Map;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -79,6 +85,23 @@ class SupportAnswerServiceTest {
         assertFalse(answers.isEligibleForKnowledgeLearning("商品的实时价格是多少？"));
         assertEquals("", answers.matchedEntryId("我的收货地址是什么？"));
         assertEquals(answers.fallback(), answers.answer("我的收货地址是什么？"));
+    }
+
+    @Test
+    void publishedCandidateCanExtendLiveKnowledgeWithoutChangingStaticBase() throws Exception {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        when(jdbc.queryForList(contains("status = 'published'"))).thenReturn(List.of(Map.of(
+                "entryId", "supplier-filtering",
+                "keywordsJson", "[\"如何筛选供应商\"]",
+                "answerText", "请进入商城的行业分类区域，再选择对应供应商分类。"
+        )));
+        SupportAnswerService dynamic = new SupportAnswerService(new ObjectMapper(),
+                new ClassPathResource("knowledge-base/customer-service-zh-CN.json"), jdbc);
+        dynamic.loadKnowledgeBase();
+
+        assertEquals("请进入商城的行业分类区域，再选择对应供应商分类。",
+                dynamic.answer("如何筛选供应商？"));
+        assertEquals(answers.fallback(), answers.answer("如何筛选供应商？"));
     }
 
     @Test

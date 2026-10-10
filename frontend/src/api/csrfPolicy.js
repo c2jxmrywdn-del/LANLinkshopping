@@ -1,7 +1,8 @@
 // Keep this policy aligned with backend WebConfig.CsrfInterceptor mappings.
 const CSRF_PROTECTED_PATHS = [
   /^\/user(?:\/|$)/,
-  /^\/admin\/marketing-email(?:\/|$)/
+  /^\/admin\/marketing-email(?:\/|$)/,
+  /^\/admin\/customer-communications(?:\/|$)/
 ]
 
 export function isCsrfProtectedMutation(config = {}) {

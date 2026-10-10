@@ -6,6 +6,7 @@ const FALLBACK = "抱歉，当前客服仅能解答 LANLinkshopping 专属知识
 const LIMIT = 20, UNKNOWN_IP_LIMIT = 300, WINDOW_MS = 60_000, MAX_TRACKED = 10_000;
 const rateWindows = globalThis.__lanlinkSupportRateWindows || new Map();
 globalThis.__lanlinkSupportRateWindows = rateWindows;
+const UUID_TOKEN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function header(req, name) {
   const value = req.headers[name.toLowerCase()];
@@ -20,7 +21,6 @@ function trustedBrowserRequest(req) {
   if (referer) {
     try { if (new URL(referer).origin !== ORIGIN) return false; } catch { return false; }
   }
-  // If Origin is omitted, require same-origin Fetch Metadata and a same-origin Referer.
   if (!origin && (!referer || !fetchSite || fetchSite.toLowerCase() !== "same-origin")) return false;
   return true;
 }
@@ -46,12 +46,12 @@ function allowRate(ip) {
   if (existing.count >= (ip === "unknown" ? UNKNOWN_IP_LIMIT : LIMIT)) return false;
   existing.count += 1; return true;
 }
-function send(res, status, answer) {
+function send(res, status, answer, metadata = {}) {
   res.setHeader("Cache-Control", "no-store, max-age=0");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Vary", "Origin");
-  return res.status(status).json({ code: status === 200 ? 200 : status, message: answer, data: { answer } });
+  return res.status(status).json({ code: status === 200 ? 200 : status, message: answer, data: { answer, ...metadata } });
 }
 
 export default async function handler(req, res) {
@@ -71,8 +71,23 @@ export default async function handler(req, res) {
 
   let body = req.body;
   if (typeof body === "string") { try { body = JSON.parse(body); } catch { return send(res, 200, FALLBACK); } }
-  if (!body || typeof body !== "object" || Array.isArray(body)
-      || typeof body.question !== "string" || body.question.length > 300) return send(res, 200, FALLBACK);
+  if (!body || typeof body !== "object" || Array.isArray(body)) return send(res, 200, FALLBACK);
+
+  const action = body.action === "history" ? "history" : "ask";
+  const visitorToken = typeof body.visitorToken === "string" && UUID_TOKEN.test(body.visitorToken)
+    ? body.visitorToken : "";
+  let upstreamBody;
+  if (action === "history") {
+    if (!visitorToken) return send(res, 200, "", { messages: [], visitorToken: "", lastMessageId: 0 });
+    const afterMessageId = Number(body.afterMessageId || 0);
+    upstreamBody = {
+      action: "history", visitorToken,
+      afterMessageId: Number.isSafeInteger(afterMessageId) && afterMessageId > 0 ? afterMessageId : 0
+    };
+  } else {
+    if (typeof body.question !== "string" || body.question.length > 300 || !visitorToken) return send(res, 200, FALLBACK);
+    upstreamBody = { action: "ask", question: body.question, visitorToken };
+  }
 
   const secret = process.env.SUPPORT_PROXY_SECRET;
   if (typeof secret !== "string" || secret.length < 40) {
@@ -87,16 +102,37 @@ export default async function handler(req, res) {
     const upstream = await fetch(BACKEND, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Support-Proxy-Secret": secret, "X-Support-Client-IP": ip },
-      body: JSON.stringify({ question: body.question }),
+      body: JSON.stringify(upstreamBody),
       cache: "no-store", redirect: "error", signal: controller.signal
     });
     const payload = await upstream.json().catch(() => null);
     const answer = typeof payload?.data?.answer === "string" ? payload.data.answer
       : typeof payload?.message === "string" ? payload.message : FALLBACK;
-    console.info("[support-proxy] upstream-response", { status: upstream.status, hasPayload: Boolean(payload), hasDataAnswer: typeof payload?.data?.answer === "string", hasMessage: typeof payload?.message === "string", bodyCode: payload?.code ?? null });
-    if ([403,429,413].includes(upstream.status)) return send(res, upstream.status, FALLBACK);
+    console.info("[support-proxy] upstream-response", {
+      action, status: upstream.status, hasPayload: Boolean(payload),
+      hasDataAnswer: typeof payload?.data?.answer === "string",
+      messageCount: Array.isArray(payload?.data?.messages) ? payload.data.messages.length : 0,
+      bodyCode: payload?.code ?? null
+    });
+    if ([403, 429, 413].includes(upstream.status)) return send(res, upstream.status, FALLBACK);
     if (!upstream.ok || !payload) return send(res, 503, FALLBACK);
-    return send(res, 200, answer);
+
+    if (action === "history") {
+      const messages = Array.isArray(payload?.data?.messages) ? payload.data.messages.slice(0, 100)
+        .filter(m => m && Number.isSafeInteger(Number(m.id)) && ["customer", "bot", "agent"].includes(m.senderType))
+        .map(m => ({
+          id: Number(m.id), senderType: m.senderType,
+          senderName: typeof m.senderName === "string" ? m.senderName.slice(0, 80) : "",
+          content: typeof m.content === "string" ? m.content.slice(0, 1000) : "",
+          createdAt: typeof m.createdAt === "string" ? m.createdAt.slice(0, 32) : ""
+        })) : [];
+      const maxId = messages.reduce((max, item) => Math.max(max, item.id), upstreamBody.afterMessageId);
+      return send(res, 200, "", { visitorToken, messages, lastMessageId: maxId });
+    }
+    return send(res, 200, answer, {
+      visitorToken: typeof payload?.data?.visitorToken === "string" ? payload.data.visitorToken : visitorToken,
+      lastMessageId: Number(payload?.data?.lastMessageId || 0)
+    });
   } catch (error) {
     console.error("[support-proxy] upstream-request-failed", { name: error?.name || "UnknownError" });
     return send(res, 503, FALLBACK);

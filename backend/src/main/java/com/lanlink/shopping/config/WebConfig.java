@@ -34,7 +34,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns("/**");
         // CSRF：保护账号写操作与营销邮件发送（AuthInterceptor 之后执行，先保证已登录）
         registry.addInterceptor(new CsrfInterceptor())
-                .addPathPatterns("/user/**", "/admin/marketing-email/**");
+                .addPathPatterns("/user/**", "/admin/marketing-email/**", "/admin/customer-communications/**");
     }
 
     @Override

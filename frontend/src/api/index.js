@@ -1,10 +1,9 @@
 import request, { fetchCsrfToken } from './request'
 import { hasCookieConsent } from '../utils/cookieConsent'
 
-// Static knowledge-base support; no LLM, arbitrary tools or code-execution endpoint.
+// The public assistant stays knowledge-base-only. Dialogue storage is token-scoped and redacted server-side.
 export const supportApi = {
-  async ask(question) {
-    const fallback = '抱歉，当前客服仅能解答 LANLinkshopping 专属知识库已收录的电商相关问题。可咨询账号注册与登录、商品浏览、购物车与订单、商户入驻、钱包与账期、会员与活动、站内消息及 Cookie 设置；其他问题暂不在可答范围内。'
+  async ask(question, visitorToken) {
     const unavailable = '客服暂时无法响应，请稍后重试。'
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000)
@@ -12,16 +11,44 @@ export const supportApi = {
       const response = await fetch('/api/support/ask', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ action: 'ask', question, visitorToken }),
         signal: controller.signal
       })
-      if (!response.ok) return { answer: unavailable, unavailable: true }
+      if (!response.ok) return { answer: unavailable, unavailable: true, visitorToken }
       const body = await response.json().catch(() => null)
       const answer = body?.data?.answer || body?.message
-      if (typeof answer !== 'string' || !answer) return { answer: unavailable, unavailable: true }
-      return { answer, unavailable: false }
+      if (typeof answer !== 'string' || !answer) return { answer: unavailable, unavailable: true, visitorToken }
+      return {
+        answer,
+        unavailable: false,
+        visitorToken: body?.data?.visitorToken || visitorToken,
+        lastMessageId: Number(body?.data?.lastMessageId || 0)
+      }
     } catch {
-      return { answer: unavailable, unavailable: true }
+      return { answer: unavailable, unavailable: true, visitorToken }
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  },
+  async history(visitorToken, afterMessageId = 0) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+    try {
+      const response = await fetch('/api/support/ask', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
+        body: JSON.stringify({ action: 'history', visitorToken, afterMessageId }),
+        signal: controller.signal
+      })
+      if (!response.ok) return { messages: [], visitorToken, lastMessageId: afterMessageId }
+      const body = await response.json().catch(() => null)
+      return {
+        messages: Array.isArray(body?.data?.messages) ? body.data.messages : [],
+        visitorToken: body?.data?.visitorToken || visitorToken,
+        lastMessageId: Number(body?.data?.lastMessageId || afterMessageId)
+      }
+    } catch {
+      return { messages: [], visitorToken, lastMessageId: afterMessageId }
     } finally {
       clearTimeout(timeoutId)
     }
@@ -218,7 +245,19 @@ export const trafficApi = {
 export const adminApi = {
   auditPage: (params) => request.get('/admin/audit/page', { params }),
   auditExport: (params) => request.get('/admin/audit/export', { params, responseType: 'blob' }),
-  supportLearningPreview: (payload) => request.post('/admin/support-learning/preview', payload)
+  supportLearningPreview: (payload) => request.post('/admin/support-learning/preview', payload),
+  communicationOverview: () => request.get('/admin/customer-communications/overview'),
+  communicationConversations: (params) => request.get('/admin/customer-communications/conversations', { params }),
+  communicationConversation: (id) => request.get('/admin/customer-communications/conversations/' + encodeURIComponent(id)),
+  communicationReply: (id, payload) => request.post('/admin/customer-communications/conversations/' + encodeURIComponent(id) + '/messages', payload),
+  communicationSetStatus: (id, status) => request.put('/admin/customer-communications/conversations/' + encodeURIComponent(id) + '/status', { status }),
+  communicationSetPriority: (id, priority) => request.put('/admin/customer-communications/conversations/' + encodeURIComponent(id) + '/priority', { priority }),
+  communicationAssign: (id) => request.post('/admin/customer-communications/conversations/' + encodeURIComponent(id) + '/assign'),
+  communicationUnassign: (id) => request.delete('/admin/customer-communications/conversations/' + encodeURIComponent(id) + '/assign'),
+  communicationCreateLearningCandidate: (id, payload) => request.post('/admin/customer-communications/conversations/' + encodeURIComponent(id) + '/learn', payload),
+  communicationLearningCandidates: (params) => request.get('/admin/customer-communications/learning-candidates', { params }),
+  communicationLearningCandidate: (id) => request.get('/admin/customer-communications/learning-candidates/' + encodeURIComponent(id)),
+  communicationReviewLearningCandidate: (id, payload) => request.post('/admin/customer-communications/learning-candidates/' + encodeURIComponent(id) + '/review', payload)
 }
 
 // ===== 营销中台：活动系统 / 促销系统 / 会员系统 =====

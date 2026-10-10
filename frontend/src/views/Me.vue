@@ -12,7 +12,14 @@
         <aside class="col-left">
           <a-card :bordered="false" class="card">
             <div class="user-row">
-              <a-avatar :size="56" :src="profile.profile?.avatar" class="avatar">{{ (user.user?.nickname || 'U')[0] }}</a-avatar>
+              <UserAvatar
+                :size="56"
+                :src="profile.profile?.avatar || user.user?.avatar || ''"
+                :name="user.user?.nickname || 'U'"
+                :gender="profile.profile?.gender || user.user?.gender"
+                :role="user.isAdmin ? 'admin' : user.isMerchant ? 'merchant' : 'user'"
+                class="avatar"
+              />
               <div>
                 <div class="uname">
                   {{ user.user?.nickname }}
@@ -94,6 +101,7 @@ import { ref, computed, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router'
 import ProfilePanel from '../components/account/ProfilePanel.vue'
+import UserAvatar from '../components/ui/UserAvatar.vue'
 import MessagePanel from '../components/account/MessagePanel.vue'
 import AddressPanel from '../components/account/AddressPanel.vue'
 import LoginLogPanel from '../components/account/LoginLogPanel.vue'
@@ -189,7 +197,7 @@ onMounted(reload)
 
 <style scoped>
 .me-wrap { max-width: 1200px; margin: 0 auto; }
-.avatar { background: var(--ll-ring-gradient); font-size: 22px; flex-shrink: 0; }
+.avatar { flex-shrink: 0; }
 .user-row { display: flex; align-items: center; gap: 12px; }
 .uname { font-size: 17px; font-weight: 700; color: var(--ll-ink); }
 .urole { font-size: 13px; color: var(--ll-muted); margin-top: 2px; }

@@ -51,10 +51,19 @@
           <template v-if="user.logged">
             <a-dropdown>
               <a class="ll-ripple-host ll-tap user-trigger" style="color:#fff" @pointerdown="onTap">
+                <UserAvatar
+                  :src="user.user.avatar || ''"
+                  :name="user.user.nickname"
+                  :gender="user.user.gender"
+                  :role="user.isAdmin ? 'admin' : user.isMerchant ? 'merchant' : 'user'"
+                  :size="28"
+                  :ring="false"
+                  class="header-avatar"
+                />
                 <span v-if="user.isVip" class="id-badge id-vip" title="VIP 用户">VIP</span>
                 <span v-else-if="user.isAdmin" class="id-badge id-admin" title="平台管理员">ADMIN</span>
                 <span v-else-if="user.isMerchant" class="id-badge id-merchant" title="入驻商户">商户</span>
-                {{ user.user.nickname }} ▾
+                <span class="header-user-name">{{ user.user.nickname }} ▾</span>
               </a>
               <template #overlay>
                 <a-menu>
@@ -110,6 +119,7 @@ import { useSettingsStore } from '../store/settings'
 import { tapFeedback } from '../utils/feedback'
 import IndustryCategoryMenu from '../components/IndustryCategoryMenu.vue'
 import AuthorCard from '../components/AuthorCard.vue'
+import UserAvatar from '../components/ui/UserAvatar.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -269,6 +279,9 @@ function secretTap() {
   transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1), width 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
 }
 .right { display: flex; align-items: center; gap: 16px; }
+.user-trigger { display: inline-flex; align-items: center; gap: 7px; }
+.header-avatar { vertical-align: middle; }
+.header-user-name { white-space: nowrap; }
 /* 身份徽章 */
 .id-badge { display: inline-block; font-size: 11px; font-weight: 700; line-height: 1;
             padding: 3px 6px; border-radius: 4px; margin-right: 6px; vertical-align: 1px; }

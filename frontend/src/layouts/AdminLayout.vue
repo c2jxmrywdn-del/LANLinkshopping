@@ -16,6 +16,14 @@
       <a-layout-header class="admin-header">
         <span class="title"><span class="ll-wordmark ll-wordmark-on-light"><span class="ll-lan">LAN</span><span class="ll-link">Link</span><span class="ll-shopping">shopping</span></span> 管理后台</span>
         <a-space>
+          <UserAvatar
+            :src="user.user?.avatar || ''"
+            :name="user.user?.nickname || '管理员'"
+            :gender="user.user?.gender"
+            role="admin"
+            :size="28"
+            :ring="false"
+          />
           <span class="who">{{ user.user && user.user.nickname }}（平台运营）</span>
           <a-button size="small" @click="backFront">返回前台</a-button>
           <a-button size="small" danger @click="logout">退出</a-button>
@@ -32,6 +40,7 @@
 import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../store/user'
+import UserAvatar from '../components/ui/UserAvatar.vue'
 
 const router = useRouter()
 const route = useRoute()

@@ -2,9 +2,14 @@
   <div class="panel">
     <!-- 头像区 -->
     <div class="avatar-row">
-      <a-avatar :size="72" :src="profile && profile.avatar" class="avatar">
-        {{ (profile && profile.nickname || 'U').slice(0, 1) }}
-      </a-avatar>
+      <UserAvatar
+        :size="72"
+        :src="profile && profile.avatar"
+        :name="profile && profile.nickname"
+        :gender="profile && profile.gender"
+        :role="user.isAdmin ? 'admin' : user.isMerchant ? 'merchant' : 'user'"
+        class="avatar"
+      />
       <a-button class="touch" @click="avatarOpen = true">{{ t('acct.profile.changeAvatar') }}</a-button>
     </div>
 
@@ -80,12 +85,15 @@ import { message, Modal } from 'ant-design-vue'
 import dayjs from 'dayjs'
 import AvatarEditor from './AvatarEditor.vue'
 import ContactBindModal from './ContactBindModal.vue'
+import UserAvatar from '../ui/UserAvatar.vue'
 import { useProfileStore } from '../../store/profile'
+import { useUserStore } from '../../store/user'
 import { t } from '../../i18n'
 import { checkBirthday } from '../../utils/validators'
 
 const emit = defineEmits(['dirty-change'])
 const store = useProfileStore()
+const user = useUserStore()
 
 const profile = computed(() => store.profile || {})
 const editing = ref(false)
@@ -225,13 +233,20 @@ function cancel() {
 }
 
 // ===== 头像 / 换绑回调 =====
-function onAvatarDone(url) { store.applyAvatar(url) }
+function onAvatarDone(url) {
+  store.applyAvatar(url)
+  // Keep the shared navigation avatar in sync without requiring another login.
+  if (user.user) {
+    user.user.avatar = url
+    localStorage.setItem('ll_user', JSON.stringify(user.user))
+  }
+}
 function onBindDone(data) { store.applyContact(data) }
 </script>
 
 <style scoped>
 .avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
-.avatar { background: var(--ll-ring-gradient); font-size: 26px; flex-shrink: 0; }
+.avatar { flex-shrink: 0; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; }
 .full { width: 100%; }
 .ro { padding: 5px 0; min-height: 32px; color: var(--ll-ink); }

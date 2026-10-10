@@ -22,6 +22,12 @@
           <div class="support-message-label">{{ item.role === 'user' ? '你' : '专属客服' }}</div>
           <p>{{ item.text }}</p>
         </div>
+        <div v-if="messages.length === 1 && !loading" class="support-suggestions" aria-label="常见问题">
+          <p>可以先试试</p>
+          <button type="button" @click="askSuggested('如何注册账号？')">账号注册</button>
+          <button type="button" @click="askSuggested('购物车怎么结算？')">购物车结算</button>
+          <button type="button" @click="askSuggested('如何申请商户入驻？')">商户入驻</button>
+        </div>
         <div v-if="loading" class="support-message from-support">
           <div class="support-message-label">专属客服</div>
           <p>正在检索知识库…</p>
@@ -57,6 +63,12 @@ const messageList = ref(null)
 const messages = ref([{ role: 'assistant', text: WELCOME }])
 
 function toggle() { visible.value = !visible.value }
+
+function askSuggested(question) {
+  if (loading.value) return
+  draft.value = question
+  void send()
+}
 
 watch(messages, async () => {
   await nextTick()
@@ -97,6 +109,10 @@ async function send() {
 .support-header p { margin: 4px 0 0; color: rgba(255,255,255,.78); font-size: 11px; }
 .support-close { border: 0; background: transparent; color: #fff; font-size: 26px; line-height: 1; cursor: pointer; }
 .support-messages { display: flex; flex: 1; flex-direction: column; align-items: stretch; gap: 12px; overflow-y: auto; padding: 16px 13px; background: #f8f9fb; }
+.support-suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 2px 0 5px; }
+.support-suggestions p { width: 100%; margin: 0; color: #667085; font-size: 11px; }
+.support-suggestions button { border: 1px solid #d8dee8; border-radius: 999px; padding: 6px 9px; color: #344054; background: #fff; font: inherit; font-size: 11px; cursor: pointer; }
+.support-suggestions button:hover { border-color: #587ca5; color: #13233A; background: #f3f7fc; }
 .support-message { max-width: 92%; padding: 10px 12px; border-radius: 13px; border: 1px solid #e7eaf0; background: #fff; overflow-wrap: anywhere; }
 .support-message.from-user { align-self: flex-end; border-color: #d6e4f5; background: #eef5ff; }
 .support-message.from-support { align-self: flex-start; }

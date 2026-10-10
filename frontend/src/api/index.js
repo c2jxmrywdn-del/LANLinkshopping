@@ -5,20 +5,25 @@ import { hasCookieConsent } from '../utils/cookieConsent'
 export const supportApi = {
   async ask(question) {
     const fallback = '抱歉，当前客服仅能解答 LANLinkshopping 专属知识库已收录的电商相关问题。可咨询账号注册与登录、商品浏览、购物车与订单、商户入驻、钱包与账期、会员与活动、站内消息及 Cookie 设置；其他问题暂不在可答范围内。'
+    const unavailable = '客服暂时无法响应，请稍后重试。'
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
     try {
       const response = await fetch('/api/support/ask', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
-        body: JSON.stringify({ question })
+        body: JSON.stringify({ question }),
+        signal: controller.signal
       })
-      const body = await response.json()
-      // Distinguish transport/access failures from a successful KB fallback without exposing internals.
-      if (!response.ok) return { answer: '客服暂时无法响应，请稍后重试。', unavailable: true }
+      if (!response.ok) return { answer: unavailable, unavailable: true }
+      const body = await response.json().catch(() => null)
       const answer = body?.data?.answer || body?.message
-      if (typeof answer !== 'string' || !answer) return { answer: fallback }
+      if (typeof answer !== 'string' || !answer) return { answer: unavailable, unavailable: true }
       return { answer, unavailable: false }
     } catch {
-      return { answer: fallback }
+      return { answer: unavailable, unavailable: true }
+    } finally {
+      clearTimeout(timeoutId)
     }
   }
 }

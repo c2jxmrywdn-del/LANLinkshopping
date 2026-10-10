@@ -23,6 +23,12 @@ class SupportAnswerServiceTest {
     }
 
     @Test
+    void cartCheckoutQuestionReturnsExactKnowledgeBaseAnswer() {
+        assertEquals("购物车和结算功能需要先登录。登录后可在商城或商品详情中使用购物车，再从“购物车”进入结算页面。",
+                answers.answer("购物车怎么结算？"));
+    }
+
+    @Test
     void outsideScopeReturnsStandardFallback() {
         assertEquals(answers.fallback(), answers.answer("请告诉我某个商品的实时价格和库存"));
         assertEquals(answers.fallback(), answers.answer("今天外面天气怎么样"));

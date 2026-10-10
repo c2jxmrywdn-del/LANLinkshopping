@@ -21,18 +21,20 @@
     <a-spin :spinning="loading">
       <a-row :gutter="16">
         <a-col :span="6" v-for="p in list" :key="p.prodId">
-          <a-card hoverable class="prod-card" @click="$router.push('/product/' + p.prodId)">
-            <div class="thumb">
-              <img v-if="p.coverUrl" :src="p.coverUrl" :alt="p.title" loading="lazy" decoding="async" />
-              <span v-else>{{ p.title.slice(0, 2) }}</span>
-            </div>
-            <div class="ptitle">{{ p.title }}</div>
-            <div class="pprice">¥{{ p.price }}</div>
-            <div v-if="user.hasPerm('vip:discount')" class="pvip">VIP 价 ¥{{ (p.price * 0.95).toFixed(2) }}</div>
-            <div class="pmeta">{{ p.brand }} · 销量 {{ p.sales }}</div>
-            <a-button v-if="user.hasPerm('cart:manage')" class="ll-add-cart" type="primary" size="small" block @click.stop="addCart(p)">加入购物车</a-button>
-            <a-button v-else size="small" block type="default" @click="$router.push('/login')">登录后购买</a-button>
-          </a-card>
+          <InteractiveProductCard
+            :image-url="p.coverUrl || ''"
+            :title="p.title"
+            :description="p.brand || 'B2B 供应商精选'"
+            :price="'¥' + p.price"
+            @click="$router.push('/product/' + p.prodId)"
+          >
+            <template #footer>
+              <div class="product-card-meta">销量 {{ p.sales }} · 现货 {{ p.stock }}</div>
+              <div v-if="user.hasPerm('vip:discount')" class="product-card-vip">VIP 价 ¥{{ (p.price * 0.95).toFixed(2) }}</div>
+              <a-button v-if="user.hasPerm('cart:manage')" class="ll-add-cart" type="primary" size="small" block @click.stop="addCart(p)">加入购物车</a-button>
+              <a-button v-else size="small" block type="default" @click.stop="$router.push('/login')">登录后购买</a-button>
+            </template>
+          </InteractiveProductCard>
         </a-col>
       </a-row>
       <a-empty v-if="!loading && list.length === 0" description="暂无商品" />
@@ -51,6 +53,7 @@ import { message } from 'ant-design-vue'
 import { productApi, homeApi, promotionApi } from '../api'
 import { useCartStore } from '../store/cart'
 import { useUserStore } from '../store/user'
+import InteractiveProductCard from '../components/ui/InteractiveProductCard.vue'
 
 const route = useRoute()
 const cart = useCartStore()
@@ -120,12 +123,12 @@ watch(
 .promo-title { font-weight: 700; color: #b45309; }
 .promo-item { color: var(--ll-gray, #4b5563); }
 .toolbar { display: flex; gap: 12px; margin-bottom: 16px; }
-.prod-card { margin-bottom: 16px; }
+.prod-card { margin-bottom: 16px; }\n:deep(.interactive-product-card) { margin-bottom: 16px; }
 .thumb { height: 120px; background: var(--ll-thumb-bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: var(--ll-thumb-fg); margin-bottom: 8px; overflow: hidden; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; }
 .ptitle { font-size: 14px; height: 40px; overflow: hidden; }
 .pprice { color: #e4393c; font-weight: 700; font-size: 18px; margin: 4px 0; }
 .pvip { color: #b45309; font-weight: 600; font-size: 13px; }
-.pmeta { color: #999; font-size: 12px; margin-bottom: 8px; }
+.pmeta { color: #999; font-size: 12px; margin-bottom: 8px; }\n:deep(.product-card-meta) { color: rgba(255,255,255,.84); font-size: 12px; line-height: 1.45; text-shadow: 0 1px 8px rgba(0,0,0,.2); }\n:deep(.product-card-vip) { color: #F7D894; font-size: 12px; font-weight: 750; }\n:deep(.interactive-product-card .ant-btn) { min-height: 34px; border-radius: 9px; font-weight: 700; }
 .pager { text-align: center; margin: 24px 0; }
 </style>

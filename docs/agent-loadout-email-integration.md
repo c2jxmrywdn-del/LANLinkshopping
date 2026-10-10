@@ -10,6 +10,8 @@
 - `AGENT_LOADOUT_MCP_URL=https://agent-loadout.com/api/mcp`
 - `AGENT_LOADOUT_API_KEY`：填写在 Agent Loadout 后台重新生成的 API Key；只放入部署变量，不提交到 Git。
 - `AGENT_LOADOUT_INBOX_ID`：已授权 Agent 的发件箱 ID（当前连接曾返回 `inb_1k4jbtj1763b8e8sdkcc0brd0`，如有变化以 `list_inboxes` 的结果为准）。
+- `MARKETING_UNSUBSCRIBE_SECRET`：至少 32 个字符的高熵随机密钥，专用于签名退订令牌；不要与 Agent Loadout API Key 共用。
+- `LANLINK_PUBLIC_API_URL=https://lanlinkshopping-production.up.railway.app/api`（若绑定自定义域名，改为该域名的公开 API 基址）。
 - `lanlink.verify-code.demo-mode=false`（生产必须关闭演示模式）。
 
 设置变量后重新部署后端。Agent Loadout 发件人由配置的 inbox 决定；`MAIL_FROM` 不用于覆盖它。若 `MAIL_PROVIDER=auto`，代码会在 Agent Loadout 已完整配置时优先使用它，否则继续按现有 Resend/SMTP 方式选择。
@@ -37,7 +39,7 @@
   "recipients": ["subscribed-customer@example.com"],
   "subject": "LANLinkshopping 新供应商活动",
   "text": "查看本周的新供应商与采购机会。",
-  "unsubscribeUrl": "https://your-domain.example/email/unsubscribe",
+  "unsubscribeUrl": "https://lanlinkshopping-production.up.railway.app/api/marketing-email/unsubscribe",
   "idempotencyKey": "campaign-2026-10-10-v1",
   "consentConfirmed": true
 }
@@ -49,7 +51,8 @@
 - 需要管理员明确确认本批收件人已订阅；后端还会核对收件人属于已登记账号，且账号设置中的 `notify.email=true` 与 `notify.groups.promotion=true`。未匹配到账号或未开启营销通知的地址会跳过，不会发送。
 - 主题会加上“商业推广”标识。
 - 每位收件人的幂等键独立生成；接口返回排队数与失败数，不返回邮箱地址。
-- `unsubscribeUrl` 必须是 HTTPS 地址并会写入正文。必须填入**真实有效的退订端点**；当前代码尚未实现自己的订阅同意/退订数据库，因此上线营销群发前还需要把该 URL 接入实际的退订处理流程，不能使用占位链接或向未订阅对象发送。
+- `unsubscribeUrl` 必须与 `LANLINK_PUBLIC_API_URL` 对应的系统退订地址完全一致。系统为每个已订阅收件人生成不含邮箱地址的 HMAC-SHA256 签名链接；打开链接只展示确认页，不会被邮件安全扫描器预取时误退订，用户点击确认后才关闭该账号的促销通知。验证码、订单和安全邮件不受影响。
+- 服务端仍会核验邮箱属于已登记账号，并要求 `notify.email=true` 与 `notify.groups.promotion=true`；未匹配到账号或未开启营销通知的地址会跳过，不会发送。`consentConfirmed=true` 只是管理员对本批次合规性的再次确认，不会覆盖用户偏好。
 
 ## 4. 验证
 

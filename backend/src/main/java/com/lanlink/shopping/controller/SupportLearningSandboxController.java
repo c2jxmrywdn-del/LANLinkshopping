@@ -33,22 +33,30 @@ import java.util.regex.Pattern;
 @RequestMapping("/admin/support-learning")
 public class SupportLearningSandboxController {
     private static final Pattern ENTRY_ID = Pattern.compile("[a-z0-9][a-z0-9-]{1,63}");
+    private static final Pattern CREDENTIAL_CONTENT = Pattern.compile(
+            "(?i)(-----BEGIN [A-Z ]*PRIVATE KEY-----|sk-[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|(?:password|passwd|pwd|密码|token|secret|api[_ -]?key|access[_ -]?token)\\s*[:=：])");
+    private static final Pattern EMAIL_CONTENT = Pattern.compile("(?i)\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b");
+    private static final Pattern CN_MOBILE = Pattern.compile("(?<!\\d)1[3-9]\\d{9}(?!\\d)");
+    private static final Pattern LONG_NUMBER = Pattern.compile("(?<!\\d)\\d{12,}(?!\\d)");
 
     private final SupportAnswerService answers;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final String sandboxUrl;
     private final String sandboxToken;
+    private final String sandboxMode;
 
     public SupportLearningSandboxController(
             SupportAnswerService answers,
             ObjectMapper objectMapper,
             @Value("${SUPPORT_SANDBOX_URL:}") String sandboxUrl,
-            @Value("${SUPPORT_SANDBOX_TOKEN:}") String sandboxToken) {
+            @Value("${SUPPORT_SANDBOX_TOKEN:}") String sandboxToken,
+            @Value("${SUPPORT_SANDBOX_MODE:container}") String sandboxMode) {
         this.answers = answers;
         this.objectMapper = objectMapper;
         this.sandboxUrl = sandboxUrl == null ? "" : sandboxUrl.trim().replaceAll("/+$", "");
         this.sandboxToken = sandboxToken == null ? "" : sandboxToken.trim();
+        this.sandboxMode = sandboxMode == null ? "container" : sandboxMode.trim().toLowerCase();
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(2))
                 .followRedirects(HttpClient.Redirect.NEVER)
@@ -60,6 +68,10 @@ public class SupportLearningSandboxController {
         if (!validRequest(request)) {
             return ResponseEntity.badRequest().body(R.<PreviewResult>fail(400,
                     "沙盒输入不符合要求；请检查问题、候选关键词和回答长度。"));
+        }
+        if ("local".equals(sandboxMode)) {
+            // Explicit temporary degradation only; this mode is never allowed to export a candidate as sandbox-verified.
+            return ResponseEntity.ok(R.ok(previewInProcess(request)));
         }
         if (!StringUtils.hasText(sandboxUrl) || !StringUtils.hasText(sandboxToken)) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(R.<PreviewResult>fail(503,
@@ -125,6 +137,44 @@ public class SupportLearningSandboxController {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(R.<PreviewResult>fail(503,
                     "隔离 Docker 沙盒暂时不可用，请检查容器状态与服务地址。"));
         }
+    }
+
+
+    private PreviewResult previewInProcess(PreviewRequest request) {
+        String question = request.question().trim();
+        List<String> keywords = request.keywords().stream().map(String::trim).distinct().toList();
+        String currentEntryId = answers.matchedEntryId(question);
+        String currentAnswer = answers.answer(question);
+        boolean eligible = answers.isEligibleForKnowledgeLearning(question);
+        boolean keywordMatch = answers.candidateKeywordsMatch(question, keywords);
+        boolean keywordConflict = answers.hasKeywordConflict(keywords);
+        String draftAnswer = request.draftAnswer().trim();
+        boolean answerSafe = !CREDENTIAL_CONTENT.matcher(draftAnswer).find()
+                && !EMAIL_CONTENT.matcher(draftAnswer).find()
+                && !CN_MOBILE.matcher(draftAnswer).find()
+                && !LONG_NUMBER.matcher(draftAnswer).find();
+        boolean entryIdValid = ENTRY_ID.matcher(request.entryId().trim()).matches();
+        String message;
+        if (!eligible) {
+            message = "候选问题未通过范围或安全检查；不能将范围外问题加入正式知识库。";
+        } else if (!keywordMatch) {
+            message = "候选关键词尚未命中测试问题，请调整后重新试跑。";
+        } else if (keywordConflict) {
+            message = "候选关键词与已有知识存在重复项，请缩小或更换关键词。";
+        } else if (!answerSafe) {
+            message = "候选回答疑似包含个人信息或凭据，不能导出。";
+        } else if (!entryIdValid) {
+            message = "候选条目 ID 格式不正确，请使用小写字母、数字和连字符。";
+        } else {
+            message = "临时进程内预检已完成，但尚未通过 Docker 隔离校验；候选暂不允许导出。请在隔离容器部署后重新测试。";
+        }
+        String eligibilityMessage = eligible
+                ? "问题位于当前电商学习范围内，且未触发已知拦截规则。"
+                : "问题未通过电商范围或安全检查，不能作为当前知识库候选。";
+        String notice = "⚠ 临时降级模式：此结果在主后端进程内生成，不是 Docker 容器隔离验证；不会保存问题或修改正式知识库。容器部署完成后请切回 container 模式。";
+        return new PreviewResult(currentEntryId, currentAnswer, eligible, eligibilityMessage,
+                keywordMatch, eligible && keywordMatch && answerSafe ? draftAnswer : "",
+                false, message, notice);
     }
 
     private static boolean validRequest(PreviewRequest request) {

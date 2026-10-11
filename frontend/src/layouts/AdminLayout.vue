@@ -4,7 +4,7 @@
       <div class="brand">
         <div class="brand-txt ll-wordmark"><span class="ll-lan">LAN</span><span class="ll-link">Link</span><span class="ll-shopping">shopping</span></div>
       </div>
-      <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="inline" @click="onNav">
+      <a-menu v-model:selectedKeys="selectedKeys" v-model:openKeys="openKeys" theme="dark" mode="inline" @click="onNav">
         <a-menu-item key="admin-dash">数据概览</a-menu-item>
         <a-menu-item key="admin-merchants">商户管理</a-menu-item>
         <a-menu-item key="admin-products">商品管理</a-menu-item>
@@ -53,8 +53,30 @@ const router = useRouter()
 const route = useRoute()
 const user = useUserStore()
 const selectedKeys = ref(['admin-dash'])
+const openKeys = ref([])
+const communicationMenuKey = 'admin-customer-communication'
+const communicationRouteToMenu = {
+  'admin-communications': 'admin-communications',
+  'admin-communications-inbox': 'admin-communications-inbox',
+  'admin-communication-conversation': 'admin-communications-inbox',
+  'admin-communication-message-detail': 'admin-communications-inbox',
+  'admin-communications-learning': 'admin-communications-learning',
+  'admin-communications-learning-detail': 'admin-communications-learning',
+  'admin-communications-learning-review': 'admin-communications-learning',
+  'admin-support-learning': 'admin-support-learning'
+}
 
-watch(() => route.name, (n) => { if (n) selectedKeys.value = [n] }, { immediate: true })
+watch(() => route.name, (name) => {
+  if (!name) return
+  const parentMenu = communicationRouteToMenu[name]
+  if (parentMenu) {
+    selectedKeys.value = [parentMenu]
+    openKeys.value = [communicationMenuKey]
+    return
+  }
+  selectedKeys.value = [name]
+  openKeys.value = []
+}, { immediate: true })
 
 function onNav({ key }) { router.push({ name: key }) }
 function backFront() { router.push('/') }

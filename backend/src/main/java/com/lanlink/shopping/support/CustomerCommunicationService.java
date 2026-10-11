@@ -412,12 +412,17 @@ public class CustomerCommunicationService {
         if (candidateRows.isEmpty()) throw new IllegalArgumentException("候选不存在或已审核，请刷新列表。");
         String newStatus = "publish".equals(decision) ? "published" : "rejected";
         String reviewerName = StringUtils.hasText(admin.getNickname()) ? admin.getNickname() : "平台运营";
-        jdbc.update("""
+        int updated = jdbc.update("""
                 UPDATE t_support_learning_candidate
                    SET status = ?, reviewer_user_id = ?, reviewer_name = ?, review_note = ?,
                        reviewed_at = NOW(), published_at = CASE WHEN ? = 'published' THEN NOW() ELSE NULL END
                  WHERE id = ? AND status = 'pending'
                 """, newStatus, admin.getUserId(), reviewerName, reviewNote, newStatus, id);
+        // Compare-and-set the pending state. A second administrator can win the race
+        // after the initial SELECT; never report success or audit a transition that did not occur.
+        if (updated != 1) {
+            throw new IllegalArgumentException("候选已被其他管理员处理，请刷新列表后确认最新状态。");
+        }
         auditService.record(admin.getUserId(), "published".equals(newStatus) ? "SUPPORT_KNOWLEDGE_PUBLISHED" : "SUPPORT_KNOWLEDGE_REJECTED",
                 "候选知识 ID " + id + "（" + String.valueOf(candidateRows.get(0).get("entry_id")) + "）审核结果：" + newStatus, request);
     }

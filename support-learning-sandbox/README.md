@@ -44,7 +44,7 @@ docker compose -f support-learning-sandbox/docker-compose.yml down
 - SUPPORT_SANDBOX_URL=http://lanlink-learning-sandbox.railway.internal:8080
 - SUPPORT_SANDBOX_TOKEN：与沙盒容器同一令牌。
 
-管理端访问仍由主后端管理员鉴权与 CSRF 防护负责。若容器地址、密钥或容器服务不可用，预检接口会返回服务不可用，不会悄悄退回生产进程内执行。
+管理端访问仍由主后端管理员鉴权与 CSRF 防护负责。默认 SUPPORT_SANDBOX_MODE=container：若容器地址、密钥或容器服务不可用，预检接口会返回 503，不会静默降级。只有明确将 SUPPORT_SANDBOX_MODE 设置为 local 才启用临时进程内模式；该模式会显示非隔离警示并禁用候选导出。正式容器运行后应切回 container。
 
 ## 安全提醒
 

@@ -37,6 +37,14 @@ class SandboxEvaluationTests(unittest.TestCase):
         payload["keywordConflict"] = True
         result = evaluate(payload)
         self.assertFalse(result["candidateReadyToExport"])
+        self.assertEqual("", result["draftAnswerPreview"])
+
+    def test_invalid_entry_id_is_not_previewed(self):
+        payload = valid_payload()
+        payload["entryId"] = "Invalid_ID"
+        result = evaluate(payload)
+        self.assertFalse(result["candidateReadyToExport"])
+        self.assertEqual("", result["draftAnswerPreview"])
 
     def test_personal_contact_is_rejected_from_preview(self):
         payload = valid_payload()

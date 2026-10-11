@@ -7,6 +7,7 @@ import hmac
 import json
 import os
 import re
+import socket
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -218,10 +219,22 @@ class Handler(BaseHTTPRequestHandler):
         self._send(200, result)
 
 
+class DualStackThreadingHTTPServer(ThreadingHTTPServer):
+    # Railway's private DNS can resolve IPv6; dual-stack keeps both IPv4 and IPv6 reachable.
+    address_family = socket.AF_INET6
+
+    def server_bind(self) -> None:
+        try:
+            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+        except OSError:
+            pass
+        super().server_bind()
+
+
 if __name__ == "__main__":
     if not SERVICE_TOKEN or len(SERVICE_TOKEN) < 40:
         raise SystemExit("SUPPORT_SANDBOX_TOKEN must be configured with at least 40 characters")
-    server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
+    server = DualStackThreadingHTTPServer(("::", PORT), Handler)
     server.daemon_threads = True
     server.request_queue_size = 32
     server.serve_forever()

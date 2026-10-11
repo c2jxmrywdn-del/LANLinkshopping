@@ -9,6 +9,11 @@ import { initRipple } from './utils/ripple'
 import { initI18nDom } from './i18n'
 import * as amplitude from '@amplitude/unified'
 
+const app = createApp(App)
+app.use(createPinia())
+app.use(router)
+app.use(Antd)
+
 const amplitudeApiKey = import.meta.env.VITE_AMPLITUDE_API_KEY
 if (!amplitudeApiKey) {
   console.warn('Amplitude API key missing — analytics disabled')
@@ -30,10 +35,6 @@ if (!amplitudeApiKey) {
   })
 }
 
-const app = createApp(App)
-app.use(createPinia())
-app.use(router)
-app.use(Antd)
 app.mount('#app')
 initI18nDom()
 

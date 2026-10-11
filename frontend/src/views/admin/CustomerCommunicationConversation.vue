@@ -99,7 +99,7 @@
       </a-col>
     </a-row>
   </div>
-  <a-card v-else :bordered="false"><a-spin v-if="loading" tip="正在加载会话…" /><a-result v-else status="404" title="无法打开会话" sub-title="会话可能已被移除，或当前账号没有访问权限。"><template #extra><a-button type="primary" @click="go('admin-communications-inbox')">返回会话队列</a-button></template></a-result></a-card>
+  <a-card v-else :bordered="false"><a-spin v-if="loading" tip="正在加载会话…" /><a-result v-else status="warning" title="会话暂不可用" sub-title="会话可能已被移除，也可能是网络或权限问题。请重试，或返回会话工作台重新选择。"><template #extra><a-space><a-button @click="load">重新加载</a-button><a-button type="primary" @click="go('admin-communications-inbox')">返回会话工作台</a-button></a-space></template></a-result></a-card>
 </template>
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
@@ -108,7 +108,7 @@ import { message, Modal } from 'ant-design-vue'
 import { ReloadOutlined } from '@ant-design/icons-vue'
 import { adminApi } from '../../api'
 const route=useRoute(), router=useRouter()
-const loading=ref(false), actionLoading=ref(false), sending=ref(false), learningLoading=ref(false)
+const loading=ref(true), actionLoading=ref(false), sending=ref(false), learningLoading=ref(false)
 const conversation=ref(null), messages=ref([]), draft=ref(''), internalNote=ref(false)
 const statusValue=ref('open'), priorityValue=ref('normal')
 const selectedQuestionId=ref(undefined), selectedAnswerId=ref(undefined), entryId=ref('dialog-new'), keywordText=ref('')

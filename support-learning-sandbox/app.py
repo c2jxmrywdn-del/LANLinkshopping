@@ -17,6 +17,7 @@ MAX_BODY_BYTES = 16 * 1024
 MAX_REQUESTS_PER_MINUTE = 60
 PORT = int(os.environ.get("PORT", "8080"))
 SERVICE_TOKEN = os.environ.get("SUPPORT_SANDBOX_TOKEN", "").strip()
+RUNTIME_MODE = os.environ.get("SUPPORT_SANDBOX_RUNTIME", "docker").strip().lower()
 
 ENTRY_ID = re.compile(r"^[a-z0-9][a-z0-9-]{1,63}$")
 CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
@@ -125,12 +126,14 @@ def evaluate(payload: Any) -> dict[str, Any]:
         "learningEligible": eligible,
         "learningEligibilityMessage": eligibility_message,
         "draftKeywordsMatch": keyword_match,
-        "draftAnswerPreview": draft_answer if eligible and keyword_match and answer_safe else "",
+        "draftAnswerPreview": draft_answer if candidate_ready else "",
         "candidateReadyToExport": bool(candidate_ready),
         "candidateMessage": candidate_message,
         "sandboxNotice": (
-            "独立 Docker 沙盒：本次仅在内存中校验候选，不写入文件或数据库；"
-            "不访问订单、钱包、用户档案，不调用外部 API、模型、Shell 或动态代码。"
+            ("Vercel Serverless 沙盒函数：" if RUNTIME_MODE == "vercel-serverless" else "独立 Docker 沙盒：")
+            + "本次仅在内存中校验候选，不写入文件或数据库；"
+            + "不访问订单、钱包、用户档案，不调用外部 API、模型、Shell 或动态代码。"
+            + ("运行时由平台托管，不是用户专属 Docker 容器。" if RUNTIME_MODE == "vercel-serverless" else "")
         ),
     }
 

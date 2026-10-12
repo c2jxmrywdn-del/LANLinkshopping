@@ -13,20 +13,26 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    private final AuthRateLimitInterceptor authRateLimitInterceptor;
     private final AuthInterceptor authInterceptor;
     private final com.lanlink.shopping.integration.security.PermInterceptor permInterceptor;
 
     @Value("${app.cors.allowed-origin-patterns:http://localhost:*,http://127.0.0.1:*}")
     private String allowedOriginPatterns;
 
-    public WebConfig(AuthInterceptor authInterceptor,
+    public WebConfig(AuthRateLimitInterceptor authRateLimitInterceptor,
+                     AuthInterceptor authInterceptor,
                      com.lanlink.shopping.integration.security.PermInterceptor permInterceptor) {
+        this.authRateLimitInterceptor = authRateLimitInterceptor;
         this.authInterceptor = authInterceptor;
         this.permInterceptor = permInterceptor;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        // Rate-limit public login, second-factor, and registration routes before auth/session work.
+        registry.addInterceptor(authRateLimitInterceptor)
+                .addPathPatterns("/auth/login", "/auth/login/2fa", "/auth/register");
         registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/**");
         // 权限校验：AuthInterceptor 之后执行（先保证登录与身份识别）

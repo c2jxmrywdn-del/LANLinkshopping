@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Objects;
+import java.util.function.LongSupplier;
 
 /**
  * Endpoint-specific throttling for public authentication routes.
@@ -76,6 +78,7 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
             "/auth/register", new Policy(4, 30)
     );
 
+    private final LongSupplier clock;
     private final ConcurrentHashMap<String, WindowCounter> localCounters = new ConcurrentHashMap<>();
     private final AtomicLong handledRequests = new AtomicLong();
     private final AtomicLong nextSharedRetryAt = new AtomicLong(0L);
@@ -86,10 +89,18 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
     private volatile JdbcTemplate jdbcTemplate;
     private volatile boolean sharedStoreReady;
 
+    public AuthRateLimitInterceptor() {
+        this(System::currentTimeMillis);
+    }
+
+    AuthRateLimitInterceptor(LongSupplier clock) {
+        this.clock = Objects.requireNonNull(clock, "clock");
+    }
+
     @Autowired(required = false)
     public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        initializeSharedStore(System.currentTimeMillis());
+        initializeSharedStore(clock.getAsLong());
     }
 
     @Override
@@ -104,7 +115,7 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        long now = System.currentTimeMillis();
+        long now = clock.getAsLong();
         String railwayIp = normalizeIp(request.getHeader("X-Real-IP"));
         if (railwayIp == null) {
             railwayIp = normalizeIp(request.getRemoteAddr());

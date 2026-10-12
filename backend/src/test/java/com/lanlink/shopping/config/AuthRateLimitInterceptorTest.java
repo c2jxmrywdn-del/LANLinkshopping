@@ -28,11 +28,12 @@ import static org.mockito.Mockito.when;
 
 class AuthRateLimitInterceptorTest {
 
+    private static final long FIXED_TIME_MILLIS = 1_800_000_000_000L;
     private AuthRateLimitInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
-        interceptor = new AuthRateLimitInterceptor();
+        interceptor = new AuthRateLimitInterceptor(() -> FIXED_TIME_MILLIS);
     }
 
     @Test
@@ -75,8 +76,8 @@ class AuthRateLimitInterceptorTest {
     @Test
     void sharedDatabaseStoreCoordinatesSeparateInterceptorInstances() throws Exception {
         SharedCounterJdbcTemplate sharedStore = new SharedCounterJdbcTemplate();
-        AuthRateLimitInterceptor first = new AuthRateLimitInterceptor();
-        AuthRateLimitInterceptor second = new AuthRateLimitInterceptor();
+        AuthRateLimitInterceptor first = new AuthRateLimitInterceptor(() -> FIXED_TIME_MILLIS);
+        AuthRateLimitInterceptor second = new AuthRateLimitInterceptor(() -> FIXED_TIME_MILLIS);
         first.setJdbcTemplate(sharedStore);
         second.setJdbcTemplate(sharedStore);
 

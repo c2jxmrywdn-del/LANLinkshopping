@@ -4,28 +4,71 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lanlink.shopping.common.R;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Endpoint-specific throttling for public authentication routes.
  *
- * Railway's public edge overwrites X-Real-IP. CF-Connecting-IP is used only as
- * an additional per-client dimension because direct access to the Railway
- * origin can supply that header; every request is also charged to X-Real-IP.
+ * The shared MySQL counter store coordinates requests across application
+ * replicas without requiring a separately provisioned Redis service. Only
+ * SHA-256 keys are persisted; raw IP addresses are not stored in the table.
+ * If the database-side store is unavailable, a bounded local fallback keeps
+ * the application available while emitting a warning.
  */
 @Component
 public class AuthRateLimitInterceptor implements HandlerInterceptor {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthRateLimitInterceptor.class);
+
     private static final long WINDOW_MILLIS = 60_000L;
     private static final long IDLE_TTL_MILLIS = 15 * 60_000L;
     private static final int MAX_COUNTERS = 20_000;
+    private static final long STORE_RETRY_MILLIS = 60_000L;
+    private static final int CLEANUP_BATCH_SIZE = 1_000;
+
+    private static final String CREATE_TABLE_SQL = """
+            CREATE TABLE IF NOT EXISTS t_auth_rate_limit_counter (
+                rate_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+                request_count INT UNSIGNED NOT NULL DEFAULT 0,
+                expires_at_ms BIGINT NOT NULL,
+                PRIMARY KEY (rate_key),
+                KEY idx_auth_rate_limit_expires (expires_at_ms)
+            ) ENGINE=InnoDB
+            """;
+
+    /*
+     * LAST_INSERT_ID(expr) returns this request's own atomic counter value on
+     * the same MySQL connection, avoiding a racy second SELECT of the count.
+     */
+    private static final String INCREMENT_COUNTER_SQL = """
+            INSERT INTO t_auth_rate_limit_counter (rate_key, request_count, expires_at_ms)
+            VALUES (?, LAST_INSERT_ID(1), ?)
+            ON DUPLICATE KEY UPDATE request_count = LAST_INSERT_ID(request_count + 1)
+            """;
+
+    private static final String READ_LAST_INSERT_ID_SQL = "SELECT LAST_INSERT_ID()";
+    private static final String CLEANUP_COUNTERS_SQL =
+            "DELETE FROM t_auth_rate_limit_counter WHERE expires_at_ms < ? LIMIT " + CLEANUP_BATCH_SIZE;
 
     private static final Map<String, Policy> POLICIES = Map.of(
             "/auth/login", new Policy(8, 120),
@@ -33,9 +76,21 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
             "/auth/register", new Policy(4, 30)
     );
 
-    private final ConcurrentHashMap<String, WindowCounter> counters = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, WindowCounter> localCounters = new ConcurrentHashMap<>();
     private final AtomicLong handledRequests = new AtomicLong();
+    private final AtomicLong nextSharedRetryAt = new AtomicLong(0L);
+    private final AtomicLong nextSharedCleanupAt = new AtomicLong(0L);
+    private final AtomicBoolean sharedStoreWarningLogged = new AtomicBoolean();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private volatile JdbcTemplate jdbcTemplate;
+    private volatile boolean sharedStoreReady;
+
+    @Autowired(required = false)
+    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+        initializeSharedStore(System.currentTimeMillis());
+    }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -58,15 +113,12 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
             railwayIp = "unknown";
         }
 
-        // Always apply the Railway-ingress limit; this cannot be bypassed by
-        // changing the optional CF-Connecting-IP header on direct-origin calls.
+        // Keep an ingress-source ceiling as a backstop when callers forge the
+        // optional client-IP header on direct-origin requests.
         boolean ingressAllowed = allow("ingress|" + path + "|" + railwayIp, policy.ingressLimit, now);
 
         String clientIp = normalizeIp(request.getHeader("CF-Connecting-IP"));
         if (clientIp == null && !isVercelForwardedRequest(request)) {
-            // Direct requests to the Railway public endpoint have a sanitized
-            // X-Real-IP. Avoid using the Vercel egress address as a shared
-            // client key if Vercel did not preserve CF-Connecting-IP.
             clientIp = railwayIp.equals("unknown") ? null : railwayIp;
         }
         boolean clientAllowed = clientIp == null
@@ -88,29 +140,120 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor {
     }
 
     private boolean allow(String key, int limit, long now) {
-        WindowCounter counter = counters.get(key);
-        if (counter == null) {
-            if (counters.size() >= MAX_COUNTERS) {
-                cleanupStaleCounters(now);
+        JdbcTemplate template = jdbcTemplate;
+        if (template != null) {
+            if (!sharedStoreReady && now >= nextSharedRetryAt.get()) {
+                initializeSharedStore(now);
             }
-            if (counters.size() >= MAX_COUNTERS) {
-                return false; // fail closed rather than grow without bound
+            if (sharedStoreReady) {
+                try {
+                    int count = incrementSharedCounter(template, key, now);
+                    cleanupSharedCountersIfDue(template, now);
+                    return count <= limit;
+                } catch (Exception ex) {
+                    sharedStoreReady = false;
+                    nextSharedRetryAt.set(now + STORE_RETRY_MILLIS);
+                    logSharedStoreFailure(ex);
+                }
+            }
+        }
+        return allowLocal(key, limit, now);
+    }
+
+    private int incrementSharedCounter(JdbcTemplate template, String logicalKey, long now) {
+        long windowStart = Math.floorDiv(now, WINDOW_MILLIS) * WINDOW_MILLIS;
+        String hashedKey = sha256(logicalKey + "|" + windowStart);
+        Long expiresAt = windowStart + 2 * WINDOW_MILLIS;
+
+        Integer count = template.execute((ConnectionCallback<Integer>) connection -> {
+            try (PreparedStatement increment = connection.prepareStatement(INCREMENT_COUNTER_SQL)) {
+                increment.setString(1, hashedKey);
+                increment.setLong(2, expiresAt);
+                increment.executeUpdate();
+            }
+            try (Statement statement = connection.createStatement();
+                 ResultSet result = statement.executeQuery(READ_LAST_INSERT_ID_SQL)) {
+                return result.next() ? result.getInt(1) : null;
+            }
+        });
+
+        if (count == null) {
+            throw new IllegalStateException("Shared auth rate-limit counter returned no value");
+        }
+        return count;
+    }
+
+    private void initializeSharedStore(long now) {
+        JdbcTemplate template = jdbcTemplate;
+        if (template == null) {
+            return;
+        }
+        try {
+            template.execute(CREATE_TABLE_SQL);
+            sharedStoreReady = true;
+            nextSharedRetryAt.set(0L);
+            sharedStoreWarningLogged.set(false);
+            LOGGER.info("Shared authentication rate-limit store is ready");
+        } catch (Exception ex) {
+            sharedStoreReady = false;
+            nextSharedRetryAt.set(now + STORE_RETRY_MILLIS);
+            logSharedStoreFailure(ex);
+        }
+    }
+
+    private void cleanupSharedCountersIfDue(JdbcTemplate template, long now) {
+        long next = nextSharedCleanupAt.get();
+        if (now < next || !nextSharedCleanupAt.compareAndSet(next, now + WINDOW_MILLIS)) {
+            return;
+        }
+        try {
+            template.update(CLEANUP_COUNTERS_SQL, now);
+        } catch (DataAccessException ex) {
+            // Cleanup is best-effort; a failed cleanup must not disable the
+            // active atomic counter path.
+            LOGGER.warn("Could not clean expired authentication rate-limit counters", ex);
+        }
+    }
+
+    private void logSharedStoreFailure(Exception ex) {
+        if (sharedStoreWarningLogged.compareAndSet(false, true)) {
+            LOGGER.warn("Shared authentication rate-limit store unavailable; using bounded process-local fallback", ex);
+        }
+    }
+
+    private boolean allowLocal(String key, int limit, long now) {
+        WindowCounter counter = localCounters.get(key);
+        if (counter == null) {
+            if (localCounters.size() >= MAX_COUNTERS) {
+                cleanupStaleLocalCounters(now);
+            }
+            if (localCounters.size() >= MAX_COUNTERS) {
+                return false;
             }
             WindowCounter candidate = new WindowCounter(now);
-            WindowCounter previous = counters.putIfAbsent(key, candidate);
+            WindowCounter previous = localCounters.putIfAbsent(key, candidate);
             counter = previous == null ? candidate : previous;
         }
         return counter.tryAcquire(limit, now);
     }
 
     private void cleanupIfNeeded(long now) {
-        if ((handledRequests.incrementAndGet() & 0xffL) == 0L || counters.size() >= MAX_COUNTERS) {
-            cleanupStaleCounters(now);
+        if ((handledRequests.incrementAndGet() & 0xffL) == 0L || localCounters.size() >= MAX_COUNTERS) {
+            cleanupStaleLocalCounters(now);
         }
     }
 
-    private void cleanupStaleCounters(long now) {
-        counters.entrySet().removeIf(entry -> entry.getValue().isIdle(now, IDLE_TTL_MILLIS));
+    private void cleanupStaleLocalCounters(long now) {
+        localCounters.entrySet().removeIf(entry -> entry.getValue().isIdle(now, IDLE_TTL_MILLIS));
+    }
+
+    private static String sha256(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (Exception ex) {
+            throw new IllegalStateException("SHA-256 is not available", ex);
+        }
     }
 
     private static String applicationPath(HttpServletRequest request) {

@@ -593,6 +593,15 @@ CREATE TABLE IF NOT EXISTS t_traffic_event (
   KEY idx_traffic_source_time (merchant_id,source_type,event_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='商户流量行为事件';
 
+-- Shared cross-instance authentication rate-limit counters. Values contain hashed keys only.
+CREATE TABLE IF NOT EXISTS t_auth_rate_limit_counter (
+  rate_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  request_count INT UNSIGNED NOT NULL DEFAULT 0,
+  expires_at_ms BIGINT NOT NULL,
+  PRIMARY KEY (rate_key),
+  KEY idx_auth_rate_limit_expires (expires_at_ms)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='认证接口跨实例限流计数';
+
 -- ==================== 企业账期管理 ====================
 CREATE TABLE IF NOT EXISTS t_credit_account (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,

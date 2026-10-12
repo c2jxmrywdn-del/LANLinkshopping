@@ -21,7 +21,7 @@ class UserContextTest {
     private void mockRequest() {
         request = mock(HttpServletRequest.class);
         session = mock(HttpSession.class);
-        when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
     }
 
     private User loggedUser() {
@@ -29,6 +29,16 @@ class UserContextTest {
         u.setUserId(2L);
         u.setRoleId(1L);
         return u;
+    }
+
+    @Test
+    void anonymousCurrentDoesNotCreateSession() {
+        request = mock(HttpServletRequest.class);
+        when(request.getSession(false)).thenReturn(null);
+
+        assertNull(UserContext.current(request));
+        verify(request).getSession(false);
+        verify(request, never()).getSession();
     }
 
     @Test

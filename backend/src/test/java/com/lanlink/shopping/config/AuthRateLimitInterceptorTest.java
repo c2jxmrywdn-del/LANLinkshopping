@@ -136,6 +136,13 @@ class AuthRateLimitInterceptorTest {
         }
 
         @Override
+        public int update(String sql, Object... args) {
+            // Expired-counter cleanup is best-effort and does not change the
+            // shared counter fixture's state.
+            return 0;
+        }
+
+        @Override
         public <T> T execute(ConnectionCallback<T> action) {
             Connection connection = mock(Connection.class);
             try {

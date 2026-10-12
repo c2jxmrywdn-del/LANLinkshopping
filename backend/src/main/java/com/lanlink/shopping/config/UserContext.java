@@ -3,6 +3,7 @@ package com.lanlink.shopping.config;
 import com.lanlink.shopping.common.UserIdentity;
 import com.lanlink.shopping.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * 当前登录用户上下文（基于 HttpSession）+ 请求级身份缓存。
@@ -14,7 +15,9 @@ public class UserContext {
 
     public static User current(HttpServletRequest request) {
         if (request == null) return null;
-        Object obj = request.getSession().getAttribute(SESSION_KEY);
+        HttpSession session = request.getSession(false);
+        if (session == null) return null;
+        Object obj = session.getAttribute(SESSION_KEY);
         return obj instanceof User ? (User) obj : null;
     }
 

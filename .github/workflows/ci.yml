@@ -52,3 +52,22 @@ jobs:
       - name: Verify backend
         working-directory: backend
         run: mvn -B -ntp verify
+
+  support-sandbox:
+    name: Support sandbox regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run sandbox regression tests
+        working-directory: support-learning-sandbox
+        run: python -m unittest -v
+      - name: Check Python syntax and regression JSON
+        working-directory: support-learning-sandbox
+        run: |
+          python -m py_compile conversation_quality.py test_conversation_quality.py
+          python -m json.tool conversation_regression_cases.json > /dev/null
